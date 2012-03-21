@@ -1,0 +1,2322 @@
+------------------------------------------------------------------------------
+                        Inform Translator's Manual
+
+                              Graham Nelson
+                            9th December 1996
+------------------------------------------------------------------------------
+   1   Introduction
+
+   2   Teaching Inform to read your language
+
+   2.1      What is Informese?
+   2.2      A grammar of Informese
+            (a) Commands
+            (b) Verb phrases
+            (c) Noun phrases
+            (d) Descriptors
+            (e) Nouns
+            (f) Example
+            (g) Grammatical features not present in Informese
+   2.3      Gender, number and animation (GNA) of noun phrases
+   2.4      The alphabet
+   2.5      Plural dictionary words
+   2.6      Dealing with flexion in noun phrases using grammar tokens
+   L.0      Organisation of language definition files
+   L.I.1    Version number and alphabet
+   L.I.2    Compass objects
+   L.II.1   Informese vocabulary: miscellaneous
+   L.II.2   Informese vocabulary: pronouns
+   L.II.3   Informese vocabulary: descriptors
+   L.II.4   Informese vocabulary: numbers
+   L.III.1  Translating natural language to Informese
+
+   3   Teaching Inform to write your language
+
+   3.1      The GNA of object names
+   3.2      Flexion in object names
+   L.IV.1   Default genders and contraction forms
+   L.IV.2   How to print: articles
+   L.IV.3   How to print: direction names
+   L.IV.4   How to print: numbers
+   L.IV.5   How to print: the time of day
+   L.IV.6   How to print: verbs
+   L.IV.7   How to print: menus
+   L.IV.8   How to print: miscellaneous short messages
+   L.IV.9   How to print: LibraryMessages
+
+------------------------------------------------------------------------------
+
+   1.  Introduction
+   ----------------
+
+     "The corresponding Kivunjo construction [to the English dative]
+     is called the applicative... [it] fits entirely inside the verb,
+     which has seven prefixes and suffixes, two moods and fourteen
+     tenses; the verb agrees with its subject, its object and its
+     benefactive nouns, each of which has sixteen genders."
+  
+     -- Steven Pinker, "The Language Instinct".  (Kivunjo is spoken
+        only in certain villages on the slopes of Mount Kilimanjaro.)
+
+     "_It_, hell.  She had _Those_."
+     
+     -- Dorothy Parker, reviewing a book called "It", whose hero and
+        heroine supposedly had _It_, or sex appeal.
+
+
+Designing a computer interface to cope with the full range of human
+languages is far from simple.  Three things make matters easier for Inform:
+
+ (a) Most languages form imperative commands in a similar fashion to
+     English (perhaps Chomsky's Universal Grammar of human language,
+     if there is one, allows little variation).
+ (b) Inform is probably only going to be used with Romance, and perhaps
+     a few Ugric languages: relations between these are close for
+     historical reasons.
+ (c) Inform's internal workings (its parser and verb library) deal only
+     with a small part of grammar: present tense, imperative verbs and
+     so on.
+
+The present systems have been made as flexible as reasonably possible,
+but have also made compromises.  There will still be languages which it is
+extremely difficult to translate Inform to (Hebrew, for instance, where
+vowels are conventionally omitted, to leave an ambiguous text which must be
+understood in context).  English is a non-inflected language.  That is,
+one in which word endings tend not to vary according to grammatical situation:
+
+    take a brown dog
+    take the brown dog
+    give a biscuit to the brown dog
+
+In German, the corresponding words to "brown" and "dog" would each have
+inflected to agree with the definite or indefinite article, and "to the
+brown dog" would be expressed by writing "brown dog" in the dative case,
+inflecting it again.  (Even English has a few inflections, inherited from
+Old English -- which was an inflected language: I do, you do, he does; I have,
+you have, he has.)
+
+Most languages are more heavily inflected than English, some (like Kivunjo
+or Finnish) crushingly so.  Yet the Inform parser is really modelled on a
+non-inflected language.  A translator will face two basic tasks:
+
+ (a) Translating many small pieces of text, which should be easy but
+     probably quite tedious.
+ (b) Writing short pieces of code, and grammar tokens, to try to remove
+     inflections, stripping out prefixes and suffixes from words as
+     needed.
+
+The translator will probably want to compromise in a few places, omitting
+tricky but not really necessary features of the language.  For instance,
+in German, adjectives take forms agreeing with whether their noun takes
+a definite or indefinite article:
+
+     ein groﬂer Mann      = a tall man
+     der groﬂe Mann       = the tall man
+
+This is a feature which we cannot compromise on.  But German also has a
+"neutral" form for adjectives, used in sentences like
+
+     Der Mann ist groﬂ    = The man is tall
+
+Now it could be argued that if the parser asks a question like
+
+     Whom do you mean, the tall man or the short man?
+
+then the player ought to be able to reply "groﬂ".  I think this just isn't
+worth the trouble.  As another example from German, is it essential for the
+parser to recognise commands put in the polite form when addressed to somebody
+other than the player?  For instance,
+
+     freddy, ÷ffne den ofen              =  Freddy, open the oven
+     herr kr‹ger, ÷ffnen sie den ofen    =  Mr Krueger, open the oven
+
+demonstrate forms to be used if Freddy is a familiar friend and Mr Krueger
+a mere acquaintance.  A translator might go to the trouble of implementing
+this (it's not impossible), but I suspect I'd not bother, and simply tell
+players always to use the familiar form.
+
+The translator will also face choices.  I can imagine two rather different
+translations into French, one which expects players to type commands using
+accented letters, and one which expects them to ignore accents and simply
+type A to Z.  (After all, some capitalised French titles omit accents, and
+accents can be a nuisance on some computer keyboards.)
+
+Another range of choices concerns how the computer is to be addressed.
+Many languages have different forms of address to people who are familiar
+and to strangers, as in the example of Freddy and Mr Krueger.  Is the
+computer familiar?  I suggest so, but a translator is free to disagree.
+For that matter, does the player address the computer or the main character
+of the game?  It depends on one's point of view.  In English it makes no
+difference, but there are languages where an imperative verb agrees with
+the gender of the person being addressed.  Is the computer male?  Is it
+still male if the game's main character is female?
+
+Finally, there are also dialect forms.  A French translation will be almost,
+but not quite, the same as a Francophone Canadian or Belgian one.
+
+I suggest that for such choices, the translator may want to write his
+language definition file to cope with either possibility.  For example,
+something like
+
+    #ifdef DIALECT_FRANCOPHONE;
+    print "septante";
+    #ifnot;
+    print "soixante-dix";
+    #endif;
+
+would enable the same definition file to be used by Quebecois authors
+and paid-up members of the Academie Francaise alike.  (The "English.h"
+file already has such a constant: DIALECT_US, which uses US spellings
+and number conventions in the very few instances where they differ from
+English ones.)
+
+Would anyone care to write a language definition file for Black English
+Vernacular?
+
+
+Inform's library 6/3 comes as a set of 8 files, not 7 as in library 6/2:
+the new file is called "English.h" and is a definition of the English language.
+A new ICL path variable (new in Inform 6.10, that is) called "language_name"
+allows this to be changed:
+
+    inform +language_name=French voliere
+
+compiles "voliere" using "French.h" in place of "English.h".
+
+Files like "French.h" and "English.h" are called "language definitions", and
+this manual tells you how to draft a new language definition file.
+
+My ambition is for a stock of language definitions to be built up and
+publically archived.  The author of an Inform game will probably still have
+to speak English (after all, the manuals are in English, and so is text
+produced by the special debugging verbs) but players will not.  In any case,
+there have been fringe benefits to this project -- the English Inform library
+is becoming more sensitive to number and "a" becoming "an" before a vowel,
+for instance.
+
+Translators need to produce one other file: a translation of the "Grammar.h"
+file into their own languages.  I hope to use the conventional filenames:
+
+    FrenchG.h
+    GermanG.h
+
+and so forth to refer to these.
+
+
+I should like to thank the following people, whose thoughtful replies to
+the discussion document have improved this one: Torbj|rn Andersson, Joachim
+Baumann, Paul David Doherty, Bjorn Gustavsson, Aapo Haapanen, JP Ikaheimonen,
+Bob Newell "mon oncle", Linards Ticmanis.  How else could I have learned
+the palindromic Finnish word for soap dealer, "saippuakauppias"?  Finally,
+I must also thank Jose Luis Diaz, whose translation of the Inform 5/12
+library into Spanish first introduced me to the complexity of the problem.
+
+Torbj|rn made the helpful suggestion that in the French version of "Curses",
+perhaps the player could look for a tourist map of London.  Seriously,
+if anyone out there would like to translate any of my games, please feel free
+to get in touch.  I suspect a translation of "Advent" might be a better
+place to begin.
+
+                                                          Graham Nelson
+                                                          5th December 1996
+------------------------------------------------------------------------------
+
+
+   2.  Teaching Inform to read your language
+   -----------------------------------------
+
+   2.1  What is Informese?
+   -----------------------
+
+The Inform parser understands a simple language, modelled on a small part of
+English, which we will call "Informese".
+
+The first, fairly easy, job of the translator is to change the vocabulary
+of Informese (the dictionary, so to speak) so that it matches the new
+language.  For instance, in English, Informese uses words like "other"
+and "another" in the category of "other-words" (see below).  A translator
+to French will probably change these to "autre".
+
+Once this is done, the Inform parser will understand commands which are
+neither good English nor, at least in some cases, good French.  For
+example:
+
+   jetez le boite dans lui
+
+is good Informese (using French vocabulary) but it is not good French --
+the correct French would be
+
+   jetez le boite dedans
+
+where the word "dedans" is a part of French grammar which doesn't correspond
+to a single part of Informese.  So the second job of the translator is to
+write an Inform program to translate what the player typed (real French)
+into what the parser can understand (French-vocabulary Informese).  For
+most Romance languages, only a few simple transformations will be needed, but
+for some heavily inflected or agglutinizing languages the translation process
+may need a substantial program.  This is probably the hardest job an Inform
+translator has.
+
+The biggest difference between Informese and non-English languages is that
+Informese does not glue together different words which belong to different
+grammatical constructs in Informese (as in the above case, where Informese
+would not glue together "dans" and "lui" into "dedans").  But this is
+common in non-English languages.  (E.g., Spanish "cogela" ("take it") must
+be translated into "coge la" to become good Informese.)
+
+Better news is that Informese can be configured automatically to have
+up to three genders and to recognise cases of nouns, even though these
+features lie dormant in the English parser.  Informese is not checked in
+absolute detail by the parser: the player can usually get away with typing
+the wrong gender for something in French, for instance (as in "la ciel").
+But the parser is not ignoring gender: if the player refers to an object
+as simply "la", the parser will match it against something whose short name
+is female singular.
+
+
+   2.2  A grammar for Informese
+   ----------------------------
+
+(a) Commands
+
+A command to an Inform game should be one of:
+
+    oops <word>                     correct the last command by putting
+                                    the <word> in to replace whatever seemed
+                                    to be incorrect
+    <action>                        perform this action
+    <noun phrase>, <action>         tell someone else to perform the action
+
+An <action> consists of a sequence of verb phrases, divided up by full stops
+or "then-words": a "then-word" is a word like "then" (in English).  E.g.,
+
+    take sword. east. put sword in stone
+
+is broken into the obvious sequence of three verb phrases, each of which
+is parsed and acted on in turn.  (It's important not to parse them all
+at once: the meaning of the noun phrase "stone" depends on where the player
+is, and by the time this command is reached, the player will not be where
+he is now.)
+
+
+(b) Verb phrases
+
+A verb phrase is either
+
+    again                           the same as the most recent verb phrase
+                                    typed in
+
+or takes the form
+
+    <imperative verb> <grammar line>
+
+The "imperative" is the form of the verb used for orders or instructions:
+e.g., "open" in "open the window" (though English is a poor example since
+the imperative looks the same as the infinitive); "ouvrez" in "ouvrez la
+fenetre" (French).  In most languages, even some in which verbs usually
+follow objects (e.g. Latin), the imperative verb comes at the start of a
+verb phrase.  If not, some coding will be needed (see later).
+
+It is possible for the verb to be more than one word, using an UnknownVerb
+routine (for example).
+
+Grammar lines are documented elsewhere, and most Inform programmers feel
+familiar with them.  Each token has one of four kinds of outcome:
+
+    Outcome:                       Example tokens producing this:
+    a "noun phrase"                noun, multiheld, scope=MyScope, edible,
+                                   creature, noun=CagedCreature, etc.
+    a "preposition"                'into', 'against'
+    a number                       number
+    a chunk of unparsed text       special, topic
+
+(A general parsing routine may have any of these four outcomes.)  Note that
+the term "preposition" is being used here to mean any word written in
+quotes as a grammar token.  This usually corresponds to the grammatical
+meaning of "preposition" (for instance, "into" and "against" are both
+prepositions in English) but need not do so.
+
+
+(c) Noun phrases
+
+A "noun phrase" is a string of words which refer to a single object or
+collection of objects in the game, with more or less exactness.  In English,
+typical Inform noun phrases are:
+
+    it
+    rucksack
+    shield, dagger
+    the blue box
+    a box and the compass
+    nine bronze coins
+    everything except the green crown
+    all the swords
+
+(Thus a "noun phrase" in Inform terms is any piece of text which can match
+against one of the grammar tokens "noun", "multi", etc.)
+
+Inform divides up noun phrases into three kinds of word:
+
+    "Connectives" are conjunctions or disjunctions, that is, words which
+    can join noun phrases together.  The Inform parser regards a comma as
+    a connective, and (in English) also recognises "and", "but" and "except".
+
+    "Descriptors" are words which clarify the noun to follow, such as
+    "the", "every", "my" or "all".
+
+    "Nouns" are words matched against particular game objects.
+
+Although the expected form is
+
+         noun phrase
+         |         |
+         |         |
+     descriptors  nouns
+
+(note that descriptors are expected to precede nouns), in fact both
+halves are optional:
+
+    the balloon         descriptor, noun
+    all                 descriptor
+    train               noun
+
+are all legal Inform noun phrases, and even text like
+
+    take a
+
+is a legal Inform verb phrase.
+
+
+(d) Descriptors
+
+There are five kinds of descriptor, as follows:
+
+    "Articles" are words indicating whether a particular object is being
+    referred to, or merely one of a range.  Thus there are two kinds of
+    article, "definite" and "indefinite".  E.g., English has four articles:
+
+           "the"               definite
+           "a", "an", "some"   indefinite
+
+    "All-words" are words which behave like the English word "all", that
+    is, which match against a whole range of objects.  (To Informese this
+    is effectively a "pluralising article" -- it behaves like an article
+    meaning "expect a collection of things to follow".  In this respect,
+    Informese behaves like some natural languages: Tagalog, for instance.)
+
+    "Other-words" are words behaving like "other", which Inform interprets
+    as "other than the one I am holding".  Thus, if the player is holding
+    a sword in a room where there's also a sword on the floor, then "examine
+    other sword" would refer to the one on the floor.
+
+    "Demanding numbers" are numbers like "nine" in "nine bronze coins",
+    which demand that a certain number of items are needed.
+
+    "Possessive adjectives" are adjectives indicating ownership by someone
+    or something whose meaning is held in a pronoun, such as "my" (belonging
+    to "me") or "his" (belonging to "him") or "son" (French: belonging to
+    "lui").  Note that they are adjectives and not pronouns.
+
+
+(e) Nouns
+
+There are three kinds of noun, as follows:
+
+    "Names" are words matched against particular objects.  Usually
+    (that is, unless the object in question has a "parse_name" routine
+    attached), these will just be the words found in an object's "name"
+    property.  E.g., for the object defined as:
+
+           Object -> "blue box"
+             with name 'blue' 'box';
+
+    the words "blue" and "box" are both names.  Note that the Inform parser
+    does not make the grammatical distinction between nouns and adjectives.
+    This makes it simpler and more efficient (though not all designers agree
+    that it's a good idea, and some write parse_name routines to keep
+    nouns and adjectives separate -- see the "Designer's Manual" for an
+    example of how to do this).
+
+    "Me-words" are words which behave like the English word "me", that is,
+    which refer to the player-object.  (Grammatically, such words are
+    examples of relative pronouns, but the Inform parser treats them
+    differently from other pronouns.)  Note that they refer to the player,
+    not the "actor" (the person to whom the command is directed) --
+    in "mark, give me the bomb", "me" refers to the speaker, not to Mark.
+
+    "Pronouns" are words which stand in the place of nouns and can only
+    be understood with reference back to what has previously been said.
+    To parse "put it on the table", Inform has to remember recent events:
+    if the previous command was "take sword", for instance, then "it" will
+    probably be understood as "the sword".
+
+
+(f) Example
+
+Suppose the verb "put" has a grammar line reading
+
+    * multiexcept 'into' noun ->
+
+(as indeed it does in the English "grammar.h" library file).  Then the
+text
+
+    conan, put all the swords into box
+
+is parsed as
+               command
+                  |
+                order
+               /  :  \
+              /   :   \
+    noun phrase   :    action
+              |   :       |
+            nouns :    verb phrase
+              |   :   /           \
+            name  :  /             \
+              :   : verb      grammar line____________________
+              :   :  :             |             |           |
+              :   :  :        noun phrase   preposition  noun phrase
+              :   :  :        |         |        :                 |
+              :   :  :   descriptors  nouns      :               nouns
+              :   :  :     |      |     |        :                 |
+              :   :  : all-word article name     :                name
+              :   :  :     :      :     :        :                 :
+            conan , put   all    the   swords   into              box
+
+
+(g) Grammatical features which Informese does not have
+
+Of course there are endless points of grammar which Informese doesn't have,
+but here are some of the more surprising ones:
+
+  adverbs: "run quickly east" would not normally be understood, unless of
+    course the designer arranged for "run quickly" to be effectively a
+    different verb from "run" (e.g. by writing some grammar lines beginning
+    with the token 'quickly', and others not beginning that way).
+
+  adjectives and nouns are not distinguished from each other when
+    "names" are being parsed;
+
+  objects are not normally named by description of their circumstances --
+    e.g., "the box on the floor" or "the priest's hat".  This is good news
+    for translators, as it avoids the need to work out a formal system
+    of genitives (in German, for instance).  Designers can still define
+    objects like
+
+        Object -> "priest's hat"
+          with name 'hat' 'priest^s';
+
+    that is, making genitive forms of words (e.g. "priest's") names on the
+    same basis as the noun ("hat").
+
+  demonstrative adjectives ("this" and "that") are recognised by the
+    English version of Inform, but hardly anybody knows this or makes use of
+    it.  English is unusually simple in having only two d.a.'s, "this" and
+    "that": e.g. Spanish has three forms, for "this", "that" (nearby) and
+    "that" (far away"), and then has masculine, feminine, singular and
+    plural versions of each; and the structure of "celui-ci" and "celui-la"
+    in French is too complex to be worth the effort of parsing.  So I simply
+    propose not to translate this feature to languages other than English.
+
+  other kinds of pronoun, such as:  
+    subject (nominative) pronouns ("I" in "I am happy");
+    interrogative pronouns ("What" in "What are you doing?");
+    demonstrative pronouns ("this" or "that" in "eat that");
+    possessive pronouns ("mine" in "Mine is a big car").
+
+  pronominal adverbs: English does not have these.  A pronominal adverb
+    indicates that a verb should do something with, towards, in, etc. 
+    a noun whose meaning is that of a particular pronoun.  For example,
+    "dessous" in French ("under it"), or "darauf" (and "davon", etc.)
+    in German.
+
+
+   2.3  Gender, number and animation (GNA) of noun phrases
+   -------------------------------------------------------
+
+"Gender": in most European languages, nouns divide up into masculine, feminine
+    (or sometimes neuter) forms.  Gender may be the only way to distinguish
+    otherwise identical nouns, as in French: "le faux", the forgery,
+    "la faux", the scythe.  There may be no satisfactory way to determine
+    the gender of a noun by any automatic rules (as in German).
+    Inform assumes there are no more than three genders.  Internally these
+    are called male, female and neuter (though, as we shall see, they do
+    not need to be used as such).
+
+"Number": singular ("the hat") or plural ("the grapes").  Individual objects
+    in Inform games can have names of either number.  (Languages with more
+    than two numbers are rare -- Tagalog, or Filipino, has a third for
+    "pair of".  Inform does not directly support this.)
+
+"Animation": Inform distinguishes between the animate (people and higher
+    animals) and the inanimate (objects, plants, lower animals).
+
+Combining these three possibilities gives 12 possible combinations:
+
+    (3 genders) * (2 numbers) * (2 animations) = 12
+
+The combination is called the GNA of a noun phrase.  Inform uses this
+concept both when parsing and when printing out names of objects.
+Internally, GNAs are represented by numbers between 0 to 11:
+
+               0     animate    singular    male
+               1                            female
+               2                            neuter
+               3                plural      male
+               4                            female
+               5                            neuter
+               6     inanimate  singular    male
+               7                            female
+               8                            neuter
+               9                plural      male
+              10                            female
+              11                            neuter
+
+Not all possible GNAs will occur in all natural languages.  (In English,
+cases 6, 7, 9 and 10 never occur.  In French, 2, 5, 8 and 11 never occur.)
+
+
+   2.4  The alphabet
+   -----------------
+
+Z-machine interpreters are now available for almost all machines which obey
+the Z-Machine Standard Document (November 1995), version 0.2.  Among other
+things this defined a standard set of character codes for accented and
+non-English letters, based loosely on the ISO Latin 1 convention.  Inform 6
+supports this set of accents and it may be useful to reprint the appropriate
+section of the Inform Designer's Manual (third edition, 1996) here:
+
+
+"Most accented characters are written as @, followed by an accent marker,
+then the letter on which the accent appears:
+
+   @^   put a circumflex on the next letter: a,e,i,o,u,A,E,I,O or U
+   @'   put an acute on the next letter: a,e,i,o,u,y,A,E,I,O,U or Y
+   @`   put a grave on the next letter: a,e,i,o,u,A,E,I,O or U
+   @:   put a diaeresis on the next letter: a,e,i,o,u,A,E,I,O or U
+   @c   put a cedilla on the next letter: c or C
+   @~   put a tilde on the next letter: a,n,o,A,N or O
+   @\   put a slash on the next letter: o or O
+   @o   put a ring on the next letter: a or A
+
+In addition, there are a few others:
+
+   @ss  German sz
+   @<<  continental European quotation marks
+   @>>     
+   @ae  ligatures
+   @AE     
+   @oe     
+   @OE     
+   @th  Icelandic accents
+   @et     
+   @Th     
+   @Et     
+   @LL  pound sign
+   @!!  Spanish (upside-down) exclamation mark
+   @??  Spanish (upside-down) question mark
+
+For instance,
+
+    print "@AEsop's @oeuvres en fran@ccais, mon @'el@`eve!";
+    print "Na@:ive readers of the New Yorker will re@:elect Mr Clinton.";
+    print "Carl Gau@ss first proved the Fundamental Theorem of Algebra.";
+
+Accented characters can also be referred to as constants, like other
+characters.  Just as 'x' represents the character lower-case-X, so
+'@^A' represents capital-A-circumflex."
+
+          (Inform Designer's Manual, third edition (1996), section 1.14)
+
+
+As from Inform 6.10, accents can be used equally in dictionary words.
+This is particularly important in languages such as Finnish, where '@:a' and
+'@:o' are significantly different characters from 'a' and 'o':
+
+   'vaara' means "danger"
+   'v@:a@:ar@:a' means "wrong"
+
+This raises an awkward technicality.  Dictionary words are stored internally
+to a "resolution" of 9 Z-characters: that is, only the first 9 Z-characters
+are looked at, so that
+
+   'chrysanthemum'    is stored as   'chrysanth'
+   'chrysanthemums'   is stored as   'chrysanth'
+
+This is normally no problem, but unfortunately Z-characters are not the same
+as letters.  That is,
+
+    letters A to Z       take up 1 Z-character each
+    accented letters     normally take 4 Z-characters each
+
+and this is a serious problem:
+
+   't@'el@'ecarte'    is stored as   't@'el'
+   't@'el@'ephone'    is stored as   't@'el'
+
+(there are not even enough of the 9 Z-characters left to encode the second
+e-acute, let alone the 'c' or the 'p' which would distinguish the two words).
+Inform therefore provides a mechanism to make up to about 10 common accents
+cheaper to use, in that they then take only 2 Z-characters each, not 4.
+If this mechanism were used for '@'e',
+
+   't@'el@'ecarte'    would be stored as   't@'el@'ecar'
+   't@'el@'ephone'    would be stored as   't@'el@'epho'
+
+Declaring accented characters as "cheap" in this way is one of the first
+tasks of a language definition file (see L.1 below).
+
+
+   2.5  Plural dictionary words
+   ----------------------------
+
+A dictionary word written in the form
+
+   'crowns//p'
+
+is considered to be plural.  Here, plural means "can refer to more than one
+Inform object": you wouldn't set this for the word 'grapes' if it referred
+to a single object representing a bunch of grapes, for instance.
+
+This makes it much simpler to get plurals working.  For example,
+
+   Class Crown with name 'crown' 'crowns//p';
+   Crown with name 'red';
+   Crown with name 'green';
+
+which has the following useful result:
+
+   > GET CROWN
+   Which do you mean, the red crown or the green crown?
+
+   > GET CROWNS
+   red crown: Taken.
+   green crown: Taken.
+
+
+   2.6  Dealing with flexion in noun phrases using grammar tokens
+   --------------------------------------------------------------
+
+Linguists use the following terms for "flexion", the ways that words change
+according to the words surrounding them:
+
+    "inflection": a variable ending for a word, e.g., "a peach" but
+         "an apple".
+
+    "agreement": when the inflection of one word is changed to match another
+         word which it goes with.  E.g. "grand maison" but "grande dame"
+         (French), where the inflection on "grand" agrees with the gender
+         of the noun it is being applied to.
+
+    "affix": part of a word which is attached either at the beginning
+         ("prefix"), the end ("suffix") or somewhere in the middle ("infix")
+         of the ordinary word (the "stem") to indicate e.g. person or
+         gender of the objects attached to a verb.  The affix often
+         plays a part that an entirely separate word would play in English.
+         For instance, "donnez-lui" (French: "give to him"), where the suffix
+         "lui" is helpfully hyphenated, or "cogela" (Spanish: "take it"),
+         where there is no convenient hyphen.
+
+    "enclitic": an affix, usually a suffix, meaning "too" or "and" in English:
+         e.g., "-que" (Latin), "-kin" (Finnish).
+
+    "agglutinization": the practice of composing many affixes to a single
+         word, so that it may even become an entire sentence: e.g.,
+         "kirjoitettuasi" (Finnish: "after you had written"), and Hebrew is
+         also agglutinizing.
+
+Enclitics, agglutinization and affixes will have to be undone when
+translating the source language into Informese, and we'll come to that later.
+It is also essential to define:
+
+"Case": in many languages nouns or pronouns are written differently according
+    to their usage in a sentence: e.g. in German
+
+    Case of "him"       English                    German
+    accusative          put the frog on him        leg den frosch auf ihn
+    dative              take the frog from him     nimm den frosch von ihm
+
+    and nouns take four cases, which articles tend to agree with:
+
+         der Russe       nominative
+         dem Russen      dative
+         des Russen      genitive
+         den Russen      accusative
+
+    The extreme example is Finnish, with about 30 cases (depending on what
+    one calls a "case": in effect, a wide range of English prepositional
+    phrases like "into the water" would be written as just the noun phrase
+    "water" with a postpositional ending meaning "into", and which we
+    could think of as a case).
+
+
+The words entered into an object's "name" property should normally be
+accusative.  This will be fine for noun phrases parsed in grammar lines like
+
+    Verb 'take'
+       * noun                       -> Take;
+
+However, consider translating the following grammar line:
+
+    Verb 'give'
+       * noun 'to' noun             -> Give;
+
+What is really going on is
+
+    <give-verb> <accusative object> <dative object>
+
+where, in English, the dative case survives only in the use of the word
+"to".  Thus the sentence would be better understood as:
+
+    give  the banana  to the monkey
+          ----------  -------------
+          accusative     dative
+
+and you would probably want to rewrite the grammar line as
+
+    Verb 'give'
+       * noun dativenoun            -> Give;
+
+where "dativenoun" is some token meaning "like noun, but in the dative case".
+For example, the German form might be
+
+    Verb 'gib'
+       * noun dativenoun            -> Give
+       * dativenoun noun            -> Give;
+
+(since German does not insist that the objects come in any particular order),
+and then
+
+    gib dem maedchen die blumen
+    gib die blumen dem maedchen
+
+will each be understood as asking to give the flowers to the girl.
+
+
+Unfortunately Inform does not come with a token called "dativenoun" built in,
+so you have to write one.  This will be an example of a "general parsing
+routine", about which there is a great deal of documentation in the
+Designer's Manual.  GPRs have been enhanced since the Designer's Manual
+(third edition) was published, though, so here's a recap:
+
+    A general parsing routine should look at words from the current
+    word (the one numbered "wn" onwards), and may match one or more
+    words as being understood (in which case "wn" should be left
+    pointing to the next word not matched), or else may "fail".
+
+    The possible return values are:
+    
+    GPR_FAIL         Text matches nothing.
+    GPR_REPARSE      I've actually rewritten the text, so you'll have
+                     to start parsing it again from the beginning.
+    GPR_NUMBER       Text matches a number (which should be put in
+                     the variable "parsed_number").
+    GPR_PREPOSITION  Text is understood, so carry on parsing the line,
+                     but it doesn't result in a number or an object.
+    GPR_NOUN         Parse from where I've left "wn" as though the
+                     token were "noun".
+    GPR_HELD         Ditto for "held"...
+    GPR_MULTI        and so on...
+    GPR_MULTIHELD
+    GPR_MULTIEXCEPT
+    GPR_MULTIINSIDE
+    GPR_CREATURE
+
+To demonstrate this, here is an imaginary feature of English.  Suppose that
+the English language has a verb called "glob" whose object must be in the
+dative.  For instance,
+
+    glob to the duck
+
+is grammatical but
+
+    glob duck
+
+isn't (because "duck" on its own is an accusative noun).  We can set up the
+verb as follows:
+
+    Verb "glob" * dativenoun -> Glob;
+
+and here is a simple version of "dativenoun":
+
+    [ dativenoun w;
+      w = NextWord();
+      if (w == 'to') return GPR_NOUN;
+      return GPR_FAIL;
+    ];
+
+(read this as: if the next word is "to", try and match a noun following
+it; otherwise the sentence isn't grammatical).  Now suppose further that
+English is inflected after all.  We shall pretend that for most nouns, one
+simply suffixes "ot" to the end.  But a few nouns are irregular: the
+dative of "gull" is by some historical accident "gullit", not "gullot".
+Now we have to make "dativenoun" cope with the following possibilities:
+
+    glob duck                 incorrect
+    glob to the duck          correct
+    glob the duckot           correct
+    glob duckot               correct
+    glob to gull              correct
+    glob gullot               incorrect
+    glob gullit               correct
+
+Here is a second try.  Suppose we create our duck and gull objects by:
+
+    Object -> "duck"
+      with name 'duck',
+           dativename 'duckot';
+    Object -> "gull"
+      with name 'gull',
+           dativename 'gullit';
+
+    [ dativenoun w;
+      w = NextWord();
+      if (w == 'to') return GPR_NOUN;
+      wn--;
+      parser_inflection = dativename;
+      return GPR_NOUN;
+    ];
+
+"parser_inflection" is a variable used in the parser to know the case of
+what's being parsed.  It must always be equal to _either_ a property, _or_
+a routine.  Most of the time it's equal to the property "name", which
+just means "accusative case as normal".  If it equals another property,
+such as "dativename", then the parser looks in that property for name-words
+instead of in "name".
+
+This now does what was asked.  But it's really an annoying burden on the
+game designer to expect him to give dative forms of every name, particularly
+if for almost every name the dative is formed by suffixing "ot".  It's for
+this that "parser_inflection" can be set to a routine name.  So here is yet
+a third form:
+
+    Object -> "duck"
+      with name 'duck' 'bird' 'mallard';
+    Object -> "gull"
+      with name 'gull' 'bird',
+           dativename 'gullit';
+
+    [ dative obj word a l;
+      a = WordAddress(wn-1);
+      l = WordLength(wn-1);
+
+      if (l >= 3 && a->(l-2)=='o' or 'O' && a->(l-1)=='t' or 'T')
+      {   word = DictionaryLookup(a, l-2);
+          return WordInProperty(word, obj, name);
+      }
+
+      if (obj provides dativename)
+          return WordInProperty(word, obj, dativename);
+      rfalse;
+    ];
+
+    [ dativenoun w;
+      w = NextWord();
+      if (w == 'to') return GPR_NOUN;
+      wn--;
+      parser_inflection = dative;
+      return GPR_NOUN;
+    ];
+
+An inflection routine, like "dative", is called with two arguments, an
+object and a dictionary word.  It has to reply true or false -- true
+if the dictionary word can mean the object, false if not.  "wn" is always
+set to the number of the next word along (and it should not be moved).
+
+What happens in "dative" is that two standard library routines are used
+to find the actual text of the word being looked at.  (This will be exactly
+in the form the player typed -- which is convenient if the word is very
+long and contains a vital suffix.)  After the statements
+
+      a = WordAddress(wn-1);
+      l = WordLength(wn-1);
+
+then the word being argued over is held in the array
+
+      a->0, a->1, ..., a->(l-1)
+
+so we might for instance have l=6 and
+
+      a->0 = 'd'
+      a->1 = 'u'
+      a->2 = 'c'
+      a->3 = 'k'
+      a->4 = 'o'
+      a->5 = 't'
+
+The "dative" routine looks to see if the last two letters are OT, as in this
+case they are.  It then uses two more library routines.
+
+    DictionaryLookup(text, length)
+
+returns 0 if the word at "text" and of the given length is not in the game's
+dictionary, or its dictionary entry if it is.  In this case, the call
+
+    DictionaryLookup(a, 4)
+
+tests whether "duck" is in the dictionary, and it is, so the variable "word"
+becomes the dictionary entry 'duck'.  And "dative" finally uses another
+library routine,
+
+    WordInProperty(word, object, property)
+
+to see if this is one of the words listed in object.property.
+
+If on the other hand the word had not ended in OT -- if it were "gullit",
+for instance -- then the "dative" routine would have tried to look it up
+in the object's "dativename" property.  Finally, then, the designer only
+has to give names in the dativename property if they are irregular.  The
+dative forms
+
+    birdot, duckot, mallardot
+
+are recognised automatically.  ("gullot" is also detected, though it's
+wrong.  But Inform's parser always takes the view that it's better to
+understand too much than too little.)
+
+One more surreal invention.  Let us suppose English has the pronominal
+adverb "toit", meaning "to it", which can be used as a dative.  The
+easiest way to arrange this is to elaborate "dativenoun" again:
+
+    [ dativenoun w;
+      w = NextWord();
+      if (w == 'to') return GPR_NOUN;
+      if (w == 'toit')
+      {   w = PronounValue('it');
+          if (w == NULL) return GPR_FAIL;
+          if (TestScope(w, actor)) return w;
+          return GPR_FAIL;
+      }
+      wn--;
+      parser_inflection = dative;
+      return GPR_NOUN;
+    ];
+
+Note that it isn't safe to always allow "it" to be referred to --
+"it" might be an object in another room and now out of scope.  Or it might
+still be unset.  (In the case of 'it', this is unlikely.  But a pronoun
+meaning "a group of two or more women" might well remain unset throughout
+a game.)
+
+Tokens like "dativenoun" are best defined in the grammar file, not the
+language definition file.  (It doesn't really matter, but it's better form.)
+
+Similar means can be used for languages, such as German or Swedish, in which
+nouns or adjectives agree with the article (definite or indefinite) applied
+to them.  For example,
+
+    English              Swedish
+    a brown dog          en brun hund
+    the brown dog        den bruna hunden
+    a brown house        ett brunt hus
+    the brown house      det bruna huset
+
+The simplest solution would be to make the designer always allow all forms,
+e.g.,
+
+    Object ->
+      with name 'brun' 'bruna' 'hund' 'hunden';
+    Object ->
+      with name 'brunt' 'bruna' 'hus' 'huset';
+
+But if it's felt that this is an unreasonable burden to place on the game
+designer, a parser_inflection routine could be designed to handle it.
+It may be useful to know that the variable
+
+    indef_mode
+
+is always set to "true" when parsing something known to be indefinite (e.g.
+because an indefinite article has just been typed), and "false" otherwise.
+
+Finally, note that the above methods are only one way of dealing with
+case suffixes and pronominal adverbs.  You could instead handle these at the
+"translating to Informese" stage, by writing code that translates
+
+    glob duckot                -->     glob to duck
+    glob toit                  -->     glob to it
+    den bruna hunden           -->     den brun hund
+    det bruna huset            -->     det brun hus
+
+before parsing gets underway.  In a heavily inflected language with many
+irregularities, a combination of the two techniques may be needed.
+
+
+   L.0  Organisation of language definition files
+   ----------------------------------------------
+
+A language definition file is itself written in Inform.  (When reading this
+and the other L.* sections, it may be useful to have a copy of English.h
+(the English LDF) to refer to.)  Such a file is divided into four parts:
+
+   Part I.   Preliminaries
+   Part II.  Vocabulary
+   Part III. Translating to Informese
+   Part IV.  Printing
+
+It would be very helpful if all LDFs could follow the order and layout style
+of "English.h", and in particular follow this division into four parts.
+
+The example of French will be developed throughout, with diversions to
+other languages when this would be more interesting.
+
+
+   L.I.1  Version number and alphabet
+   ----------------------------------
+
+The file should begin as follows:
+
+    ! =======================================================================
+    !   Inform Library Definition File: French
+    !
+    !   (c) Graham Nelson 1996
+    ! -----------------------------------------------------------------------
+    System_file;
+    ! -----------------------------------------------------------------------
+    !   Part I.   Preliminaries
+    ! -----------------------------------------------------------------------
+    Constant LanguageVersion
+            = "Traduction fran@ccais 961205 par Graham Nelson";
+
+[The English LDF defines a constant called EnglishNaturalLanguage here, but
+this is just to help the library keep old code working with the new parser:
+don't define a similar constant yourself.]
+
+The next ingredient of Part I is declaring the accented letters which
+are "important" (see 2.4 above).  Up to about 10 can be so given.  The
+most important should be given first; if more than 10 are given, then it's
+possible that those towards the bottom of the list may not find room for
+themselves in the list of "cheap" letters.  The declarations should use the
+"Zcharacter" directive (see the Inform Technical Manual if you're curious
+about this).  For example:
+
+    Zcharacter '@'e';         ! E-acute
+    Zcharacter '@`e';         ! E-grave
+    Zcharacter '@`a';         ! A-grave
+    Zcharacter '@`u';         ! U-grave
+    Zcharacter '@^a';         ! A-circumflex
+    Zcharacter '@^e';         ! E-circumflex
+
+(Note that since the Z-machine automatically reduces anything the player
+types into lower case, we need only include lower-case accented letters here.
+Note also that there are plenty of other French accented letters -- I-umlaut,
+U-circumflex, etc. -- but the others are quite uncommon.)
+
+
+   L.I.2   Compass objects
+   -----------------------
+
+All that is left in Part I is to declare standard compass directions.  The
+corresponding part of "English.h" reads:
+
+    Class  CompassDirection
+      with article "the", number 0
+      has  scenery;
+    Object Compass "compass" has concealed;
+    IFNDEF WITHOUT_DIRECTIONS;
+    CompassDirection -> n_obj "north wall"
+                        with name 'n' 'north' 'wall',      door_dir n_to;
+    CompassDirection -> s_obj "south wall"
+                        with name 's' 'south' 'wall',      door_dir s_to;
+    CompassDirection -> e_obj "east wall"
+                        with name 'e' 'east' 'wall',       door_dir e_to;
+    CompassDirection -> w_obj "west wall"
+                        with name 'w' 'west' 'wall',       door_dir w_to;
+    CompassDirection -> ne_obj "northeast wall"
+                        with name 'ne' 'northeast' 'wall', door_dir ne_to;
+    CompassDirection -> nw_obj "northwest wall"
+                        with name 'nw' 'northwest' 'wall', door_dir nw_to;
+    CompassDirection -> se_obj "southeast wall"
+                        with name 'se' 'southeast' 'wall', door_dir se_to;
+    CompassDirection -> sw_obj "southwest wall"
+                        with name 'sw' 'southwest' 'wall', door_dir sw_to;
+    CompassDirection -> u_obj "ceiling"
+                        with name 'u' 'up' 'ceiling',      door_dir u_to;
+    CompassDirection -> d_obj "floor"
+                        with name 'd' 'down' 'floor',      door_dir d_to;
+    ENDIF;
+    CompassDirection -> out_obj "outside"
+                        with                               door_dir out_to;
+    CompassDirection -> in_obj "inside"
+                        with                               door_dir in_to;
+
+and this should be copied as nearly as possible, with the dictionary words
+(in single quotes above) translated.  For example, "French.h" has:
+
+    Class  CompassDirection
+      with article "le", number 0
+      has  scenery;
+    Object Compass "compas" has concealed;
+    IFNDEF WITHOUT_DIRECTIONS;
+    CompassDirection -> n_obj "mur nord"
+                        with name 'n' 'nord' 'mur',        door_dir n_to;
+    CompassDirection -> s_obj "mur sud"
+                        with name 's' 'south' 'mur',       door_dir s_to;
+    CompassDirection -> e_obj "mur est"
+                        with name 'e' 'east' 'mur',        door_dir e_to;
+    CompassDirection -> w_obj "mur ouest"
+                        with name 'o' 'ouest' 'mur',       door_dir w_to;
+    CompassDirection -> ne_obj "mur nord-est"
+                        with name 'ne' 'nordest' 'mur',    door_dir ne_to;
+    CompassDirection -> nw_obj "mur nord-ouest"
+                        with name 'no' 'nordouest' 'mur',  door_dir nw_to;
+    CompassDirection -> se_obj "mur sud-est"
+                        with name 'se' 'sudest' 'mur',     door_dir se_to;
+    CompassDirection -> sw_obj "mur sud-ouest"
+                        with name 'so' 'sudouest' 'mur',   door_dir sw_to;
+    CompassDirection -> u_obj "plafond"
+                        with name 'h' 'haut' 'plafond',    door_dir u_to;
+    CompassDirection -> d_obj "planch@'e"
+                        with name 'b' 'bas' 'planche',     door_dir d_to;
+    ENDIF;
+    CompassDirection -> out_obj "l'ext@'erieure"
+                        with                               door_dir out_to
+                        has proper;
+    CompassDirection -> in_obj "l'int@'erieure"
+                        with                               door_dir in_to
+                        has proper;
+
+
+   L.II.1  Informese vocabulary: miscellaneous
+   -------------------------------------------
+
+Part II begins with dictionary words for various simple parts of speech.  For
+instance, we are required to give three synonymous ways to write "again"
+(the command meaning "repeat the previous command").  In French, this might
+be:
+
+    Constant AGAIN1__WD   = 'encore';
+    Constant AGAIN2__WD   = #n$c;
+    Constant AGAIN3__WD   = 'encore';
+
+(We can't actually think of a third different word.  But we must define
+AGAIN3__WD all the same, and must not allow it to be 0.)
+
+gives three synonymous words for what would be called the "again" command in
+English: two of these are the same.  (Do not define any as zero: if necessary,
+duplicate them as above if you don't need the number provided.)  So in French
+Inform, "encore" and "c" will both repeat the previous command.
+
+These sets all take the form above.  There are:
+
+    AGAIN*__WD      words meaning the "again" command
+    UNDO*__WD       words meaning the "undo" command
+    OOPS*__WD       words meaning the "oops" command
+
+    THEN*__WD       then-words
+    AND*__WD        connective: conjunction
+    BUT*__WD        connective: disjunction
+    ALL*__WD        all-words
+    OTHER*__WD      other-words
+    ME*__WD         me-words
+    OF*__WD         words like "of" used in the sense of "three of the boxes"
+                    when parsing a reference to a given number of things
+
+    YES*__WD        words meaning "yes" when answering "yes or no" questions
+    NO*__WD         words meaning "no" when answering "yes or no" questions
+
+In each case * runs from 1 to 3, except for ALL where it runs 1 to 5 and OF
+where it runs from 1 to 4.
+
+Note that French provides the single-letter word "o" as an answer to yes-no
+questions (oui-non questions in French), which doesn't clash with the direction
+abbreviation "o" for "ouest" since these yes-no words are used only to parse
+answers to direct questions, not in general parsing.  So we could have
+
+    Constant YES1__WD     = #n$o;
+    Constant YES2__WD     = 'oui';
+    Constant YES3__WD     = 'oui';
+
+(Likewise "n" for "non", even though "n" is also "nord" in more general play.)
+
+After the above, a few words have to be defined as possible replies to the
+question asked when the game ends.  Here the French example is:
+
+    Constant AMUSING__WD  = 'amusant';
+    Constant FULLSCORE1__WD = 'grandscore';
+    Constant FULLSCORE2__WD = 'grand';
+    Constant QUIT1__WD    = #n$a;
+    Constant QUIT2__WD    = 'arret';
+    Constant RESTART__WD  = 'restart';
+    Constant RESTORE__WD  = 'restore';
+
+
+   L.II.2  Informese vocabulary: pronouns
+   --------------------------------------
+
+Part II continues with a table of pronouns, and this is perhaps best explained
+by example.  Here is the table from "English.h":
+
+    Array LanguagePronouns table
+   
+      !  word       possible GNAs                   connected
+      !             to follow:                      to:
+      !             a     i
+      !             s  p  s  p
+      !             mfnmfnmfnmfn                 
+   
+         'it'     $$001000111000                    NULL
+         'him'    $$100000000000                    NULL
+         'her'    $$010000000000                    NULL
+         'them'   $$000111000111                    NULL;
+
+The "connected to" column should always be created with NULL entries.
+The pattern of 1s and 0s in the middle column indicates which types of
+name might be referred to with the given pronoun.  For instance, "it"
+might refer to any singular noun which is not the name of a man, woman
+or higher animal.  (In the table, I've said that "it" also covers
+inanimate singular male and female GNAs -- actually these GNAs should
+never arise in English anyway.)  Whereas "her" can only stand for a single
+female name.
+
+English has an unusually simple pronoun structure, because accusative and
+dative pronouns are identical.  French is richer, in that one set of pronouns
+are used to stand for direct objects:
+
+    donne-le-lui             give it to him/her
+
+and another, different set are "disjunctive" pronouns (disjunctive meaning
+in this context that they stand apart from the verb, and are not hyphenated
+to it):
+
+    mange avec lui           eat with him
+
+And here goes:
+
+    Array LanguagePronouns table
+
+      !  word       possible GNAs                   connected
+      !             to follow:                      to:
+      !             a     i
+      !             s  p  s  p
+      !             mfnmfnmfnmfn                 
+
+         !   Object pronouns
+
+         '-le'    $$100000100000                    NULL
+         '-la'    $$010000010000                    NULL
+         '-les'   $$000110000110                    NULL
+         '-lui'   $$110000110000                    NULL
+         '-leur'  $$000110000110                    NULL
+
+         !   Disjunctive pronouns
+
+         'lui'    $$100000100000                    NULL
+         'elle'   $$010000010000                    NULL
+         'eux'    $$000100000100                    NULL
+         'elles'  $$000010000010                    NULL;
+
+[As we shall see in L.III.1, the hyphenation leaves us some work to do
+when translating the player's input into Informese -- we want hyphenated
+words to be split up in order for the above to work.]
+
+Using the "pronouns" verb in a game will print out current values, which
+may be useful when debugging the above table.
+
+A game can find the current value of a pronoun by calling, e.g.,
+
+   PronounValue('him')
+
+which returns either NULL (if "him" is unset) or the object number it refers
+to.  More usefully, a game can announce that an object has been mentioned
+by calling
+
+   PronounNotice(object)
+
+For instance, if a magic lantern should suddenly appear, the piece of code
+making it appear should call PronounNotice(magic_lantern).  The parser will
+then make 'it' (or whatever pronouns apply) refer to the lantern.  This
+replaces the old way of doing things, which was to set the variable
+
+   itobj = magic_lantern
+
+(itobj, himobj and herobj are still supported in the English version of the
+parser only, to make sure old code still works).
+
+
+   L.II.3  Informese vocabulary: descriptors
+   -----------------------------------------
+
+Part II continues with a table of descriptors, in a similar format.
+
+    Array LanguageDescriptors table
+   
+      !  word       possible GNAs   descriptor      connected
+      !             to follow:      type:           to:
+      !             a     i
+      !             s  p  s  p
+      !             mfnmfnmfnmfn                 
+
+         'my'     $$111111111111    POSSESS_PK      0
+         'this'   $$111000111000    POSSESS_PK      0
+         'these'  $$000111000111    POSSESS_PK      0
+         'his'    $$111111111111    POSSESS_PK      'him'
+         'her'    $$111111111111    POSSESS_PK      'her'
+         'their'  $$111111111111    POSSESS_PK      'them'
+         'its'    $$111111111111    POSSESS_PK      'it'
+         'the'    $$111111111111    DEFART_PK       NULL
+         #n$a     $$111000111000    INDEFART_PK     NULL
+         'an'     $$111000111000    INDEFART_PK     NULL
+         'some'   $$000111000111    INDEFART_PK     NULL;
+
+This gives three of the four types of descriptor:
+
+   POSSESS_PK     A possessive adjective, connected either to 0
+                  (meaning to the player object) or to the object
+                  referred to by the given pronoun -- which must be one
+                  of those in the pronoun table.
+
+   DEFART_PK      A definite article.  The connected-to value should be
+                  NULL.
+
+   INDEFART_PK    An indefinite article.  The connected-to value should be
+                  NULL.
+
+The fourth kind allows extra descriptors to be added which force the objects
+that follow to have (or not to have) a given attribute.  For example, the
+following three lines would implement "lit", "lighted" and "unlit" as
+adjectives automatically understood by the English parser:
+
+         'lit'    $$111111111111    light           NULL
+        'lighted' $$111111111111    light           NULL
+         'unlit'  $$111111111111    (-light)        NULL
+
+An attribute name means "must have this attribute"; the negation of it
+means "must not have this attribute".
+
+To continue the example, "French.h" has descriptors table:
+
+    Array LanguageDescriptors table
+
+      !  word       possible GNAs   descriptor      connected
+      !             to follow:      type:           to:
+      !             a     i
+      !             s  p  s  p
+      !             mfnmfnmfnmfn                 
+
+         'le'     $$100000100000    DEFART_PK       NULL
+         'la'     $$010000010000    DEFART_PK       NULL
+         'l^'     $$110000110000    DEFART_PK       NULL
+         'les'    $$000110000110    DEFART_PK       NULL
+         'un'     $$100000100000    INDEFART_PK     NULL
+         'une'    $$010000010000    INDEFART_PK     NULL
+         'des'    $$000110000110    INDEFART_PK     NULL
+   
+         'mon'    $$100000100000    POSSESS_PK      0
+         'ma'     $$010000010000    POSSESS_PK      0
+         'mes'    $$000110000110    POSSESS_PK      0
+         'son'    $$100000100000    POSSESS_PK      '-lui'
+         'sa'     $$010000010000    POSSESS_PK      '-lui'
+         'ses'    $$000110000110    POSSESS_PK      '-lui'
+         'leur'   $$110000110000    POSSESS_PK      '-les'
+         'leurs'  $$000110000110    POSSESS_PK      '-les';
+
+(recall that in dictionary words, the apostrophe is written ^, so that
+'l^' means "l'").  Thus, "son oiseau" means "his bird" or "her bird"
+according to what "-lui" would currently mean (i.e., the most recent singular
+noun referred to).
+
+Note that in the French tables, the ambiguity of (say) "leur" (does it mean
+the possessive adjective for the last plural mentioned, or does it mean the
+plural direct object pronoun?) is resolved by the hyphen trick: we're
+distinguishing between "-leur" (direct object pronoun) and "leur" (possessive
+adjective), just as we distinguished between "-lui" (direct object pronoun)
+and "lui" (disjunctive pronoun).
+
+It is not always so easy.  In English, "her" can mean either the possessive
+adjective for a feminine singular, or the object pronoun for a feminine
+singular, so that it occurs in both pronoun and descriptor tables.  The
+Inform parser notices this automatically and tries out both meanings when
+parsing.
+
+
+   L.II.4  Informese vocabulary: numbers
+   -------------------------------------
+
+An array should be given of dictionary words for the first 20 numbers, e.g.:
+
+    Array LanguageNumbers table
+        'un' 1 'une' 1 'deux' 2 'trois' 3 'quatre' 4 'cinq' 5
+        'six' 6 'sept' 7 'huit' 8 'neuf' 9 'dix' 10
+        'onze' 11 'douze' 12 'treize' 13 'quatorze' 14 'quinze' 15
+        'seize' 16 'dix-sept' 17 'dix-huit' 18 'dix-neuf' 19 'vingt' 20;
+
+[In some languages, like Russian, there are numbers larger than 1 which
+inflect with gender: please recognise all possibilities here.]
+
+
+   L.III.1  Translating natural language to Informese
+   --------------------------------------------------
+
+Part III is potentially the trickiest part of a language definition file
+to write: it holds the routine to convert what the player has typed into
+Informese.  This is optional, but for most languages something will have
+to be done.  For instance:
+
+  *  Break up words at hyphens and apostrophes. (The Z-machine doesn't
+     automatically do this.)  Thus
+
+         donne-lui l'oiseau  (French: "give him the bird")
+
+     is transformed into
+
+         donne -lui l' oiseau
+
+  *  Remove inflections which don't carry useful information.  For
+     instance, most German imperatives can take two forms, one with an
+     "e" on the end:
+
+         leg = lege (German: "put")    schau = schaue (German: "look")
+
+     It would be helpful to remove the "e", which would avoid stuffing
+     game dictionaries full of essentially duplicate entries.
+
+  *  Break affixes away from the words they're glued to.  For instance,
+
+         cogela (Spanish: "take it")
+
+     transformed into
+
+         coge la
+
+     so that the affix part "la" becomes a separate word and can be treated
+     as a pronoun.
+
+  *  Rewrite words which contain more than one kind of Informese grammar.
+     This one way (though not the only way) to handle pronominal adverbs.
+     For instance (French):
+     
+         dessus   -->   sur lui
+         dedans   -->   dans lui
+
+     German has a systematic rule for such words:
+
+         davon    -->   von es
+         darauf   -->   auf es
+
+     (Any German preposition can have "da" or "dar" applied this way.)
+     This clearly has to be done with some care.  We wouldn't want to
+     transform
+     
+         Darren   -->   rren es
+
+  *  Alter word order.  For instance, if the verb occurs at the end of
+     an imperative verb phrase, move it to the start.  Or consider
+     Norwegian, in which (although the indefinite article is straightforward)
+     the definite article is suffixed to nouns:
+
+         kakane (Norwegian: "the cakes")  -->  ne kake
+
+Part III of the language definition file, then, must consist of one routine,
+called "LanguageToInformese" (and may also contain any other routines or
+arrays you need to get this routine working).  Informese being modelled on
+English, and English being simple anyway, the "English.h" just has:
+
+    [ LanguageToInformese;
+    ];
+
+To write something more substantial you need to know how the Inform parser
+stores text.  When the call to LanguageToInformese is made, the text that
+the player typed is held in a -> array called "buffer", and some useful
+information about it is held in another array called "parse".
+
+   buffer->0  is the maximum number of characters ever allowed
+   buffer->1  is the number actually typed
+   buffer->2  ...and subsequent entries... contain the characters.
+
+For instance, the contents might look something like this:
+
+   buffer-> 0   1   2   3   4   5   6   7   8   9  10  11  ...
+            80  8   t   a   k   e       a   l   l  ...........
+
+The useful information in "parse" is as follows:
+
+   parse->0   is the maximum number of words ever allowed
+   parse->1   is the number actually typed
+
+   parse-->(x*2+1)  is the dictionary entry for word x (counting from 0),
+                    or 0 if it's not in the game's dictionary
+
+   parse->(x*4+4)   is the number of characters of text word x takes up
+   parse->(x*4+5)   is the position of the first character of word x in
+                    the buffer.
+
+For instance, the contents might look like this:
+
+   parse->  0   1          4   5        8   9   ...............
+   parse-->         1              3            ...............
+
+            20  2          4   2        3   7   ...............
+                    'take'         'all'        ...............
+
+The translation process has to be done by shifting characters about and
+altering them in "buffer".  Of course, the moment anything in "buffer" is
+changed, the information in "parse" becomes out of date.  But you can
+bring it back up to date with the (Inform assembly-language) statement
+
+    @tokenise buffer parse;
+
+(Indeed, the parser does just this when the LanguageToInformese routine
+has finished.)
+
+
+(a) First example: French hyphens and apostrophes
+
+Here is the translation required to handle French hyphens and apostrophes
+as in the description above:
+
+    [ LanguageToInformese x;
+
+      !   Insert a space before each hyphen and after each apostrophe.
+
+      for (x=2:x<2+buffer->1:x++)
+      {   if (buffer->x == '-') LTI_Insert(x++, ' ');
+          if (buffer->x == ''') LTI_Insert(x+1, ' ');
+      }
+
+      !   This code would print out the modified text, for testing purposes,
+      !   if it were not commented out:
+      !
+      !   print "[";
+      !   for (x=2:x<2+buffer->1:x++)
+      !       print (char) buffer->x;
+      !   print "]^";
+    ];
+   
+Note that
+
+      for (x=2:x<2+buffer->1:x++)
+
+loops through the characters of text in the buffer, and LTI_Insert is a
+library routine provided to help with translations:
+
+    LTI_Insert(position, character)
+
+inserts the given character at buffer->position, moving all the subsequent
+characters along by one.  (It's automatically protected from letting the
+text overflow out of the buffer.)  Deleting characters is usually unnecessary:
+you can simply over-write them with spaces.
+
+
+(b) Second example: French words "dessus" and "dedans"
+
+Here is code to replace any usage of "dessus" by "sur lui" and of "dedans"
+by "dans lui":
+
+     for (x=0:x<parse->1:x++)
+     {
+         word = parse-->(x*2 + 1);
+         at = parse->(x*4 + 5);
+   
+         if (word == 'dessus')
+         {   LTI_Insert(at, ' ');
+             buffer->at     = 's';
+             buffer->(at+1) = 'u';
+             buffer->(at+2) = 'r';
+             buffer->(at+3) = ' ';
+             buffer->(at+4) = 'l';
+             buffer->(at+5) = 'u';
+             buffer->(at+6) = 'i';
+             break;
+         }
+         if (word == 'dedans')
+         {   LTI_Insert(at, ' ');          
+             LTI_Insert(at, ' ');          
+             buffer->at     = 'd';
+             buffer->(at+1) = 'a';
+             buffer->(at+2) = 'n';
+             buffer->(at+3) = 's';
+             buffer->(at+4) = ' ';
+             buffer->(at+5) = 'l';
+             buffer->(at+6) = 'u';
+             buffer->(at+7) = 'i';
+             break;
+         }
+     }
+
+Actually, this routine only replaces the first usage of either word in
+the text, which is good enough.  We could have made it replace absolutely
+every usage by writing
+
+             @tokenise buffer parse;
+             x = 0; continue;
+
+instead of 
+
+             break;
+
+in the two places where that line occurs.
+
+
+(c) Third example: German "da" + preposition
+
+    [ LanguageToInformese x c word at len;
+
+      for (x=0:x<parse->1:x++)
+      {
+         word = parse-->(x*2 + 1);
+         len = parse->(x*4 + 4);
+         at = parse->(x*4 + 5);
+   
+         if (word == 0 && buffer->at == 'd' && buffer->(at+1) == 'a')
+         {   c=2; if (buffer->(at+2) == 'r') c=3;
+             !   Is the rest of the word, after "da" or "dar", in dict?
+             word = DictionaryLookup(buffer+at+c, len-c);
+             if (word ~= 0)
+             {   buffer->at = ' '; buffer->(at+1) = ' ';
+                 if (c=3) buffer->(at+2) = ' ';
+                 LTI_Insert(at+len, 's');
+                 LTI_Insert(at+len, 'e');
+                 LTI_Insert(at+len, ' ');
+                 break;
+             }
+         }
+      }
+    ];
+
+[This routine attacks "da" or "dar" plus any valid dictionary word,
+as long as the whole thing isn't a valid dictionary word already.  That
+might be a bit extreme -- we could impose further restrictions if we wanted
+to.]
+
+
+   3   Teaching Inform to write your language
+   ------------------------------------------
+
+   3.1  The GNA of short names
+   ---------------------------
+
+As explained in Section 2.3 above, Inform provides for up to three genders,
+and you as the translator will have to decide how to use them.  Although
+internally they are called
+
+   male
+   female
+   neuter
+
+you do not need to make "male" correspond to "masculine", and so on.  Here
+are examples:
+
+English: all nouns are neuter except for those of people (and sometimes
+    higher animals), when they follow the gender of the person.
+    
+French, Spanish, Italian: nouns are masculine or feminine, but there is no
+    neuter.
+
+German, Dutch: nouns are masculine, feminine or neuter.
+
+Norwegian: here the number of genders is a matter of dialect; an old-fashioned
+    view of Norwegian is that it has two genders, "common" (containing all
+    words from the older masculine and feminine genders) and "neuter": but
+    nowadays Norwegian has absorbed a new feminine gender from its rural
+    dialects.  So: use the "male" attribute for common gender, the "female"
+    attribute for the dialect feminine and "neuter" for neuter.
+
+The Inform library needs to know the GNA of object names so that it can
+print articles.  For example, to print the room description:
+
+    VoliËre
+    Un jungle superb des bÍtes et des arbres.
+
+    On peut voir trois oiseaux (une oie, un moineau et un cygne blanc),
+    cinq boÓtes, un huÓtre, Edith Piaf et des raisins ici.
+
+the library needs to know that
+
+    oie            is female singular
+    moineau        is male singular
+    cygne blanc    is male singular
+    huÓtre         is male singular
+    raisins        is plural
+
+It can only be sure of finding such information if it has the GNA of
+every object name available.
+
+A game designer using your translation of the library will have to
+specify the GNA of every object's name, for printing purposes.  The A part
+is easy: objects which have the
+
+    animate
+
+attribute have animation, and all other objects haven't.  The N part is
+similar: any object which has the
+
+    pluralname
+
+attribute is considered to have a plural name (it's still only one object:
+an example might be an object called "doors" which represented doubled
+doors, or "grapes" representing a bunch of grapes).  All other objects are
+considered to have singular short names.
+
+To specify the gender, you can either give an object one of the attributes
+
+    male
+    female
+    neuter
+
+or you can let the Inform library guess.  It guesses using two constants,
+
+    LanguageAnimateGender          default gender for something animate
+    LanguageInanimateGender        default gender for something inanimate
+
+which must be defined at the start of Part IV of the language definition file
+(see L.IV.1).
+
+Finally, there might be times when it's useful to know an object's GNA,
+and for this the routine
+
+   GetGNAOfObject(obj)
+
+returns 0 to 11 according to the table of values given in section 2.3 above.
+
+
+   3.2  Flexion in short names
+   ---------------------------
+
+Short names of objects are likely to vary with case, in inflected
+languages such as German or Latin.  There is no automatic way Inform can
+correct the case of short names, though, so it will be up to you to manage
+this.  You may want to define printing rules:
+
+   [ DativeName;
+     ...
+   ];
+
+   "You give ", (name) noun, " to ", (DativeName) second;
+
+It might be necessary to insist that designers always create objects with
+a property giving dative forms of their short names, perhaps.
+
+Inform already does this in the case of short names being inflected
+according to whether they take the definite or indefinite articles.
+For instance,
+
+    English              Swedish
+    a brown dog          en brun hund
+    the brown dog        den bruna hunden
+    a brown house        ett brunt hus
+    the brown house      det bruna huset
+
+    English              German
+    the red book         das rote Buch
+    a red book           ein rotes Buch
+
+When a short name is being printed, the variable
+
+    indef_mode
+
+is always "true" if an indefinite article has just been printed, and
+"false" otherwise.  So one way to provide the above would be to define
+
+    Object ->
+      with short_name
+           [;  if (indef_mode) print "rotes Buch";
+               else print "rote Buch";
+               rtrue;
+           ];
+
+But this clumsy, so in addition to this, Inform allows you to use the
+property short_name_indef:
+
+    Object ->
+      with short_name "rote Buch",
+           short_name_indef "rotes Buch";
+
+
+   L.IV.1  Default genders and contraction forms
+   ---------------------------------------------
+
+Part IV opens with these two declarations.  For instance, "English.h" has:
+
+    Constant LanguageAnimateGender   = male;
+    Constant LanguageInanimateGender = neuter;
+
+whereas "French.h" has:
+
+    Constant LanguageAnimateGender   = male;
+    Constant LanguageInanimateGender = male;
+
+Another piece of jargon: a "contraction form" is a textual feature of a
+noun which causes any article in front of it to inflect.  English has two
+contraction forms, "starting with a vowel" and "starting with a consonant",
+and the indefinite article inflects with it:
+
+    a + orange = an orange
+    a + banana = a banana
+
+This section must first define a constant.  In the case of "French.h":
+
+    Constant LanguageContractionForms = 2;        ! French has two:
+                                                  ! 0 = starting with a const.
+                                                  ! 1 = starting with a vowel
+                                                  !     or mute h
+
+It's up to you how you number these, but contraction form 0 should be the
+one which most often happens.
+
+You also have to provide a routine to decide what contraction form a piece
+of text has.  Here is an approximate version for French:
+
+   [ LanguageContraction text;
+     if (text->0 == 'a' or 'e' or 'i' or 'o' or 'u' or 'h'
+                    or 'A' or 'E' or 'I' or 'O' or 'U' or 'H') return 1;
+     return 0;
+   ];
+
+The "text" array holds the full text of the noun, though this routine would
+normally only look at the first few letters at most.  (Inform only calls
+this routine when it absolutely needs to know -- for instance, it doesn't
+bother when printing definite articles in English, because they don't vary
+with contraction form.  It detects this automatically from the table below.)
+
+The above is only approximate because French has many accented vowels to
+check, too.  Now a comparison going on and on like
+
+                    ... or '@`e' or '@`a' or ...
+
+could become very long and tiresome: you might instead want to create an
+array recording whether each character is a vowel or consonant.
+
+
+   L.IV.2  How to print: articles
+   ------------------------------
+
+The Inform library needs to print three kinds of article:
+
+                                        English         French
+    indefinite articles                 a, an, some     un, une, des
+    definite articles                   the             le, la, l', les
+    Capitalised definite articles       The             Le, La, L', les
+
+Articles vary not only with contraction form but with the GNA of the noun
+they apply to.
+
+(a) Example 1: French
+
+    Constant LanguageContractionForms = 2;        ! French has two:
+                                                  ! 0 = starting with a const.
+                                                  ! 1 = starting with a vowel
+                                                  !     or mute h
+
+    [ LanguageContraction text;
+      if (text->0 == 'a' or 'e' or 'i' or 'o' or 'u' or 'h'
+                     or 'A' or 'E' or 'I' or 'O' or 'U' or 'H') return 1;
+      return 0;
+    ];
+
+    Array LanguageArticles -->
+
+     !   Contraction form 0:     Contraction form 1:
+     !   Cdef   Def    Indef     Cdef   Def    Indef
+
+         "Le "  "le "  "un "     "L'"   "l'"   "un "         ! 0: masc sing
+         "La "  "la "  "une "    "L'"   "l'"   "une "        ! 1: fem sing
+         "Les " "les " "des "    "Les " "les " "des ";       ! 2: plural
+
+                       !             a           i
+                       !             s     p     s     p
+                       !             m f n m f n m f n m f n                 
+
+    Array LanguageGNAsToArticles --> 0 1 0 2 2 2 0 1 0 2 2 2;
+
+Thus the array "LanguageGNAsToArticles" says, for instance, that animate
+feminine plural nouns take article form 2, i.e., the third line in the
+LanguageArticles array:
+
+         "Les " "les " "des "    "Les " "les " "des "
+
+This gives CDef, Def and Indef articles for each of contraction forms 0 and 1.
+
+Note the spaces after some words in the array and not others: so, "les arbres"
+but "l'huitre", for instance.
+
+
+(b) Example 2: English
+
+    Constant LanguageContractionForms = 2;     ! English has two:
+                                               ! 0 = starting with a consonant
+                                               ! 1 = starting with a vowel
+
+    [ LanguageContraction text;
+      if (text->0 == 'a' or 'e' or 'i' or 'o' or 'u'
+                     or 'A' or 'E' or 'I' or 'O' or 'U') return 1;
+      return 0;
+    ];
+
+    Array LanguageArticles -->
+
+     !   Contraction form 0:     Contraction form 1:
+     !   Cdef   Def    Indef     Cdef   Def    Indef
+
+         "The " "the " "a "      "The " "the " "an "          ! Articles 0
+         "The " "the " "some "   "The " "the " "some ";       ! Articles 1
+
+                       !             a           i
+                       !             s     p     s     p
+                       !             m f n m f n m f n m f n                 
+
+    Array LanguageGNAsToArticles --> 0 0 0 1 1 1 0 0 0 1 1 1;
+
+
+(c) Example 3: Italian
+
+   Constant LanguageContractionForms = 3;        ! 0 = starting with a const
+                                                 ! 1 = starting with z
+                                                 !     or s + a consonant
+                                                 ! 2 = starting with a vowel
+
+   [ LanguageContraction text;
+     if (text->0 == 'a' or 'e' or 'i' or 'o' or 'u'
+                    or 'A' or 'E' or 'I' or 'O' or 'U') return 2;
+     if (text->0 == 'z') return 1;
+     if (text->0 ~= 's') return 0;
+     if (text->1 == 'a' or 'e' or 'i' or 'o' or 'u'
+                    or 'A' or 'E' or 'I' or 'O' or 'U') return 1;
+     return 0;
+   ];
+
+    Array LanguageArticles -->
+
+     !   Contraction form 0:     Contraction form 1:     Contraction form 2:
+     !   Cdef   Def    Indef     Cdef   Def    Indef     Cdef   Def    Indef
+
+         "Il "  "il "  "un "     "Lo "  "lo "  "uno "    "L'"   "l'"   "un "
+         "La "  "la "  "una "    "Lo "  "lo "  "una "    "L'"   "l'"   "un'"
+
+         "I "   "i "   "un "     "Gli " "gli " "uno "    "Gli " "gli " "un "
+         "Le "  "le "  "una "    "Gli " "gli " "una "    "Le "  "le "  "un'";
+
+                       !             a           i
+                       !             s     p     s     p
+                       !             m f n m f n m f n m f n                 
+
+    Array LanguageGNAsToArticles --> 0 1 0 2 3 0 0 1 0 2 3 0;
+
+
+To complicate matters further, a few nouns have irregular articles: in
+French, for instance, the initial "h" of some words is not considered mute,
+for historical reasons: thus, "le haricot", not "l'haricot".  For such nouns,
+the property "articles" is provided:
+
+   articles "Le " "le " "un "
+
+would give CDef, Def and Indef for the "haricot", overriding the system
+above.
+
+
+   L.IV.3  How to print: direction names
+   -------------------------------------
+
+Next is a routine called "LanguageDirection" to print names for direction
+properties.  Imitate the following (from "French.h"):
+
+    [ LanguageDirection d;
+      switch(d)
+      {   n_to:    print "nord";
+          s_to:    print "sud";
+          e_to:    print "est";
+          w_to:    print "ouest";
+          ne_to:   print "nordest";
+          nw_to:   print "nordouest";
+          se_to:   print "sudest";
+          sw_to:   print "sudouest";
+          u_to:    print "haut";
+          d_to:    print "bas";
+          in_to:   print "dans";
+          out_to:  print "dehors";
+          default: return RunTimeError(9,d);
+      }
+    ];
+
+
+   L.IV.4  How to print: numbers
+   -----------------------------
+
+Next is a routine called "LanguageNumber" which takes a number N and prints
+it out in textual form.
+
+N can be anything from -32768 to +32767 and the correct text should be printed
+in all cases.  This is probably easiest with a recursive algorithm.  Here,
+for example, is the "French.h" version:
+
+    [ LanguageNumber n f;
+      if (n==0)    { print "z@'ero"; rfalse; }
+      if (n<0)     { print "moins "; n=-n; }
+      if (n>=1000) { print (LanguageNumber) n/1000, " mille"; n=n%1000; f=1; }
+      if (n>=100)  { if (f==1) print ", ";
+                     print (LanguageNumber) n/100, " cent"; n=n%100; f=1; }
+      if (n==0) rfalse;
+      switch(n)
+      {   1:  print "un";
+          2:  print "deux";
+          3:  print "trois";
+          4:  print "quatre";
+          5:  print "cinq";
+          6:  print "six";
+          7:  print "sept";
+          8:  print "huit";
+          9:  print "neuf";
+          10: print "dix";
+          11: print "onze";
+          12: print "douze";
+          13: print "treize";
+          14: print "quatorze";
+          15: print "quinze";
+          16: print "seize";
+          17: print "dix-sept";
+          18: print "dix-huit";
+          19: print "dix-neuf";
+          20 to 99:
+              switch(n/10)
+              {  2: print "vingt";
+                    if (n%10 == 1) { print " et un"; return; }
+                 3: print "trente";
+                    if (n%10 == 1) { print " et un"; return; }
+                 4: print "quarante";
+                    if (n%10 == 1) { print " et un"; return; }
+                 5: print "cinquante";
+                    if (n%10 == 1) { print " et un"; return; }
+                 6: print "soixante";
+                    if (n%10 == 1) { print " et un"; return; }
+                 7: print "soixante";
+                    if (n%10 == 1) { print " et onze"; return; }
+                    print "-"; LanguageNumber(10 + n%10); return;
+                 8: if (n%10 == 0) { print "quatre vingts"; return; }
+                    print "quatre-vingt";
+                 9: print "quatre-vingt-"; LanguageNumber(10 + n%10); return;
+              }
+              if (n%10 ~= 0)
+              {   print "-"; LanguageNumber(n%10);
+              }
+      }
+    ];
+
+To test this, you may want to run the routine
+
+    [ TestNumbers n;
+      for (n = -1001: n<=1001: n++) print (number) n, "^";
+    ];
+
+(if you have the patience), or
+
+    [ TestRNumbers n x y;
+      for (n = 1: n<=100: n++)
+      {   x = random(32767);
+          y = random(2); if (y == 0) y = -1;
+          print (number) x*y, "^";
+      }
+    ];
+
+(if you haven't).
+
+
+   L.IV.5  How to print: the time of day
+   -------------------------------------
+
+Next, a routine called LanguageTimeOfDay should appear, to print out the
+time of day in a suitable (numeric) style.  Here is the French version:
+
+   [ LanguageTimeOfDay hours mins;
+     print hours/10, hours%10, "h", mins/10, mins%10;
+   ];
+
+and here the corresponding English version:
+
+   [ LanguageTimeOfDay hours mins i;
+       print (string) TIME__TX;
+       i=hours%12; if (i<10) print " ";
+       if (i==0) i=12;
+       print i, ":", mins/10, mins%10;
+       if ((hours/12) > 0) print " pm"; else print " am";
+   ];
+
+so that 23 minutes past 1 in the afternoon would be printed as
+
+    13h23         1:23 pm
+
+according to national custom.
+
+
+   L.IV.6  How to print: verbs
+   ---------------------------
+
+Inform sometimes needs to print verbs out, in messages like:
+
+   I only understood you as far as wanting to take the red box.    (*)
+                                              ^^^^
+
+It normally does this by simply printing out the verb's dictionary entry.
+However, dictionary entries tend to be cut short (to the first 9 letters
+or so) or else to be abbreviations (like "i" meaning "inventory").
+This routine must look at its argument and either print a textual form and
+return true, or return false (letting the library carry on as normal):
+
+   [ LanguageVerb i;
+     if (i==#n$l)        { print "look";              rtrue; }
+     if (i==#n$z)        { print "wait";              rtrue; }
+     if (i==#n$x)        { print "examine";           rtrue; }
+     if (i==#n$i or 'inv' or 'inventory')
+                         { print "inventory";         rtrue; }
+     rfalse;
+   ];
+
+It's probably better to avoid the need for the routine altogether in
+languages where the verb stem would make no sense, by changing the
+message (*) above to make it less explicit.
+
+
+   L.IV.7  How to print: menus
+   ---------------------------
+
+Next, a batch of definitions should be made to specify the look of menus
+and which keys on the keyboard navigate through them.  "French.h" has:
+
+    Constant NKEY__TX     = "P = prochain    ";
+    Constant PKEY__TX     = "D = dernier ";
+    Constant RKEY__TX     = "ENTER = lire sujet   ";
+    Constant QKEY1__TX    = "  R = retour     ";
+    Constant QKEY2__TX    = "R = dernier carte";
+
+    Constant NKEY1__KY    = 'P';
+    Constant NKEY2__KY    = 'p';
+    Constant PKEY1__KY    = 'D';
+    Constant PKEY2__KY    = 'd';
+    Constant QKEY1__KY    = 'R';
+    Constant QKEY2__KY    = 'r';
+
+whereas "English.h" has:
+
+    Constant NKEY__TX     = "N = next subject";
+    Constant PKEY__TX     = "P = previous";
+    Constant QKEY1__TX    = "  Q = resume game";
+    Constant QKEY2__TX    = "Q = previous menu";
+    Constant RKEY__TX     = "RETURN = read subject";
+
+    Constant NKEY1__KY    = 'N';
+    Constant NKEY2__KY    = 'n';
+    Constant PKEY1__KY    = 'P';
+    Constant PKEY2__KY    = 'p';
+    Constant QKEY1__KY    = 'Q';
+    Constant QKEY2__KY    = 'q';
+
+
+   L.IV.8  How to print: miscellaneous short messages
+   --------------------------------------------------
+
+These are phrases or words so short that they're not worth putting in the
+LibraryMessages system, e.g.,
+
+   Constant SCORE__TX    = "Score: ";
+   Constant MOVES__TX    = "Tours: ";
+   Constant TIME__TX     = "Heure: ";
+
+define the text printed on the ordinary status line (in English, "Score" and
+"Turns").  The remainder of the list is as follows:
+
+   Constant CANTGO__TX   = "On ne peut pas aller en cet direction.";
+       the "You can't go that way" message
+   Constant FORMER__TX   = "votre m@^eme ancien";
+       name of player's former self, after the player has become
+       somebody else
+   Constant YOURSELF__TX = "votre m@^eme";
+       name of player object
+   Constant DARKNESS__TX = "Obscurit@'e";
+       name of Darkness place
+   Constant NOTHING__TX  = "rien";
+       name of the "nothing" object (caused by print (name) 0;, which
+       is not strictly speaking legal in Inform anyway)
+
+   Constant THOSET__TX   = "ces choses";
+       used in command printing
+   Constant THAT__TX     = "@cca";
+       used in command printing. There are three circumstances in which
+       all or part of a command can be printed by the parser:
+
+           > TAKE OUT
+           What do you want to take out?        [an incomplete command]
+
+           > TAKE FROG
+           (the lesser-spotted frog)            [a vague command]
+
+           > TAKE FROG WITHIN CAGE
+           I only understood you as far as wanting to take the frog.
+                                                [a command that went on
+                                                too long]
+
+       "those" is printed in place of a multiple object and "that"
+       in place of a number or something not well understood by the
+       parser (like a question topic).  Note that
+       
+           What do you want to 
+           I only understood you as far as wanting to 
+
+       are both library messages.  The verb is printed from its dictionary
+       entry (via LanguageVerb above), and will therefore appear in the
+       imperative.  (In English, of course, this is the same as the
+       infinitive.)  You may therefore want to rephrase the two messages as
+       
+           What do want to finish the command: 
+           I only understood the first part of your command:
+
+
+   Constant OR__TX       = " ou ";
+       in the list of objects being printed in a question asking you
+       which thing you mean: if you can't find anything grammatical to
+       go here, try using just ", ".
+
+   Constant AND__TX      = " et ";
+       dividing up many kinds of list
+
+   Constant WHOM__TX     = "qui ";
+   Constant WHICH__TX    = "lequel ";
+   Constant IS2__TX      = "est ";
+   Constant ARE2__TX     = "sont ";
+       used _only_ to print text like
+       "inside which is a duck", "on top of whom are two drakes"
+
+   Constant IS__TX       = " est";
+   Constant ARE__TX      = " sont";
+       used only by the list-maker and only when the ISARE_BIT is set;
+       the library only does this from with LibraryMessages, so you
+       can avoid the need altogether
+
+
+   L.IV.9  How to print: LibraryMessages
+   -------------------------------------
+
+Finally, Part IV contains an extensive block of translated library messages,
+making up at least 50% of the language definition file.  In English they look
+like this:
+
+  ...
+  Lock:    switch(n)
+           {   1: if (x1 has pluralname) print "They don't ";
+                  else print "That doesn't ";
+                  "seem to be something you can lock.";
+               2: print_ret (ctheyreorthats) x1, " locked at the moment.";
+               3: "First you'll have to close ", (the) x1, ".";
+               4: if (x1 has pluralname) print "Those don't ";
+                  else print "That doesn't ";
+                  "seem to fit the lock.";
+               5: "You lock ", (the) x1, ".";
+           }
+
+  SwitchOn: switch(n)
+           {   1: print_ret (ctheyreorthats) x1,
+                  " not something you can switch.";
+               2: print_ret (ctheyreorthats) x1,
+                  " already on.";
+               3: "You switch ", (the) x1, " on.";
+           }
+  ...
+
+You have to translate these messages, or near equivalents to them.  It may
+be useful to define printing rules, just as I've done in "English.h":
+
+   [ CTheyreorThats obj; if (obj has pluralname) print "They're";
+     else print "That's";
+   ];
+
+(Thus, "ctheyorthats" is not a rule built into Inform but is one I wrote
+into the language definition file.)
+
+------------------------------------------------------------------------------

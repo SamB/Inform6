@@ -1,0 +1,1322 @@
+This is Info file inform.info, produced by Makeinfo-1.64 from the input
+file inform.texi.
+
+This is the Inform Designer's Manual, third edition, 4 September 1996.
+It was converted to Info by Christopher J. Madsen <ac608@yfn.ysu.edu>.
+
+Copyright 1996 Graham Nelson and Christopher J. Madsen
+
+Permission is granted to make and distribute copies of this manual
+provided that:
+ (a) distributed copies are not substantially different from those
+     archived by the author,
+ (b) this and other copyright messages are always retained in full, and
+ (c) no profit is involved.
+
+
+File: inform,  Node: Parsing Nouns,  Next: Plural Names,  Prev: Listing Objects,  Up: Describing and Parsing
+
+How nouns are parsed
+====================
+
+     The Naming of Cats is a difficult matter,
+     It isn't just one of your holiday games;
+     You may think at first I'm as mad as a hatter
+     When I tell you, a cat must have THREE DIFFERENT NAMES.
+     
+     -- T. S. Eliot (1888-1965), The Naming of Cats
+
+     Bulldust, coolamon, dashiki, fizgig, grungy, jirble, pachinko,
+     poodle-faker, sharny, taghairm
+
+     -- Catachrestic words from Chambers English Dictionary
+
+Suppose we have a tomato defined with
+
+    name "fried" "green" "tomato",
+
+but which is going to redden later and need to be referred to as "red
+tomato".  It's perfectly straightforward to alter the name property of
+an object, which is a word array of dictionary words.  For example,
+
+[ Names obj i;
+  for (i=0:2*i<obj.#name:i++) print (address) (obj.&name)-->i, "^";
+];
+
+prints out the list of dictionary words held in name for a given
+object.  It's perfectly possible to write to this, so we could just set
+
+  (tomato.&name)-->1 = 'red';
+
+but this is not a flexible or elegant solution, and it's time to begin
+delving into the parser.
+
+!! Note that we can't change the size of the name array.  To simulate
+this, we could define the object with name set to, say, 30 copies of an
+`untypeable word' (see below) such as 'blank.'.
+
+The Inform parser is designed to be as "open-access" as possible,
+because a parser cannot ever be general enough for every game without
+being highly modifiable.  The first thing it does is to read in text
+from the keyboard and break it up into a stream of words: so the text
+"wizened man, eat the grey bread" becomes
+
+     wizened / man / , / eat / the / grey / bread
+
+and these words are numbered from 1.  At all times the parser keeps a
+"word number" marker to keep its place along this line, and this is
+held in the variable wn.  The routine NextWord() returns the word at
+the current position of the marker, and moves it forward, i.e. adds 1
+to wn.  For instance, the parser may find itself at word 6 and trying
+to match "grey bread" as the name of an object.  Calling NextWord()
+gives the value 'grey' and calling it again gives 'bread'.
+
+   Note that if the player had mistyped "grye bread", "grye" being a
+word which isn't mentioned anywhere in the program or created by the
+library, NextWord() returns 0 for `misunderstood word'.  Writing
+something like if (w=='grye') ... somewhere in the program makes Inform
+put "grye" into the dictionary automatically.
+
+!! Remember that the game's dictionary only has 9-character resolution.
+Thus the values of 'polyunsaturate' and 'polyunsaturated' are equal.
+Also, upper case and lower case letters are considered the same.  Words
+are permitted to contain numerals or symbols (but not at present to
+contain accented characters).
+
+!!!! A dictionary word can even contain spaces, full stops or commas.
+If so it is `untypeable'.  For instance, 'in,out' is an untypeable word
+because if the player does type it then the parser cuts it into three,
+never checking the dictionary for the entire word.  Thus the constant
+'in,out' can never be anything that NextWord returns.  This can
+actually be useful (as it was in *note Living Creatures::.).
+
+!! It can also be useful to check for numbers.  The library routine
+TryNumber(wordnum) tries to parse the word at wordnum as a number
+(recognising decimal numbers and English ones from "one" to "twenty"),
+returning -1000 if it fails altogether, or else the number.  Values
+exceeding 10000 are rounded down to 10000.
+
+!!!! Sometimes there is no alternative but to actually look at the
+player's text one character at a time (for instance, to check a
+20-digit phone number).  The routine WordAddress(wordnum) returns a
+byte array of the characters in the word, and WordLength(wordnum) tells
+you how many characters there are in it.  Thus in the above example,
+
+    thetext = WordAddress(4);
+    print WordLength(4), " ", (char) thetext->0, (char) thetext->2;
+
+prints the text "3 et".
+
+An object can affect how its name is parsed by giving a parse_name
+routine.  This is expected to try to match as many words as possible
+starting from the current position of wn, reading them in one at a time
+using the NextWord() routine.  Thus it must not stop just because the
+first word makes sense, but must keep reading and find out how many
+words in a row make sense.  It should return:
+
+     0    if the text didn't make any sense at all,
+     k    if k words in a row of the text seem to refer to the object, or
+     -1    to tell the parser it doesn't want to decide after all.
+
+The word marker wn can be left anywhere afterwards.  For example:
+
+Object -> thing "weird thing"
+  with parse_name
+       [ i; while (NextWord()=='weird' or 'thing') i++;
+            return i;
+       ];
+
+This definition duplicates (very nearly) the effect of having defined:
+
+Object -> thing "weird thing"
+  with name "weird" "thing";
+
+Which isn't very useful.  But the tomato can now be coded up with
+
+       parse_name
+       [ i j; if (self has general) j='red'; else j='green';
+            while (NextWord()=='tomato' or 'fried' or j) i++;
+            return i;
+       ],
+
+so that "green" only applies until its general attribute has been set,
+whereupon "red" does.
+
+Exercise 56
+-----------
+
+   Rewrite this to insist that the adjectives must come before the
+noun, which must be present.
+
+   *Note Answer 56::
+
+Exercise 57
+-----------
+
+   Create a musician called Princess who, when kissed, is transformed
+into "/?%?/ (the artiste formerly known as Princess)".
+
+   *Note Answer 57::
+
+Exercise 58
+-----------
+
+   (Cf. `Cafe Inform'.)  Construct a drinks machine capable of serving
+cola, coffee or tea, using only one object for the buttons and one for
+the possible drinks.
+
+   *Note Answer 58::
+
+!! parse_name is also used to spot plurals: see *Note Plural Names::.
+
+Suppose that an object doesn't have a parse_name routine, or that it
+has but it returned -1.  The parser then looks at the name words.  It
+recognises any arrangement of some or all of these words as a match
+(the more words, the better).  Thus "fried green tomato" is understood,
+as are "fried tomato" and "green tomato".  On the other hand, so are
+"fried green" and "green green tomato green fried green".  This method
+is quick and good at understanding a wide variety of sensible inputs,
+though bad at throwing out foolish ones.
+
+   However, you can affect this by using the ParseNoun entry point.
+This is called with one argument, the object in question, and should
+work exactly as if it were a parse_name routine: i.e., returning -1, 0
+or the number of words matched as above.  Remember that it is called
+very often and should not be horribly slow.  For example, the following
+duplicates what the parser usually does:
+
+[ ParseNoun obj n;
+  while (IsAWordIn(NextWord(),obj,name) == 1) n++; return n;
+];
+[ IsAWordIn w obj prop   k l m;
+  k=obj.&prop; l=(obj.#prop)/2;
+  for (m=0:m<l:m++)
+      if (w==k-->m) rtrue;
+  rfalse;
+];
+
+In this example IsAWordIn just checks to see if w is one of the entries
+in the word array obj.&prop.
+
+!! Exercise 59
+--------------
+
+   Many adventure-game parsers split object names into `adjectives' and
+`nouns', so that only the pattern <0 or more adjectives> <1 or more
+nouns> is recognised.  Implement this.
+
+   *Note Answer 59::
+
+!! Exercise 60
+--------------
+
+   During debugging it sometimes helps to be able to refer to objects
+by their internal numbers, so that "put object 31 on object 5" would
+work.  Implement this.
+
+   *Note Answer 60::
+
+!! Exercise 61
+--------------
+
+   How could the word "#" be made a wild-card, meaning "match any
+single object"?
+
+   *Note Answer 61::
+
+!!!! Exercise 62
+----------------
+
+   And how could "*" be a wild-card for "match any collection of
+objects"?
+
+   *Note Answer 62::
+
+!!!! Exercise 63
+----------------
+
+   There is no problem with a calling a container "hole in wall",
+because the parser will understand "put apple in hole in wall" as "put
+(apple) in (hole in wall)".  But create a fly in amber, so that "put
+fly in amber in hole in wall" works properly and isn't misinterpreted as
+"put (fly) in (amber in hole in wall)".  (Warning: you may need to know
+about the BeforeParsing entry point (*note Parsing Verbs::.) and the
+format of the parse buffer (see *note Grammar Tokens::.).)
+
+   *Note Answer 63::
+
+References
+----------
+
+   * Straightforward parse_name examples are the chess-pieces object
+     and the kittens class of `Alice Through The Looking-Glass'.
+     Lengthier ones are found in `Balances', especially in the white
+     cubes class.
+
+
+File: inform,  Node: Plural Names,  Next: Parsing Verbs,  Prev: Parsing Nouns,  Up: Describing and Parsing
+
+Plural names for duplicated objects
+===================================
+
+     Abiit ad plures.
+     
+     -- Petronius (?-c. 66), Cena Trimalchionis
+
+A notorious problem for adventure game parsers is to handle a
+collection of, say, ten gold coins, allowing the player to use them
+independently of each other, while gathering them together into groups
+in descriptions and inventories.  This is relatively easy in Inform,
+and only in really hard cases do you have to provide code.  Two
+problems must be overcome: firstly, the game has to be able to talk to
+the player in plurals, and secondly vice versa.  First, then, game to
+player:
+
+Class  GoldCoin
+  with name "gold" "coin",
+       short_name "gold coin",
+       plural "gold coins";
+
+(and similar silver and bronze coin classes here)
+
+Object bag "bag"
+  with name "bag"
+  has  container open openable;
+GoldCoin ->;
+GoldCoin ->;
+GoldCoin ->;
+SilverCoin ->;
+SilverCoin ->;
+BronzeCoin ->;
+
+Now we have a bag of six coins.  The player looking inside the bag will
+get
+
+>look inside bag
+In the bag are three gold coins, two silver coins and a bronze coin.
+
+How does the library know that the three gold coins are the same as each
+other, but the others different?  It doesn't look at the classes but the
+names.  It will only group together things which:
+
+  a. have a plural set,
+
+  b. are `indistinguishable' from each other.
+
+Indistinguishable means they have the same name words as each other,
+possibly in a different order, so that nothing the player can type will
+separate the two.
+
+!! Actually, the library is cleverer than this.  What it groups
+together depends slightly on the context of the list it's writing out.
+When it's writing a list which prints out details of which objects are
+providing light, for instance (like an inventory), it won't group
+together two objects if one is lit but the other isn't.  Similarly for
+objects with visible possessions or which can be worn.
+
+!!!! This all gets even more complicated when the objects have a
+parse_name routine supplied, because then the library can't use the name
+fields to tell them apart.  If they have different parse_name routines,
+it decides that they're different.  But if they have the same parse_name
+routine, there is no alternative but to ask them.  What happens is that
+
+     1.    A variable called parser_action is set to ##TheSame;
+     2.    Two variables, called parser_one and parser_two are set to
+         the two objects in question;
+     3.    Their parse_name routine is called.  If it returns:
+             -1     the objects are declared ``indistinguishable",
+             -2     they are declared different.
+     4.    Otherwise, the usual rules apply and the library looks at
+             the ordinary name fields of the objects.
+
+##TheSame is a fake action.    The implementation of the `Spellbreaker
+cubes' in the `Balances' game is an example of such a routine, so that
+if the player writes the same name on several of the cubes, they become
+grouped together.  Note that this whole set-up is such that if the
+author of a parse_name routine has never read this paragraph, it doesn't
+matter and the usual rules take their course.
+
+!!!! You may even want to provide a parse_name routine just to speed up
+the process of telling two objects apart -- if there were 30 gold coins
+the parser would be doing a lot of work comparing all their names, but
+you can make the decision much faster.
+
+Secondly, the player talking to the computer.  This goes a little
+further than just copies of the same object: many games involve
+collecting a number of similar items, say a set of nine crowns in
+different colours. Then you'd want the parser to recognise things like:
+
+> drop all of the crowns except green
+> drop the three other crowns
+
+even though the crowns are not identical.  The simple way to do this is
+just to put "crowns" in their name lists, and this works perfectly well
+most of the time.
+
+!!!! But it isn't ideal, because then the parser will think "take
+crowns" refers to a single object, and won't realise that the player
+wants to pick up all the sensibly available crowns.  So the complicated
+(but better) way is to make the parse_name routine tell the parser that
+yes, there was a match, but that it was a plural.  The way to do this
+is to set parser_action to ##PluralFound, another fake action.  So, for
+example:
+
+Class  Crown
+  with parse_name
+       [ i j;
+         for (::)
+         {   j=NextWord();
+             if (j=='crown' or self.name) i++;
+             else
+             {   if (j=='crowns')
+                 {   parser_action=##PluralFound; i++; }
+                 else return i;
+             }
+         }
+       ];
+
+This code assumes that the crown objects have just one name each, their
+colours.
+
+Exercise 64
+-----------
+
+   Write a `cherub' class so that if the player tries to call them
+"cherubs", a message like "I'll let this go by for now, but the plural
+of cherub is cherubim" appears.
+
+   *Note Answer 64::
+
+References
+----------
+
+   * See the coinage of `Balances'.
+
+
+File: inform,  Node: Parsing Verbs,  Next: Grammar Tokens,  Prev: Plural Names,  Up: Describing and Parsing
+
+How verbs are parsed
+====================
+
+     Grammar, which can govern even kings.
+     
+     -- Moliere (1622-1673), Les Femmes savantes
+
+The parser's fundamental method is simple.  Given a stream of text like
+
+     saint / peter / , / take / the / keys / from / paul
+
+it first calls the entry point BeforeParsing (in case you want to
+meddle with the text stream before it gets underway).  It then works
+out who is being addressed, if anyone, by looking for a comma, and
+trying out the text up to there as a noun (anyone animate or anything
+talkable will do): in this case St Peter.  This person is called the
+"actor", since he is going to perform the action, and is usually the
+player himself (thus, typing "myself, go north" is equivalent to typing
+"go north").  The next word, in this case 'take', is the "verb word".
+An Inform verb usually has several English verb words attached, which
+are called synonyms of each other: for instance, the library is set up
+with
+                   `take' = `get' = `carry' = `hold'
+   all referring to the same Inform verb.
+
+!! The parser sets up global variables actor and verb_word while
+working.  (In the example above, their values would be the St Peter
+object and 'take', respectively.)
+
+!!!! It isn't quite that simple: names of direction objects are treated
+as implicit "go" commands, so that "n" is acceptable as an alternative
+to "go north".  There are also "again", "oops" and "undo" to grapple
+with.
+
+!! Also, a major feature (the grammar property for the person being
+addressed) has been missed out of this description: see the latter half
+of *Note Living Creatures:: for details.
+
+Teaching the parser a new synonym is easy.  Like all of the directives
+in this section, the following must appear after the inclusion of the
+library file Grammar:
+
+    Verb "steal" "acquire" "grab" = "take";
+
+This creates another three synonyms for "take".
+
+!! One can also prise synonyms apart, as will appear later.
+
+The parser is now up to word 5; i.e., it has "the keys from paul" left
+to understand.  Apart from a list of English verb-words which refer to
+it, an Inform verb also has a "grammar".  This is a list of 1 or more
+"lines", each a pattern which the rest of the text might match.  The
+parser tries the first, then the second and so on, and accepts the
+earliest one that matches, without ever considering later ones.
+
+   A line is itself a row of "tokens".  Typical tokens might mean `the
+name of a nearby object', `the word from' or `somebody's name'.  To
+match a line, the parser must match against each token in sequence.
+For instance, the line of 3 tokens
+
+     <a noun> <the word from> <a noun>
+
+matches the text.  Each line has an action attached, which in this case
+is Remove: so the parser has ground up the original text into just four
+numbers, ending up with
+
+    actor = st_peter
+    action = Remove   noun = gold_keys   second = st_paul
+
+What happens then is that the St Peter's orders routine (if any) is
+sent the action, and may if it wishes cooperate.  If the actor had been
+the player, then the action would have been processed in the usual way.
+
+!! The action for the line which is currently being worked through is
+stored in the variable action_to_be; or, at earlier stages when the
+verb hasn't been deciphered yet, it holds the value NULL.
+
+The Verb directive creates Inform verbs, giving them some English verb
+words and a grammar.  The library's Grammar file consists almost
+exclusively of Verb directives: here is an example simplified from one
+of them.
+
+Verb "take" "get" "carry" "hold"
+                * "out"                          -> Exit
+                * multi                          -> Take
+                * multiinside "from" noun        -> Remove
+                * "in" noun                      -> Enter
+                * multiinside "off" noun         -> Remove
+                * "off" held                     -> Disrobe
+                * "inventory"                    -> Inv;
+
+Each line of grammar begins with a *, gives a list of tokens as far as
+-> and then the action which the line produces.  The first line can
+only be matched by something like "get out", the second might be
+matched by
+
+     take the banana
+     get all the fruit except the apple
+
+and so on.  A full list of tokens will be given later: briefly, `"out"'
+means the literal word "out", `multi' means one or more objects nearby,
+`noun' means just one and `multiinside' means one or more objects
+inside the second noun.  In this book, grammar tokens are written in
+the style `noun' to prevent confusion (as there is also a variable
+called noun).
+
+!!!! As mentioned above, the parser thinks "take" and "get" are exactly
+the same.  Sometimes this has odd results: "get in bed" is correctly
+understood as a request to enter the bed, "take in washing" is
+misunderstood as a request to enter the washing.  You might avoid this
+by using Extend only to separate them into different grammars, or you
+could fix the Enter action to see if the variable verb_word=='take' or
+'get'.
+
+!! Some verbs are meta - they are not really part of the game: for
+example, "save", "score" and "quit".  These are declared using Verb
+meta, as in
+
+Verb meta "score"
+                *                                -> Score;
+
+and any debugging verbs you create would probably work better this way,
+since meta-verbs are protected from interference by the game and take
+up no game time.
+
+After the -> in each line is the name of an action.  Giving a name in
+this way is what creates an action, and if you give the name of one
+which doesn't already exist then you must also write a routine to
+execute the action, even if it's one which doesn't do very much.  The
+name of the routine is always the name of the action with Sub appended.
+For instance:
+
+[ XyzzySub; "Nothing happens."; ];
+Verb "xyzzy"    *                                -> Xyzzy;
+
+will make a new magic-word verb "xyzzy", which always says "Nothing
+happens" -- always, that is, unless some before rule gets there first,
+as it might do in certain magic places.  Xyzzy is now an action just as
+good as all the standard ones: ##Xyzzy gives its action number, and you
+can write before and after rules for it in Xyzzy: fields just as you
+would for, say, Take.
+
+The library defines grammars for the 100 or so English verbs most often
+used by adventure games.  However, in practice you very often need to
+alter these, usually to add extra lines of grammar but sometimes to
+remove existing ones.  For example, consider an array of 676 labelled
+buttons, any of which could be pushed: it's hardly convenient to define
+676 button objects.  It would be more sensible to create a grammar line
+which understands things like
+
+     ``button j16",    ``d11",    ``a5 button"
+
+(it's easy enough to write code for a token to do this), and then to
+add it to the grammar for the "press" verb.  The Extend directive is
+provided for exactly this purpose:
+
+Extend "push"   * Button                    -> PushButton;
+
+The point of Extend is that it is against the spirit of the Library to
+alter the standard library files -- including the grammar table --
+unless absolutely necessary.
+
+!!!! Another method would be to create a single button object with a
+parse_name routine which carefully remembers what it was last called,
+so that the object always knows which button it represents.  See
+`Balances' for an example.
+
+Normally, extra lines of grammar are added at the bottom of those
+already there.  This may not be what you want.  For instance, "take"
+has a grammar line
+
+                * multi                     -> Take
+
+quite early on.  So if you want to add a grammar line which diverts
+"take something-edible" to a different action, like so:
+
+                * edible                    -> Eat
+
+(`edible' being a token matching anything which has the attribute
+edible) then it's no good adding this at the bottom of the Take
+grammar, because the earlier line will always be matched first.  Thus,
+you really want to insert your line at the top, not the bottom, in this
+case.  The right command is
+
+Extend "take" first
+                * edible                    -> Eat;
+
+You might even want to over-ride the old grammar completely, not just
+add a line or two.  For this, use
+
+Extend "push" replace
+                * Button                    -> PushButton;
+
+and now "push" can be used only in this way.  To sum up, Extend can take
+three keywords:
+
+    replace      completely replace the old grammar with this one;
+    first        insert the new grammar at the top of the old one;
+    last         insert the new grammar at the bottom of the old one;
+
+with last being the default (which doesn't need to be said explicitly).
+
+!! In library grammar, some verbs have many synonyms: for instance,
+
+"attack" "break" "smash" "hit" "fight" "wreck" "crack"
+"destroy" "murder" "kill" "torture" "punch" "thump"
+
+are all treated as identical.  But you might want to distinguish between
+murder and lesser crimes.  For this, try
+
+Extend only "murder" "kill" replace * animate -> Murder;
+
+The keyword only tells Inform to extract the two verbs "murder" and
+"kill".  These then become a new verb which is initially an identical
+copy of the old one, but then replace tells Inform to throw that away
+in favour of an entirely new grammar.  Similarly,
+
+Extend only "get" * "with" "it" -> Sing;
+
+makes "get" behave exactly like "take" (as usual) except that it also
+recognises "with it", so that "get with it" makes the player sing but
+"take with it" doesn't.  Other good pairs to separate might be "cross"
+and "enter", "drop" and "throw", "give" and "feed", "swim" and "dive",
+"kiss" and "hug", "cut" and "prune".
+
+!!!! Bear in mind that once a pair has been split apart like this, any
+subsequent extension made to one will not be made to the other.
+
+!!!! There are (a few) times when verb definition commands are not
+enough.  For example, in the original `Advent' (or `Colossal Cave'),
+the player could type the name of a not-too-distant place which had
+previously been visited, and be taken there.  There are several ways to
+code this -- say, with 60 rather similar verb definitions, or with a
+single "travel" verb which has 60 synonyms, whose action routine looks
+at the parser's verb_word variable to see which one was typed, or even
+by restocking the compass object with new directions in each room --
+but here's another.  The library will call the UnknownVerb routine (if
+you provide one) when the parser can't even get past the first word.
+This has two options: it can return false, in which case the parser
+just goes on to complain as it would have done anyway.  Otherwise, it
+can return a verb word which is substituted for what the player
+actually typed.  Here is a foolish example:
+
+[ UnknownVerb w;
+  if (w=='shazam') { print "Shazam!^"; return 'inventory'; }
+  rfalse;
+];
+
+which responds to the magic word "shazam" by printing Shazam! and then,
+rather disappointingly, taking the player's inventory.  But in the
+example above, it could be used to look for the word w through the
+locations of the game, store the place away in some global variable,
+and then return 'go'.  The GoSub routine could then be fixed to look at
+this variable.
+
+!!!! Exercise 65
+----------------
+
+   Why is it usually a bad idea to print text out in an UnknownVerb
+routine?
+
+   *Note Answer 65::
+
+!!!! If you allow a flexible collection of verbs (say, names of spells
+or places) then you may want a single `dummy' verb to stand for
+whichever is being typed.  This may make the parser produce strange
+questions because it is unable to sensibly print the verb back at the
+player, but you can fix this using the PrintVerb entry point.
+
+!!!! Exercise 66
+----------------
+
+   Implement the Crowther and Woods feature of moving from one room to
+another by typing its name, using a dummy verb.
+
+   *Note Answer 66::
+
+!! Exercise 67
+--------------
+
+   Implement a lamp which, when rubbed, produces a genie who casts a
+spell over the player to make him confuse the words "white" and "black".
+
+   *Note Answer 67::
+
+References
+----------
+
+   * `Advent' makes a string of simple Verb definitions; `Alice Through
+     The Looking-Glass' uses Extend a little.
+
+   * `Balances' has a large extra grammar and also uses the UnknownVerb
+     and PrintVerb entry points.
+
+
+File: inform,  Node: Grammar Tokens,  Next: Scope,  Prev: Parsing Verbs,  Up: Describing and Parsing
+
+Tokens of grammar
+=================
+
+The complete list of grammar tokens is as follows:
+    "<word>"           that literal word only
+    noun               any object in scope
+    held               object held by the player
+    multi              one or more objects in scope
+    multiheld          one or more held objects
+    multiexcept        one or more in scope, except the other
+    multiinside        one or more in scope, inside the other
+    <attribute>        any object in scope which has the attribute
+    creature           an object in scope which is animate
+    noun = <routine>   any object in scope passing the given test
+    scope = <routine>  an object in this definition of scope
+    number             a number only
+    <routine>          any text accepted by the given routine
+    special            any single word or number
+
+These tokens are all described in this section except for `scope =
+<Routine>', which is postponed to the next.
+
+`"<word>"' This matches only the literal word given, normally a
+preposition such as "into".  Whereas most tokens produce a "parameter"
+(an object or group of objects, or a number), this token doesn't.
+There can therefore be as many or as few of them on a grammar line as
+desired.
+
+!! Prepositions like this are unfortunately sometimes called
+`adjectives' inside the parser source code, and in Infocom hackers'
+documents: the usage is traditional but has been avoided in this manual.
+
+`noun' The definition of "in scope" will be given in the next section.
+Roughly, it means "visible to the player at the moment".
+
+`held' Convenient for two reasons.  Firstly, many actions only sensibly
+apply to things being held (such as Eat or Wear), and using this token
+in the grammar you can make sure that the action is never generated by
+the parser unless the object is being held.  That saves on always
+having to write "You can't eat what you're not holding" code.
+Secondly, suppose we have grammar
+
+Verb "eat"
+                * held                           -> Eat;
+
+and the player types "eat the banana" while the banana is, say, in
+plain view on a shelf.  It would be petty of the game to refuse on the
+grounds that the banana is not being held.  So the parser will generate
+a Take action for the banana and then, if the Take action succeeds, an
+Eat action.  Notice that the parser does not just pick up the object,
+but issues an action in the proper way -- so if the banana had rules
+making it too slippery to pick up, it won't be picked up.  This is
+called "implicit taking".
+
+The `multi-' tokens indicate that a list of one or more objects can go
+here.  The parser works out all the things the player has asked for,
+sorting out plural nouns and words like "except" by itself, and then
+generates actions for each one.  A single grammar line can only contain
+one `multi-' token: so "hit everything with everything" can't be parsed
+(straightforwardly, that is: you can parse anything with a little more
+effort).  The reason not all nouns can be multiple is that too helpful
+a parser makes too easy a game.  You probably don't want to allow
+"unlock the mystery door with all the keys" -- you want the player to
+suffer having to try them one at a time, or else to be thinking.
+
+`multiexcept' Provided to make commands like "put everything in the
+rucksack" parsable: the "everything" is matched by all of the player's
+possessions except the rucksack.  This stops the parser from generating
+an action to put the rucksack inside itself.
+
+`multiinside' Similarly, this matches anything inside the other
+parameter on the line, and is good for parsing commands like "remove
+everything from the cupboard".
+
+`<attribute>' This allows you to sort out objects according to
+attributes that they have:
+
+Verb "use" "employ" "utilise"
+                * edible                    -> Eat
+                * clothing                  -> Wear
+      ...and so on...
+                * enterable                 -> Enter;
+
+though the library grammar does not contain such an appallingly
+convenient verb!  Since you can define your own attributes, it's easy
+to make a token matching only your own class of object.
+
+`creature'        Same as `animate' (a hangover from older editions of
+Inform).
+
+`noun = <Routine>' The last and most powerful of the "a nearby object
+satisfying some condition" tokens.  When determining whether an object
+passes this test, the parser sets the variable noun to the object in
+question and calls the routine.  If it returns true, the parser accepts
+the object, and otherwise it rejects it.  For example, the following
+should only apply to animals kept in a cage:
+
+[ CagedCreature;
+    if (noun in wicker_cage) rtrue; rfalse;
+];
+Verb "free" "release"
+                * noun=CagedCreature        -> FreeAnimal;
+
+So that only nouns which pass the CagedCreature test are allowed.  The
+CagedCreature routine can appear anywhere in the code, though it's
+tidier to keep it nearby.
+
+`scope = <Routine>' An even more powerful token, which means "an object
+in scope" where scope is redefined specially.  See the next section.
+
+`number'        Matches any decimal number from 0 upwards (though it
+rounds off large numbers to 10000), and also matches the numbers "one"
+to "twenty" written in English.  For example:
+
+Verb "type"
+                * number                    -> TypeNum;
+
+causes actions like Typenum 504 when the player types "type 504".  Note
+that noun is set to 504, not to an object.
+
+Exercise 68
+-----------
+
+   (A beautiful feature stolen from David M. Baggett's game `The Legend
+Lives', which uses it to great effect.)  Some games produce footnotes
+every now and then.  Arrange matters so that these are numbered [1],
+[2] and so on in order of appearance, to be read by the player when
+"footnote 1" is typed.
+
+   *Note Answer 68::
+
+!!  The entry point ParseNumber allows you to provide your own
+number-parsing routine, which opens up many sneaky possibilities --
+Roman numerals, coordinates like "J4", very long telephone numbers and
+so on.  This takes the form
+
+[ ParseNumber buffer length;
+  ...returning 0 if no match is made, or the number otherwise...
+];
+
+and examines the supposed `number' held at the byte address buffer, a
+row of characters of the given length.  If you provide a ParseNumber
+routine but return 0 from it, then the parser falls back on its usual
+number-parsing mechanism to see if that does any better.
+
+!!!! Note that ParseNumber can't return 0 to mean the number zero.
+Probably "zero" won't be needed too often, but if it is you can always
+return some value like 1000 and code the verb in question to understand
+this as 0.  (Sorry: this was a poor design decision made too long ago
+to change now.)
+
+`<Routine>' The most flexible token is simply the name of a "general
+parsing routine".  This looks at the word stream using NextWord and wn
+(*note Parsing Nouns::.) and should return:
+
+     -1    if the text isn't understood,
+     0    if it's understood but no parameter results,
+     1    if a number results, or
+     n    if the object n results.
+
+In the case of a number, the actual value should be put into the
+variable parsed_number.  On an unsuccessful match (returning -1) it
+doesn't matter what the final value of wn is.  On a successful match it
+should be left pointing to the next thing `after' what the routine
+understood.  Since NextWord moves wn on by one each time it is called,
+this happens automatically unless the routine has read too far.  For
+example:
+
+[ OnAtorIn w;
+  w=NextWord(); if (w=='on' or 'at' or 'in') return 0;
+  return -1;
+];
+
+makes a token which accepts any of the words "on", "at" or "in" as
+prepositions (not translating into objects or numbers).  Similarly,
+
+[ Anything w;  while (w~=-1) w=NextWordStopped(); return 0; ];
+
+accepts the entire rest of the line (ignoring it).  NextWordStopped is
+a form of NextWord which returns -1 once the original word stream has
+run out.
+
+`special'        Obsolete and best avoided.
+
+Exercise 69
+-----------
+
+   Write a token to detect low numbers in French, "un" to "cinq".
+
+   *Note Answer 69::
+
+!! Exercise 70
+--------------
+
+   Write a token to detect floating-point numbers like "21", "5.4623",
+"two point oh eight" or "0.01", rounding off to two decimal places.
+
+   *Note Answer 70::
+
+!! Exercise 71
+--------------
+
+   Write a token to match a phone number, of any length from 1 to 30
+digits, possibly broken up with spaces or hyphens (such as "01245 666
+737" or "123-4567").
+
+   *Note Answer 71::
+
+!!!! Exercise 72
+----------------
+
+   (Adapted from code in Andrew Clover's `timewait.h' library
+extension.) Write a token to match any description of a time of day,
+such as "quarter past five", "12:13 pm", "14:03", "six fifteen" or
+"seven o'clock".
+
+   *Note Answer 72::
+
+!! Exercise 73
+--------------
+
+   Code a spaceship control panel with five sliding controls, each set
+to a numerical value, so that the game looks like:
+
+>look
+Machine Room
+There is a control panel here, with five slides, each of which can be
+set to a numerical value.
+>push slide one to 5
+You set slide one to the value 5.
+>examine the first slide
+Slide one currently stands at 5.
+>set four to six
+You set slide four to the value 6.
+
+*Note Answer 73::
+
+!!!! General parsing routines sometimes need to get at the raw text
+originally typed by the player.  Usually WordAddress and WordLength
+(*note Parsing Nouns::.) are adequate.  If not, it's helpful to know
+that the parser keeps a string array called buffer holding:
+
+     buffer->0 = <maximum number of characters which can fit in buffer>
+     buffer->1 = <the number n of characters typed>
+     buffer->2...buffer->(n+1) = <the text typed>
+
+and, in parallel with this, another one called parse holding:
+
+     parse->0 = <maximum number of words which can fit in buffer>
+     parse->1 = <the number m of words typed>
+     parse->2... = <a four-byte block for each word, as follows>
+             block-->0 = <the dictionary entry if word is known, 0 otherwise>
+             block->2 = <number of letters in the word>
+             block->3 = <index to first character in the buffer>
+
+(However, for version 3 games the format is slightly different: in
+buffer the text begins at byte 1, not at byte 2, and its end is
+indicated with a zero terminator byte.)  Note that the raw text is
+reduced to lower case automatically, even if within quotation marks.
+Using these buffers directly is perfectly safe but not recommended
+unless there's no other way, as it tends to make code rather illegible.
+
+!!!! Exercise 74
+----------------
+
+   Try to implement the parser's routines NextWord, WordAddress and
+WordLength.
+
+   *Note Answer 74::
+
+!!!! Exercise 75
+----------------
+
+   (Difficult.)  Write a general parsing routine accepting any amount
+of text (including spaces, full stops and commas) between double-quotes
+as a single token.
+
+   *Note Answer 75::
+
+Exercise 76
+-----------
+
+   How would you code a general parsing routine which never matches
+anything?
+
+   *Note Answer 76::
+
+!!!! Exercise 77
+----------------
+
+   Why would you code a general parsing routine which never matches
+anything?
+
+   *Note Answer 77::
+
+!! Exercise 78
+--------------
+
+   An apparent restriction of the parser is that it only allows two
+parameters (noun and second).  Write a general parsing routine to
+accept a third.  (This final exercise with general parsing routines is
+easier than it looks: see the specification of the NounDomain library
+routine in *Note Objects and Routines::.)
+
+   *Note Answer 78::
+
+
+File: inform,  Node: Scope,  Next: Helping the Parser,  Prev: Grammar Tokens,  Up: Describing and Parsing
+
+Scope and what you can see
+==========================
+
+     He cannot see beyond his own nose.  Even the fingers he
+     outstretches from it to the world are (as I shall suggest) often
+     invisible to him.
+
+     -- Max Beerbohm (1872-1956), of George Bernard Shaw
+
+     Wherefore are these things hid?
+     
+     -- William Shakespeare (1564-1616), Twelfth Night
+
+Time to say what "in scope" means.  This definition is one of the most
+important rules of play, because it decides what the player is allowed
+to refer to.  You can investigate this in practice by compiling any game
+with the debugging suite of verbs included and typing "scope" in
+different places: but here are the rules in full.  The following are in
+scope:
+
+     the player's immediate possessions;
+     the 12 compass directions;
+     if there is light (*note Light and Dark::.), the objects in the same room as the player;
+     if not, any objects in the thedark object.
+
+In addition, if an object is in scope then its immediate possessions
+are in scope, *if* it is `see-through', which means that:
+
+     the object has supporter, *or*
+     the object has transparent, *or*
+     the object is an open container.
+
+In addition, if an object is in scope then anything which it "adds to
+scope" is also in scope.
+
+!! The player's possessions are in scope in a dark room -- so the
+player can still turn his lamp on.  On the other hand, a player who
+puts the lamp on the ground and turns it off then loses the ability to
+turn it back on again, because it is out of scope.  This can be changed;
+see below.
+
+!! Compass directions make sense as things.  The player can always type
+something like "attack the south wall" and the before rule for the room
+could trap the action Attack s_obj to make something unusual happen, if
+this is desired.
+
+!! The parser applies scope rules to all actors, not just the player.
+Thus "dwarf, drop sword" will be accepted if the dwarf can see it, even
+if the player can't.
+
+!! The concealed attribute only hides objects from room descriptions,
+and doesn't remove them from scope.  If you want things to be both
+concealed and unreferrable-to, put them somewhere else!  Or give them
+an uncooperative parse_name routine.
+
+!!!! Actually, the above definition is not quite right, because the
+compass directions are not in scope when the player asks for a plural
+number of things, like "take all the knives"; this makes some of the
+parser's plural algorithms run faster.  Also, for a `multiexcept'
+token, the other object is not in scope; and for a `multiinside' token,
+only objects in the other object are in scope.  This makes "take
+everything from the cupboard" work in the natural way.
+
+Two library routines are provided to enable you to see what's in scope
+and what isn't.  The first, TestScope(obj, actor), simply returns true
+or false according to whether or not obj is in scope.  The second is
+LoopOverScope(routine, actor) and calls the given routine for each
+object in scope.  In each case the actor given is optional; if it's
+omitted, scope is worked out for the player as usual.
+
+Exercise 79
+-----------
+
+   Implement the debugging suite's "scope" verb, which lists all the
+objects currently in scope.
+
+   *Note Answer 79::
+
+Exercise 80
+-----------
+
+   Write a "megalook" verb, which looks around and examines everything
+nearby.
+
+   *Note Answer 80::
+
+The rest of this section is about how to change the scope rules.  As
+usual with Inform, you can change them globally, but it's more
+efficient and safer to work locally.  To take a typical example: how do
+we allow the player to ask questions like the traditional "what is a
+grue"?  The "grue" part ought to be parsed as if it were a noun, so that
+we could distinguish between, say, a "garden grue" and a "wild grue".
+So it isn't good enough to look only at a single word.  Here is one
+solution:
+
+Object questions "qs";
+[ QuerySub; print_ret (string) noun.description;
+];
+[ Topic i;
+  switch(scope_stage)
+  {   1: rfalse;
+      2: objectloop (i in questions) PlaceInScope(i); rtrue;
+      3: "At the moment, even the simplest questions confuse you.";
+  }
+];
+
+where the actual questions at any time are the current children of the
+questions object, like so:
+
+Object q1 "long count" questions
+  with name "long" "count",
+       description "The Long Count is the great Mayan cycle of time,
+           which began in 3114 BC and will finish with the world's end
+           in 2012 AD.";
+
+and we also have a grammar line:
+
+Verb "what"
+                * "is"  scope=Topic              -> Query
+                * "was" scope=Topic              -> Query;
+
+Note that the questions and q1 objects are out of the game for every
+other purpose.  The name "qs" doesn't matter, as it will never appear;
+the individual questions are named so that the parser might be able to
+say "Which do you mean, the long count or the short count?" if the
+player asked "what is the count".
+
+   When the parser reaches `scope=Topic', it calls the Topic routine
+with the variable scope_stage set to 1.  The routine should return 1
+(true) if it is prepared to allow multiple objects to be accepted here,
+and 0 (false) otherwise: as we don't want "what is everything" to list
+all the questions and answers in the game, we return false.
+
+   A little later on in its machinations, the parser again calls Topic
+with scope_stage now set to 2.  Topic is now obliged to tell the parser
+which objects are to be in scope.  It can call two parser routines to
+do this.
+
+ScopeWithin(object)
+
+puts everything inside the object into scope, though not the object
+itself;
+
+PlaceInScope(object)
+
+puts just a single object into scope.  It is perfectly legal to declare
+something in scope that "would have been in scope anyway": or even
+something which is in a different room altogether from the actor
+concerned, say at the other end of a telephone line.  Our scope routine
+Topic should then return
+
+  0. (false) to carry on with the usual scope rules, so that everything
+     that would usually be in scope still is, or
+
+  1. (true) to tell the parser not to put any more objects into scope.
+
+So at scope_stage 2 it is quite permissible to do nothing but return
+false, whereupon the usual rules apply.  Topic returns true because it
+wants only question topics to be in scope, not question topics together
+with the usual miscellany near the player.
+
+   This is enough to deal with "what is the long count".  If on the
+other hand the player typed "what is the lgon cnout", the error message
+which the parser would usually produce ("You can't see any such thing")
+would be unsatisfactory.  So if parsing failed at this token, then
+Topic is called at scope_stage 3 to print out a suitable error message.
+It must provide one.
+
+!! Note that ScopeWithin(object) extends the scope down through its
+possessions according to the usual rules, i.e., depending on their
+transparency, whether they're containers and so on.  The definition of
+Topic above shows how to put just the direct possessions into scope.
+
+Exercise 81
+-----------
+
+   Write a token which puts everything in scope, so that you could have
+a debugging "purloin" verb which could take anything, regardless of
+where it was and the rules applying to it.
+
+   *Note Answer 81::
+
+Changing the global definition of scope should be done cautiously
+(there may be unanticipated side effects); bear in mind that scope
+decisions need to be taken often -- every time an object token is
+parsed, so perhaps five to ten times in every game turn -- and hence
+moderately quickly.  The global definition can be tampered with by
+providing the entry point
+
+InScope(actor)
+
+where the actor is usually the player, but not always.  If the routine
+decides that a particular object should be in scope for the actor, it
+should execute InScope and ScopeWithin just as above, and return true
+or false, as if it were at scope_stage 2.  Thus, it is vital to return
+false in circumstances when you don't want to intervene.
+
+!! The token `scope=<Routine>' takes precedence over InScope, which
+will only be reached if the routine returns false to signify `carry on'.
+
+!!!! There are seven reasons why InScope might be being called; the
+scope_reason variable is set to the current one:
+
+PARSING_REASON
+     The usual one.  Note that action_to_be holds NULL in the early
+     stages (before the verb has been decided) and later on the action
+     which would result from a successful match.
+
+TALKING_REASON
+     Working out which objects are in scope for being spoken to (see
+     the end of *Note Living Creatures:: for exercises using this).
+
+EACHTURN_REASON
+     When running each_turn routines for anything nearby, at the end of
+     each turn.
+
+REACT_BEFORE_REASON
+     When running react_before.
+
+REACT_AFTER_REASON
+     When running react_after.
+
+TESTSCOPE_REASON
+     When performing a TestScope.
+
+LOOPOVERSCOPE_REASON
+     When performing a LoopOverScope.
+
+Here are some examples.  Firstly, as promised, how to change the rule
+that "things you've just dropped disappear in the dark":
+
+[ InScope person i;
+  if (person==player && location==thedark)
+      objectloop (i near player)
+          if (i has moved)
+              PlaceInScope(i);
+  rfalse;
+];
+
+With this routine added, the objects in the dark room the player is in
+are in scope only if they have moved (that is, have been held by the
+player in the past); and even then, are in scope only to the player.
+
+!!!! Exercise 82
+----------------
+
+   Construct a long room divided by a glass window.  Room descriptions
+on either side should describe what's in view on the other; the window
+should be lookable-through; objects on the far side should be in scope,
+but not manipulable; and everything should cope well if one side is in
+darkness.
+
+   *Note Answer 82::
+
+!!!! Exercise 83
+----------------
+
+   Code the following puzzle.  In an initially dark room there is a
+light switch.  Provided you've seen the switch at some time in the
+past, you can turn it on and off -- but before you've ever seen it, you
+can't.  Inside the room is nothing you can see, but you can hear a
+dwarf breathing.  If you tell the dwarf to turn the light on, he will.
+
+   *Note Answer 83::
+
+As mentioned in the definition above, each object has the ability to
+drag other objects into scope whenever it is in scope.  This is
+especially useful for giving objects component parts: e.g., giving a
+washing-machine a temperature dial.  (The dial can't be a child object
+because that would throw it in with the clothes: and it ought to be
+attached to the machine in case the machine is moved from place to
+place.) For this purpose, the property add_to_scope may contain a list
+of objects to add.
+
+!! Alternatively, it may contain a routine.  This routine can then call
+AddToScope(x) to put any object x into scope.  It may not, however,
+call ScopeWithin or any other scoping routines.
+
+!!!! Scope addition does `not' occur for an object moved into scope by
+an explicit call to PlaceInScope, since this must allow complete
+freedom in scope selections.  But it does happen when objects are moved
+in scope by calls to ScopeWithin(domain).
+
+Exercise 84
+-----------
+
+   (From the tiny example game `A Nasal Twinge'.)  Give the player a
+nose, which is always in scope and can be held, reducing the player's
+carrying capacity.
+
+   *Note Answer 84::
+
+Exercise 85
+-----------
+
+   (Likewise.)  Create a portable sterilising machine, with a "go"
+button, a top which things can be put on and an inside to hold objects
+for sterilisation.  (Thus it is a container, a supporter and a
+possessor of sub-objects all at once.)
+
+   *Note Answer 85::
+
+!!!! Exercise 86
+----------------
+
+   Create a red sticky label which the player can affix to any object
+in the game.  (Hint: use InScope, not add_to_scope.)
+
+   *Note Answer 86::
+
+References
+----------
+
+   * `Balances' uses `scope = <routine>' tokens for legible spells and
+     memorised spells.
+
+   * See also the exercises at the end of *Note Living Creatures:: for
+     further scope trickery.
+

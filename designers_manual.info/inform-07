@@ -1,0 +1,1170 @@
+This is Info file inform.info, produced by Makeinfo-1.64 from the input
+file inform.texi.
+
+This is the Inform Designer's Manual, third edition, 4 September 1996.
+It was converted to Info by Christopher J. Madsen <ac608@yfn.ysu.edu>.
+
+Copyright 1996 Graham Nelson and Christopher J. Madsen
+
+Permission is granted to make and distribute copies of this manual
+provided that:
+ (a) distributed copies are not substantially different from those
+     archived by the author,
+ (b) this and other copyright messages are always retained in full, and
+ (c) no profit is involved.
+
+
+File: inform,  Node: Player,  Next: Constants and Scoring,  Prev: Daemons,  Up: The Model World
+
+Starting, moving, changing and killing the player
+=================================================
+
+     There are only three events in a man's life; birth, life and death;
+     he is not conscious of being born, he dies in pain and he forgets
+     to live.
+
+     -- Jean de la Bruyere (1645-1696)
+
+     Life's but a walking shadow, a poor player
+     That struts and frets his hour upon the stage
+     And then is heard no more; it is a tale
+     Told by an idiot, full of sound and fury,
+     Signifying nothing.
+     
+     -- William Shakespeare (1564-1616), Macbeth V. v
+
+The only compulsory task for a game's Initialise routine is to set the
+location variable to the place where the player should begin.  This is
+usually a room (and is permitted to be one that's in darkness) but
+could instead be an object inside a room, such as a chair or a bed.  If
+you would like to give the player some items to begin with, Initialise
+should also move them to player.
+
+   Games with a long opening sequence might want to start by offering
+the player a chance to restore a saved game at once.  They can do so by
+writing the following in their Initialise routines:
+
+    print "Would you like to restore a game?  >";
+    if (YesOrNo()) <Restore>;
+
+(If you want to make the status line invisible during an opening
+sequence, see *Note Assembly Language::.)  Initialise normally returns
+0 or 1 (it doesn't matter which), but if it returns 2 then no game
+banner will be printed at once.  (This is for games which, like
+`Sorcerer', delay their banners until after the prologue.) `Ruins',
+however, opens in classical fashion:
+
+[ Initialise;
+  TitlePage();
+  location = Forest;
+  move food_ration to player;
+  move sodium_lamp to player;
+  move dictionary to player;
+  thedark.description = "The darkness of ages presses in on you, and you
+      feel claustrophobic.";
+ "^^^^^Days of searching, days of thirsty hacking through the briars of
+  the forest, but at last your patience was rewarded. A discovery!^";
+];
+
+(The TitlePage routine will be an exercise in *Note Assembly
+Language::: `Ruins' is really too small a game to warrant one, but
+never mind.) The location variable needs some explanation.  It holds
+either the current room, if there's light to see by, or the special
+value thedark (the "Darkness" object) if there isn't.  In the latter
+case (but only in the latter case) the actual current room is held in
+the variable real_location, should you need to know it.  Neither of
+these is necessarily the same as the parent of the player object.  For
+instance, if the player sits in a jeep parked in a dark garage, then
+location is thedark, real_location is Garage and parent(player) is jeep.
+
+   Because of this, one shouldn't simply move the player object by hand.
+Instead, to move the player about (for teleportation of some kind), use
+the routine PlayerTo(place); (which automatically takes care of
+printing the new room's description if there's enough light there to see
+by).
+
+!! PlayerTo can also be used to move the player to a place inside a
+room (e.g., a cage, or a traction engine).
+
+!! Calling PlayerTo(place, 1); moves the player but prints nothing (in
+particular, prints no room description).
+
+!! Calling PlayerTo(place, 2); will Look as if the player had arrived
+in the room by walking in as usual, so only a short description appears
+if the room is one that has been seen before.
+
+!! In a process called `scoring arrival', a room which the player has
+entered for the first time is given the visited attribute.  If it was
+listed as scored, points are awarded.  (See *Note Things to Enter::.)
+
+!!!! When a Look action takes place, or a call to PlayerTo(place,1),
+the library `notes arrival' as well as `scores arrival'.  `Noting
+arrival' consists of checking to see if the room has changed since last
+time (darkness counting as a different room for this purpose).  If so,
+the following happens:
+
+  1. If the new location has an initial property, this is printed if
+     it's a string, or run if it's a routine.
+
+  2. The entry point NewRoom is called (if it exists).
+
+  3. Any `floating objects', such as drifting mist, which are found_in
+     many places at once, are moved into the room.
+
+The player's whole persona can easily be changed, because the player
+object can itself have an orders routine, just as the object for any
+non-player character can.  To replace the orders routine for the
+standard player object, set
+
+player.orders = MyNewRule;
+
+where MyNewRule is a new orders rule.  Note that this is applied to
+every action or order issued by the player.  The variable actor holds
+the person being told to do something, which may well be the player
+himself, and the variables action, noun and second are set up as usual.
+For instance, if a cannon goes off right next to the player, a period
+of partial deafness might ensue:
+
+[ MyNewRule;
+  if (actor~=player) rfalse;
+  Listen: "Your hearing is still weak from all that cannon-fire.";
+];
+
+The if statement needs to be there to prevent commands like "helena,
+listen" from being ruled out -- after all, the player can still speak.
+
+!! Exercise 42
+--------------
+
+   Why not achieve the same effect by giving the player a react_before
+rule instead?
+
+   *Note Answer 42::
+
+Exercise 43
+-----------
+
+   (Cf. `Curses'.)  Write an orders routine for the player so that
+wearing the gas mask will prevent him from talking.
+
+   *Note Answer 43::
+
+!! In fact a much more powerful trick is available: the player can
+actually become a different character in the game, allowing the real
+player at the keyboard to act through someone else.  Calling
+ChangePlayer(obj) will transform the player to obj.  There's no need
+for obj to have names like "me" or "myself"; the parser understands
+these words automatically to refer to the currently-inhabited player
+object.  However, it must provide a number property (which the library
+will use for workspace).  The maximum number of items the player can
+carry as that object will be its capacity.  Finally, since ChangePlayer
+prints nothing, you may want to conclude with a <<Look>>;
+
+   ChangePlayer has many possible applications.  The player who tampers
+with Dr Frankenstein's brain transference machine may suddenly become
+the Monster strapped to the table.  A player who drinks too much wine
+could become a `drunk player object' to whom many different rules
+apply.  The "snavig" spell of `Spellbreaker', which transforms the
+player to an animal like the one cast upon, could be implemented thus.
+More ambitiously, a game could have a stock of half a dozen main
+characters, and the focus of play can switch between them.  A player
+might have a team of four adventurers to explore a dungeon, and be able
+to switch the one being controlled by typing the name.  In this case,
+an AfterLife routine -- see below -- may be needed to switch the focus
+back to a still-living member of the team after one has met a sticky
+end.
+
+!! Calling ChangePlayer(object,1); will do the same but make the game
+print "(as Whoever)" during room descriptions.
+
+!!!! When the person to be changed into has an orders routine, things
+start to get complicated.  It may be useful to arrange such a routine
+as follows:
+
+      orders
+      [;  if (player==self)
+          {   ! I am the player object...
+              if (actor==self)
+              {   ! ...giving myself an order, i.e., trying an action.
+              }
+              else
+              {   ! ...giving someone else, the "actor", an order.
+              }
+          }
+          else
+          {   ! The player is the "actor" and is giving me an order.
+          }
+      ],
+
+!! Exercise 44
+--------------
+
+In Central American legend, a sorceror can transform himself into a
+`nagual', a familiar such as a spider-monkey; indeed, each individual
+has an animal self or `wayhel', living in a volcanic land over which
+the king, as a jaguar, rules.  Turn the player into his `wayhel'.
+
+   *Note Answer 44::
+
+!!!! Exercise 45
+----------------
+
+   Write an orders routine for a Giant with a conscience, who will
+refuse to attack a mouse, but so that a player who becomes the Giant
+can be as cruel as he likes.
+
+   *Note Answer 45::
+
+The player is still alive for as long as the variable deadflag is zero.
+When set to 1, the player dies; when set to 2, the player wins; and all
+higher values are taken as more exotic forms of death.  Now Inform does
+not know what to call these exotica: so if they should arise, it calls
+the DeathMessage routine, which is expected to look at deadflag and can
+then print something like "You have changed".
+
+   Many games allow reincarnation (or, as David M. Baggett points out,
+in fact resurrection).  You too can allow this, by providing an
+AfterLife.  This routine gets the chance to do as it pleases before any
+"You are dead" type message appears, including resetting deadflag back
+to 0 -- which causes the game to proceed in the normal way, rather than
+end.  AfterLife routines can be tricky to write, though, because the
+game has to be set to a state which convincingly reflects what has
+happened.
+
+References
+----------
+
+   * The magic words "xyzzy" and "plugh" in `Advent' make use of
+     PlayerTo.
+
+   * `Advent' has an amusing AfterLife routine: for instance, try
+     collapsing the bridge by leading the bear across, then returning
+     to the scene after resurrection.  `Balances' has one which only
+     slightly penalises death.
+
+
+File: inform,  Node: Constants and Scoring,  Next: Extending the Library,  Prev: Player,  Up: The Model World
+
+Miscellaneous constants and scoring
+===================================
+
+     For when the One Great Scorer comes
+     To write against your name,
+     He marks -- not that you won or lost --
+     But how you played the game.
+     
+     -- Grantland Rice (1880-1954), Alumnus Football
+
+Some game rules can be altered by defining `constants' at the start of
+the program.  Two constants you `must' provide (and before including
+any of the library files) are the strings Story and Headline:
+
+Constant Story "ZORK II";
+Constant Headline "^An Interactive Plagiarism^
+             Copyright (c) 1995 by Ivan O. Ideas.^";
+
+All the rest are optional, but should be defined before Verblib is
+included if they're to take effect.
+
+The library won't allow the player to carry an indefinite number of
+objects: the limit allowed is the constant MAX_CARRIED, which you may
+define if you wish.  If you don't define it, it's 100, which nearly
+removes the rule.  In fact you can change this during play, since it is
+actually the capacity of the player which is consulted; the only use of
+MAX_CARRIED is to set this up to an initial value.
+
+   If you define SACK_OBJECT to be some container, then the player will
+automatically put old, least-used objects away in it as the game
+progresses, provided it is being carried.  This is a feature which
+endears the designer greatly to players.  For instance, the following
+code appears (in between inclusion of Parser and Verblib) in `Toyshop':
+
+Object satchel "satchel"
+  with description "Big and with a smile painted on it.",
+       name "satchel", article "your",
+       when_closed "Your satchel lies on the floor.",
+       when_open "Your satchel lies open on the floor.",
+  has  container open openable;
+Constant SACK_OBJECT satchel;
+
+`Ruins' isn't going to provide this feature, because there are few
+portable objects and those there are would be incongruous if described
+as being in a rucksack.
+
+Another constant is AMUSING_PROVIDED.  If you define this, the library
+knows to put an "amusing" option on the menu after the game is won.  It
+will then call Amusing from your code when needed.  You can use this to
+roll closing credits, or tell the player various strange things about
+the game, now that there's no surprise left to spoil.
+
+   The other constants you are allowed to define help the score routines
+along.  There are two scoring systems provided by the library, side by
+side: you can use both or neither.  You can always do what you like to
+the score variable in any case, though the "fullscore" verb might then
+not fully account for what's happened.  One scores points for getting
+certain items or reaching certain places; the other for completing
+certain actions.  These constants are:
+
+      MAX_SCORE          the maximum game score (by default 0);
+      NUMBER_TASKS       number of individual "tasks" to perform (1);
+      OBJECT_SCORE       bonus for first picking up a scored object (4);
+      ROOM_SCORE         bonus for first entering a scored room (5)
+
+and then the individual tasks have scores, as follows:
+
+     Array task_scores -> t1 t2 ... tn;
+
+As this is a byte array, the task scores must be between 0 and 255.
+Within your code, when a player achieves something, call Achieved(task)
+to mark that the task has been completed.  It will only award points if
+this task has not been completed before.  There do not have to be any
+"tasks": there's no need to use the scoring system provided.  Tasks
+(and the verb "full" for full score) will only work at all if you define
+the constant TASKS_PROVIDED.  The entry point PrintTaskName prints the
+name of a game task (but, of course, is only ever called in a game with
+TASKS_PROVIDED defined).  For instance, (`Toyshop' again)
+
+[ PrintTaskName ach;
+  switch(ach)
+  {   0: "eating a sweet";
+      1: "driving the car";
+      2: "shutting out the draught";
+      3: "building a tower of four";
+      4: "seeing which way the mantelpiece leans";
+  }
+];
+
+Another entry point, called PrintRank, gets the chance to print
+something additional to the score (traditionally, though not
+necessarily, rankings).  For instance, we bid farewell to the `Ruins'
+with the following:
+
+[ PrintRank;
+  print ", earning you the rank of ";
+  switch(score)
+  {   0 to 9:   "humble rainforest Tourist.";
+      10 to 19: "Investigator.";
+      20 to 29: "Acquisitor.";
+      30 to 49: "Archaeologist.";
+      50:       "Master Archaeologist.";
+  }
+];
+
+Normally, an Inform game will print messages like
+
+     [Your score has gone up by three points.]
+
+when the score changes (by whatever means).  The player can turn this
+on and off with the "notify" verb; by default it is on.  (You can alter
+the flag notify_mode yourself to control this.)
+
+The verbs "objects" and "places" are usually provided, so the player
+can get a list of all handled objects (and where they now are), and all
+places visited.  If you don't want these to be present, define the
+constant NO_PLACES before inclusion of the library.
+
+!! Exercise 46
+--------------
+
+   Suppose one single room object is used internally for the 64 squares
+of a gigantic chessboard, each of which is a different location to the
+player.  Then "places" is likely to result in only the last-visited
+square being listed.  Fix this.
+
+   *Note Answer 46::
+
+References
+----------
+
+   * `Advent' contains ranks and an Amusing reward (but doesn't use
+     either of these scoring systems, instead working by hand).
+
+   * `Balances' uses scored objects (for its cubes).
+
+   * `Toyshop' has tasks, as above.
+
+   * `Adventureland' uses its TimePasses entry point to recalculate the
+     score every turn (and watch for victory).
+
+
+File: inform,  Node: Extending the Library,  Prev: Constants and Scoring,  Up: The Model World
+
+Extending and redefining the Library
+====================================
+
+     A circulating library in a town is as an ever-green tree of
+     diabolical knowledge!  It blossoms through the year!
+
+     -- R. B. Sheridan (1751-1816), The Rivals
+
+Most large games will need to enrich the `model world': for instance,
+by creating a new concept such as "magic amulets".  The game might
+contain a dozen of these, each with the power to cast a different
+spell.  So it will need routines which can tell whether or not a given
+object is an amulet, and what to do when the spell is cast.
+
+   To do this, a game should make a class definition for amulets:
+called Amulet, say.  Then
+
+    if (noun ofclass Amulet) ...
+
+will test to see if noun is one of the amulets, for instance.
+
+   The amulet's spell will be represented by the property amulet_spell.
+Typical values for this might be:
+
+    amulet_spell "The spell fizzles out with a dull phut! sound.",
+    amulet_spell
+    [;  if (location == thedark)
+        {   give real_location light;
+            "There is a burst of magical light!";
+        }
+    ],
+    amulet_spell HiddenVault,
+    amulet_spell
+    [;  return random(LeadRoom, SilverRoom, GoldRoom);
+    ],
+
+Then the process of casting the spell for amulet X is a matter of
+sending the message
+
+    X.amulet_spell();
+
+which will reply with either: false, meaning nothing has happened;
+true, meaning that something did happen; or an object, a room to
+teleport the player to.  Here is a routine which deals with it all:
+
+    [ CastSub destination;
+      if (noun ofclass Amulet)
+      {   if (~~(noun provides amulet_spell))
+              "[Ooops. Forgot to program this amulet_spell.]";
+          destination = noun.amulet_spell();
+          switch(destination)
+          {   false:   "Nothing happens.";
+              true:    ;
+              default: print "You are magically teleported to...^";
+                       PlayerTo(destination);
+          }
+      }
+      else "You only know how to cast spells with amulets.";
+    ];
+
+An elaborate library extension will end up defining many classes,
+grammar, actions and verb definitions.  These may neatly be packaged up
+into an Include file and placed with the other library files.
+
+!!!! If this file contains the directive System_file; then it will even
+be possible for games to Replace routines from it (see below).
+
+!! The ordinary Library's own properties, such as description or e_to,
+are called "common properties".  They are special for the following
+reason: if an object O does not give any value for common property P,
+then O.P can still be looked up, though it can't be set to something
+else.  (If you tried this with a property of your own invention, such
+as amulet_spell above, an error would be printed out at run-time.)  The
+value of O.P is just the "default value" provided by the Library for
+property P: for example, the default value of cant_go is "You can't go
+that way."
+
+!! But you can change this default value during play, using the
+library's ChangeDefault routine.  For instance, at a late stage in the
+game:
+
+ChangeDefault(cant_go, "You're a Master Adventurer now, and still
+                        you walk into walls!");
+
+Of course this cannot change defaults for properties of your own
+invention, because they haven't got default values.
+
+!!!! Common properties are also slightly faster to perform calculations
+with: the down side is that there's a strictly limited supply of them
+(63 in all), of which the library uses up half already.  To indicate
+that a property needs to be a common property, use the Property
+directive.  For example:
+
+    Property door_to;
+    Property capacity 100;
+    Property cant_go "You can't go that way.";
+
+In the latter cases we are giving default values: in the former case,
+the default value will just be 0.
+
+Major library extensions are rarely needed.  More often, one would like
+simply to change the stock of standard messages, such as the "Nothing
+is on sale." which tends to be printed when the player asks to buy
+something, or the "Taken." printed when something is picked up.
+
+   This facility is available as follows.  Provide a special object
+called LibraryMessages, which must be defined between the inclusion of
+the "Parser" and "VerbLib" library files.  This object should have just
+one property, a before rule.  For example:
+
+     Object LibraryMessages
+       with before
+            [;  Jump: "You jump and float uselessly for a while in
+                       the zero gravity here on Space Station Alpha.";
+                SwitchOn:
+                      if (lm_n==3)
+                      {   print "You power up ", (the) lm_o, "."; }
+            ];
+
+The object never physically appears in the game, of course.  The idea
+is that the before rule is consulted before any message is printed: if
+it returns false, the standard message is printed; if true, then
+nothing is printed, as it's assumed that this has already happened.
+
+   The Jump action only ever prints one message (usually "You jump on
+the spot."), but more elaborate actions such as SwitchOn have several
+(the extreme case is Take, with 13).  lm_n holds the message number,
+which counts upwards from 1.  The messages and numbers are given in
+*Note Actions and Fake Actions::.  New message numbers may possibly be
+added in future, but old ones will not be renumbered.
+
+   An especially useful library message to change is the prompt,
+normally set to "^>" (new-line followed by >).  This is printed under
+the action Prompt (actually a fake action existing for exactly this
+purpose).  In this way, the game's prompt can be made context-sensitive,
+or the "skipped line on screen each turn" convention can be removed.
+
+!!  This prompt is only used in ordinary game play, and not at such
+keyboard inputs as yes/no questions or the RESTART/RESTORE/QUIT game
+over choice.
+
+Exercise 47
+-----------
+
+   Infocom's game `The Witness' has the prompt "What should you, the
+detective, do next?" on turn one and "What next?" subsequently.
+Implement this.
+
+   *Note Answer 47::
+
+!!!! An amusing way to see the system in action is to put
+
+     Object LibraryMessages
+       with before
+            [;  print "[", sw__var, ", ", lm_n, "] ";
+            ];
+
+into your game (arcane note: sw__var, the "switch variable", in this
+case holds the action number).  Another amusing effect is to simply
+write rtrue; for the before routine, which results in an alarmingly
+silent game -- blindfold Adventure, perhaps.
+
+!!!!  Note that LibraryMessages can be used as a sneaky way to add extra
+rules onto the back of actions, since there's nothing to stop you doing
+real processing in a call to it; or, more happily, to make messages
+more sensitive to game context, so that "Nothing is on sale." might
+become "That's not one of the goods on sale." inside a shopping mall.
+
+!!!! Exercise 48
+----------------
+
+   Write an Inform game in Occitan (a dialect of medieval French spoken
+in Provence).
+
+   *Note Answer 48::
+
+The Library is itself written in Inform, and with experience it's not
+too hard to alter it if need be.  But this is an inconvenience and an
+inelegant way to carry on.  So here is the last resort in library
+modification: work out which routine is giving trouble, and Replace it.
+For example, if the directive
+
+Replace BurnSub;
+
+is placed in your file `before the library files are included', Inform
+ignores the definition of BurnSub in the library files.  You then have
+to define a routine called BurnSub yourself.  It would be normal to
+copy the definition of BurnSub out of the library files into your own
+code, and then modify that copy as needed.
+
+   The most popular routine to replace is DrawStatusLine: see *Note
+Assembly Language:: for several examples.
+
+!!!!  Inform even allows you to Replace "hardware" functions like
+random, which would normally be translated directly to machine opcodes.
+Obviously, replacing something like child with a software routine will
+impose an appreciable speed penalty and slightly increase object code
+size.  Replacing random may however be useful when fixing the random
+number generator for game-testing purposes.
+
+References
+----------
+
+   * `Balances' contains a section of code (easily extractable to other
+     games) implementing the `Enchanter' trilogy's magic system by
+     methods like the above.
+
+   * There are several formal library extension files in existence,
+     mostly small: see the Inform home page on the WWW.
+
+   * "pluralobj.h" by Andrew Clover makes large-scale use of
+     LibraryMessages to ensure that the library always uses words like
+     "those" instead of "that" when talking about objects with names
+     like "a heap of magazines".
+
+
+File: inform,  Node: Describing and Parsing,  Next: Testing and Hacking,  Prev: The Model World,  Up: Top
+
+Describing and Parsing
+**********************
+
+     Language disguises thought... The tacit conventions on which the
+     understanding of everyday language depends are enormously
+     complicated.
+
+     -- Ludwig Wittgenstein (1889-1951), Tractatus
+
+* Menu:
+
+* Describing Objects::          Describing objects and rooms
+* Listing Objects::             Listing and grouping objects
+* Parsing Nouns::               How nouns are parsed
+* Plural Names::                Plural names for duplicated objects
+* Parsing Verbs::               How verbs are parsed
+* Grammar Tokens::              Tokens of grammar
+* Scope::                       Scope and what you can see
+* Helping the Parser::          Helping the parser out of trouble
+
+
+File: inform,  Node: Describing Objects,  Next: Listing Objects,  Prev: Describing and Parsing,  Up: Describing and Parsing
+
+Describing objects and rooms
+============================
+
+     And we were angry and poor and happy,
+     And proud of seeing our names in print.
+     
+     -- G. K. Chesterton (1874-1936), A Song of Defeat
+
+Talking to the player about the state of the world is much easier than
+listening to his intentions for it.  Despite this, the business of
+description takes up a fair part of Chapter V since the designer of a
+really complex game will eventually need to know almost every rule
+involved.  (Whereas nobody would want to know everything about the
+parser.)
+
+   To begin, the simplest description is the "short name" given to a
+single object.  For instance
+
+    print (a) brass_lamp;
+
+may result in "an old brass lamp" being printed.  There are four such
+forms of print:
+
+       print (the) obj        Print the object with its definite article
+       print (The) obj        The same, but capitalised
+       print (a) obj          Print the object with indefinite article
+       print (name) obj       Print the object's short name alone
+
+and these can be freely mixed into lists of things to print or
+print_ret, as for example:
+
+    print_ret "The ogre declines to eat ", (the) noun, ".";
+
+Exercise 49
+-----------
+
+(By Gareth Rees.)  When referring to animate objects, one usually needs
+to use pronouns such as "his".  Define new printing routines so that,
+say, print "You throw the book at ", (PronounAcc) obj, "!"; will insert
+the right accusative pronoun.
+
+   *Note Answer 49::
+
+!!!! There is also a special syntax print object for printing object
+names, but `do not use it without good reason': it doesn't understand
+some of the features below and is not protected against crashing if you
+mistakenly try to print the name for an out of range object number.
+
+The indefinite article for an object is held in the property article
+and is assumed to be `a' if none is declared.  That means that if the
+short name starts with a vowel, you need to set it to `an'.  But article
+offers much more amusement:
+
+     a / platinum bar, an / orange balloon, your / Aunt Jemima,
+     some bundles of / reeds, far too many / marbles, The / London Planetarium
+
+If the object is given the attribute proper then its name is treated as
+a proper noun with no indefinite article, so the value of article is
+ignored.
+
+!! The article property can also hold a routine to print one, in case
+(let us say) "a pregnant mouse" has to change to "some mice".
+
+Definite articles are always "the" (except for proper nouns).  Thus
+
+     the platinum bar, Benjamin Franklin, Elbereth
+
+are all printed by print (the) ...; the latter two objects being proper.
+
+!! There's usually no need to worry about definite and indefinite
+articles for room objects, as Inform never has cause to print them.
+
+The short name of an object is normally the text given in double-quotes
+at the head of its definition.  This is very inconvenient to change
+during play when, for example, "blue liquid" becomes "purple liquid" as
+a result of a chemical reaction.  A more flexible way to specify an
+object's short name is with the short_name property.  To print the name
+of such an object, Inform does the following:
+
+  1. If the short_name is a string, it's printed and that's all.
+
+  2. If it is a routine, then it is called.  If it returns true, that's
+     all.
+
+  3. The text given in the header of the object definition is printed.
+
+For example, the dye might be given:
+
+short_name
+[;   switch(self.colour)
+     {   1: print "blue ";
+         2: print "purple ";
+         3: print "horrid sludge"; rtrue;
+     }
+],
+
+with "liquid" as the short name in its header.  According to whether
+its colour property is 1, 2 or 3, the printed result is "blue liquid",
+"purple liquid" or "horrid sludge".
+
+!! Alternatively, define the dye with short_name "blue liquid" and then
+simply execute dye.short_name = "purple liquid"; when the time comes.
+
+!! Rooms can also be given a short_name routine, which is useful to
+code, say, a grid of four hundred similar locations called "Area 1" up
+to "Area 400".  (They can be represented by just one object in the
+program.)
+
+For many objects the indefinite article and short name will most often
+be seen in inventory lists, such as
+
+>i
+You are carrying:
+  a leaf of mint
+  a peculiar book
+  your satchel (which is open)
+    a green cube
+
+Some objects, though, ought to have fuller entries in an inventory: a
+wine bottle should say how much wine is left, for instance.  The invent
+property is designed for this.  The simplest way to use invent is as a
+string.  For instance, declaring a peculiar book with
+
+    invent "that harmless old book of Geoffrey's",
+
+will make this the inventory line for the book.  In the light of
+events, it could later be changed to
+
+    geoffreys_book.invent = "that lethal old book of Geoffrey's";
+
+!! Note that this string becomes the whole inventory entry: if the
+object were an open container, its contents wouldn't be listed, which
+might be unfortunate.  In such circumstances it's better to write an
+invent routine, and that's also the way to append text like
+"(half-empty)".
+
+!! Each line of an inventory is produced in two stages.  *First*, the
+basic line:
+
+1a.
+     The global variable inventory_stage is set to 1.
+
+1b.
+     The invent routine is called (if there is one).  If it returns
+     true, stop here.
+
+1c.
+     The object's indefinite article and short-name are printed.
+
+*Second*, little informative messages like "(which is open)" are
+printed, and inventories are given for the contents of open containers:
+
+2a.
+     The global variable inventory_stage is set to 2.
+
+2b.
+     The invent routine is called (if there is one).  If it returns
+     true, stop here.
+
+2c.
+     A message such as "(closed, empty and providing light)" is
+     printed, as appropriate.
+
+2d.
+     If it is an open container, its contents are inventoried.
+
+   After each line is printed, linking text such as a new-line or a
+comma is printed, according to the current "list style".
+
+For example, here is the invent routine used by the matchbook in
+`Toyshop':
+
+invent
+[ i; if (inventory_stage==2)
+     {   i=self.number;
+         if (i==0) print " (empty)";
+         if (i==1) print " (1 match left)";
+         if (i>1)  print " (",i," matches left)";
+     }
+],
+
+!!!! Exercise 50
+----------------
+
+Suppose you want to change the whole inventory line for an ornate box
+but you can't use an invent string, or return true from stage 1,
+because you still want stage 2d to happen properly (so that its
+contents will be listed).  How can you achieve this?
+
+   *Note Answer 50::
+
+The largest and most complicated messages Inform ever prints on its own
+initiative are room descriptions, printed when the Look action is
+carried out (for instance, when the statement <Look>; triggers a room
+description).  What happens is: the room's short name is printed
+(usually in bold-face) on a line of its own, then its description,
+followed by a list of the objects residing there which aren't concealed
+or scenery.
+
+   Chapter IV mentioned many different properties -- initial, when_on,
+when_off and so on -- giving descriptions of what an object looks like
+when in the same room as the player; some apply to doors, others to
+switchable objects and so on.  All of them can be routines to print
+text, instead of being strings to print.  The precise rules are given
+below.
+
+   But the whole system can be bypassed using the describe property.
+If an object gives a describe routine then this takes priority over
+everything: if it returns true, the library assumes that the object has
+already been described, and prints nothing further.  For example,
+
+    describe
+    [;  "^The platinum pyramid catches the light beautifully.";
+    ];
+
+means that even when the pyramid has been moved (i.e. held by the player
+at some stage) it will always have its own line of room description.
+
+!! Note the initial ^ (new-line) character.  The library doesn't print
+a skipped line itself before calling describe because it doesn't know
+yet whether the routine will want to say anything.  A describe routine
+which prints nothing and returns true makes an object invisible, as if
+it were concealed.
+
+!!!! The Look action does three things: it `notes arrival', prints the
+room description then `scores arrival'.  Only the printing rules are
+given here (see *Note Constants and Scoring:: for the others), but
+they're given in full.  In what follows, the word `location' means the
+room object if there's light to see by, and the special "Darkness"
+object otherwise.  First the top line:
+
+1a.
+     A new-line is printed.  The location's short name is printed (in
+     bold-face, if possible).
+
+1b.
+     If the player is on a supporter, then " (on <something>)" is
+     printed; if inside anything else, then " (in <something>)".
+
+1c.
+     " (as <something>)" is printed if this was requested by the game's
+     most recent call to ChangePlayer (for instance, " (as a
+     werewolf)").
+
+1d.
+     A new-line is printed.
+
+   Now the `long description'.  This step is skipped if the player has
+just moved of his own will into a location already visited, unless the
+game is in "verbose" mode.
+
+2.
+     If the location has a describe property, then run it.  If not,
+     look at the location's description property: if it's a string,
+     print it; if it's a routine, run it.
+
+   All rooms must provide either a describe property or a description
+of themselves.  Now for items nearby:
+
+3a.
+     List any objects on the floor.
+
+3b.
+     If the player is in or on something, list the other objects in
+     that.
+
+   The library has now finished, but your game gets a chance to add a
+postscript:
+
+4.
+     Call the entry point LookRoutine.
+
+!! The visited attribute is only given to a room after its description
+has been printed for the first time (it happens during `scoring
+arrival').  This is convenient for making the description different
+after the first time.
+
+!!  `Listing objects' (as in 3a and 3b) is a complicated business.
+Some objects are given a line or paragraph to themselves, others are
+lumped together in a list at the end.  The following objects are not
+mentioned at all: the player, what the player is in or on (if anything)
+and anything which is scenery or concealed.  The remaining objects are
+looked through (eldest first) as follows:
+
+  1. If the object has a describe routine, run it.  If it returns true,
+     stop here and don't mention the object at all.
+
+  2. Work out the "description property" for the object:
+       a. For a container, this is when_open or when_closed;
+
+       b. Otherwise, for a switchable object this is when_on or
+          when_off;
+
+       c. Otherwise, for a door this is when_open or when_closed;
+
+       d. Otherwise, it's initial.
+
+  3. If *either* the object doesn't have this property *or* the object
+     has been held by the player before (i.e., has moved) and the
+     property isn't when_off or when_closed *then* then the object will
+     be listed at the end.
+
+  4. Otherwise a new-line is printed and the property is printed (if
+     it's a string) or run (if it's a routine).
+
+!! A supporter which is scenery won't be mentioned, but anything on top
+of it which is not concealed will be.
+
+!! Objects which have just been pushed into a new room are not listed
+in that room's description on the turn in question. This is not because
+of any rule about room descriptions, but because the pushed object is
+moved into the new room only after the room description is made.  This
+means that when a wheelbarrow is pushed for a long distance, the player
+does not have to keep reading "You can see a wheelbarrow here." every
+move, as though that were a surprise.
+
+!! You can use a library routine called Locale to perform `object
+listing'.  See *Note Objects and Routines:: for details: suffice to say
+here that the process above is equivalent to executing
+
+    if (Locale(location, "You can see", "You can also see"))
+        print " here.^";
+
+Locale is useful for describing areas of a room which are sub-divided
+off, such as the stage of a theatre.
+
+!!!! Exercise 51
+----------------
+
+   The library implements "superbrief" and "verbose" modes for room
+description (one always omits long room descriptions, the other never
+does).  How can verbose mode automatically print room descriptions
+every turn?  (Some of the later Infocom games did this.)
+
+   *Note Answer 51::
+
+References
+----------
+
+   * `Balances' often uses short_name, especially for the white cubes
+     (whose names change) and lottery tickets (whose numbers are chosen
+     by the player).  `Adventureland' uses short_name in simpler ways:
+     see the bear and the bottle, for instance.
+
+   * The scroll class of `Balances' uses invent.
+
+   * The library extension "pluralobj.h" by Andrew Clover makes
+     large-scale use of LibraryMessages to ensure that the library
+     always uses words like "those" instead of "that" when talking
+     about objects with names like "a heap of magazines".
+
+   * See the ScottRoom class of `Adventureland' for a radically
+     different way to describe rooms (in pidgin English, like
+     telegraphese).
+
+
+File: inform,  Node: Listing Objects,  Next: Parsing Nouns,  Prev: Describing Objects,  Up: Describing and Parsing
+
+Listing and grouping objects
+============================
+
+     As some day it may happen that a victim must be found
+     I've got a little list -- I've got a little list
+     Of society offenders who might well be underground,
+     And who never would be missed
+     Who never would be missed!
+     
+     -- W. S. Gilbert (1836-1911), The Mikado
+
+The library often needs to reel off a list of objects: when an Inv
+(inventory) action takes place, for instance, or when describing the
+contents of a container or the duller items in a room.  Lists are
+difficult to print out correctly `by hand', because there are many
+cases to get right, especially when taking plurals into account.
+Fortunately, the library's list-maker is available to the public.  The
+routine to call is:
+
+WriteListFrom(object, style);
+
+where the list will start from the given object and go along its
+siblings.  Thus, to list all the objects inside X, list from child(X).
+What the list looks like depends on the "style", which is a bitmap you
+can make by adding some of the following constants:
+
+        NEWLINE_BIT        New-line after each entry
+        INDENT_BIT         Indent each entry according to depth
+        FULLINV_BIT        Full inventory information after entry
+        ENGLISH_BIT        English sentence style, with commas and `and'
+        RECURSE_BIT        Recurse downwards with usual rules
+        ALWAYS_BIT         Always recurse downwards
+        TERSE_BIT          More terse English style
+        PARTINV_BIT        Only brief inventory information after entry
+        DEFART_BIT         Use the definite article in list
+        WORKFLAG_BIT       At top level (only), only list objects
+                           which have the workflag attribute
+        ISARE_BIT          Prints " is " or " are " before list
+        CONCEAL_BIT        Misses out concealed or scenery objects
+
+The best way to use this is to experiment.   For example, a `tall'
+inventory is produced by:
+
+WriteListFrom( child(player),
+               FULLINV_BIT + INDENT_BIT + NEWLINE_BIT + RECURSE_BIT );
+
+and a `wide' one by:
+
+WriteListFrom( child(player),
+               FULLINV_BIT + ENGLISH_BIT + RECURSE_BIT );
+
+which produce effects like:
+
+>inventory tall
+You are carrying:
+  a bag (which is open)
+    three gold coins
+    two silver coins
+    a bronze coin
+  four featureless white cubes
+  a magic burin
+  a spell book
+
+>inventory wide
+You are carrying a bag (which is open), inside which are three gold
+coins, two silver coins and a bronze coin, four featureless white
+cubes, a magic burin and a spell book.
+
+except that the `You are carrying' part is not done by the list-maker,
+and nor is the final full stop in the second example.  The workflag is
+an attribute which the library scribbles over from time to time as
+temporary storage, but you can use it with care.  In this case it makes
+it possible to specify any reasonable list.
+
+!!!! WORKFLAG_BIT and CONCEAL_BIT specify conflicting rules.  If
+they're both given, then what happens is: at the top level, but not
+below, everything with workflag is included; on lower levels, but not
+at the top, everything without concealed or scenery is included.
+
+Exercise 52
+-----------
+
+   Write a DoubleInvSub action routine to produce an inventory like so:
+
+You are carrying four featureless white cubes, a magic burin and a
+spell book.  In addition, you are wearing a purple cloak and a miner's
+helmet.
+
+*Note Answer 52::
+
+!! Finally, there is a neat way to customise the grouping together of
+non-identical items in lists, considerably enhancing the presentation
+of the game.  If a collection of game objects -- say, all the edible
+items in the game -- have a common non-zero value of the property
+list_together, in the range 1 to 1000, they will always appear
+adjacently in inventories, room descriptions and the like.
+
+   Alternatively, instead of being a small number the common value can
+be a string such as "foodstuffs".  If so then lists will cite, e.g.,
+
+     three foodstuffs (a scarlet fish, some lemmas and an onion)
+
+in running text, or
+
+     three foodstuffs:
+             a scarlet fish
+             some lemmas
+             an onion
+
+in indented lists.  This only happens when two or more are gathered
+together.
+
+   Finally, the common value can be a routine, such as:
+
+list_together
+[; if (inventory_stage==1) print "heaps of food, notably ";
+   else print ", which would do you no good";
+],
+
+Typically this might be part of a class definition from which all the
+objects in question inherit.  A list_together routine will be called
+twice: once, with inventory_stage set to 1, as a preamble to the list
+of items, and once (with 2) to print any postscript required.  It is
+allowed to change c_style (the current list style) without needing to
+restore the old value and may, by returning 1 from stage 1, signal the
+list-maker not to print a list at all.  The simple example above
+results in
+
+     heaps of food, notably a scarlet fish, some lemmas
+     and an onion, which would do you no good
+
+Such a routine may want to make use of the variables parser_one and
+parser_two, which respectively hold the first object in the group and
+the depth of recursion in the list (this might be needed to keep
+indentation going properly).  Applying x=NextEntry(x,parser_two); moves
+x on from parser_one to the next item in the group.  Another helpful
+variable is listing_together, set up to the first object of a group
+being listed or to 0 whenever no group is being listed.  The following
+list of 24 items shows some possible effects (see the example game
+`List Property'):
+
+     You can see a plastic fork, knife and spoon, three hats (a fez, a Panama
+     and a sombrero), the letters X, Y, Z, P, Q and R from a Scrabble set, a
+     defrosting Black Forest gateau, Punch magazine, a recent issue of the
+     Spectator, a die and eight coins (four silver, one bronze and three gold)
+     here.
+
+!! Exercise 53
+--------------
+
+Implement the Scrabble pieces.
+
+   *Note Answer 53::
+
+!!!! Exercise 54
+----------------
+
+   Implement the three denominations of coin.
+
+   *Note Answer 54::
+
+!!!! Exercise 55
+----------------
+
+   Implement the I Ching in the form of six coins, three gold (goat,
+deer and chicken), three silver (robin, snake and bison) which can be
+thrown to reveal gold and silver trigrams.
+
+   *Note Answer 55::
+
+References
+----------
+
+   * A good example of WriteListFrom in action is the definition of
+     CarryingClass from the example game `The Thief', by Gareth Rees.
+     This alters the examine description of a character by appending a
+     list of what that person is carrying and wearing.
+
+   * Denominations of coin are also in evidence in `Balances'.
+

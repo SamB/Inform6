@@ -1,0 +1,1515 @@
+This is Info file inform.info, produced by Makeinfo-1.64 from the input
+file inform.texi.
+
+This is the Inform Designer's Manual, third edition, 4 September 1996.
+It was converted to Info by Christopher J. Madsen <ac608@yfn.ysu.edu>.
+
+Copyright 1996 Graham Nelson and Christopher J. Madsen
+
+Permission is granted to make and distribute copies of this manual
+provided that:
+ (a) distributed copies are not substantially different from those
+     archived by the author,
+ (b) this and other copyright messages are always retained in full, and
+ (c) no profit is involved.
+
+
+File: inform,  Node: Concept Index,  Next: Secondary Index,  Prev: Index,  Up: Top
+
+Concept Index
+*************
+
+* Menu:
+
+* 676 labelled buttons:                 Parsing Verbs.
+* abbreviations <1>:                    Run-Time Limitations.
+* abbreviations:                        Compiler Options.
+* accented characters:                  Printing Output.
+* accusative pronoun <1>:               Answer 48.
+* accusative pronoun:                   Describing Objects.
+* Ace of Hearts:                        Example 7.
+* Acorn Risc PC 700:                    ICL.
+* acquisitive bag <1>:                  Answer 8.
+* acquisitive bag:                      Containers.
+* actions:                              Actions and Reactions.
+* actions, creation of:                 Actions and Reactions.
+* actions, defined in Library:          Actions and Fake Actions.
+* actions, diversion of:                Places.
+* actions, groups of:                   Actions and Reactions.
+* actions, how the parser chooses:      Parsing Verbs.
+* actions, in debugging suite:          Actions and Fake Actions.
+* actions, list of group 1:             Actions and Fake Actions.
+* actions, of the five senses:          Places.
+* actions, sequence of processing:      Actions and Reactions.
+* actions, statements to cause:         Actions and Reactions.
+* actions, validation (exercise) <1>:   Answer 3.
+* actions, validation (exercise):       Actions and Reactions.
+* actor:                                Scope.
+* adaptive hints:                       Boxes.
+* additive:                             Messages and Classes.
+* adjectives <1>:                       Answer 58.
+* adjectives:                           Parsing Nouns.
+* Advanced games:                       Run-Time Limitations.
+* AEsop:                                Printing Output.
+* alarm clock <1>:                      Living Creatures.
+* alarm clock:                          Answer 24.
+* Aldebaran brandy:                     Living Creatures.
+* altar:                                Things to Enter.
+* ambiguity:                            Helping the Parser.
+* ambiguous inputs:                     Helping the Parser.
+* ancient honeycomb:                    Messages and Classes.
+* Andrew Clover <1>:                    Daemons.
+* Andrew Clover <2>:                    Describing Objects.
+* Andrew Clover <3>:                    Extending the Library.
+* Andrew Clover <4>:                    Grammar Tokens.
+* Andrew Clover:                        Living Creatures.
+* Andrew Plotkin:                       Assembly Language.
+* animals:                              Living Creatures.
+* appallingly convenient verb:          Grammar Tokens.
+* archaeological dig:                   Daemons.
+* arguments:                            Arguments and Return Values.
+* arithmetic expressions:               Arithmetic Expressions.
+* array bounds:                         Arrays.
+* array of names:                       Parsing Nouns.
+* arrays:                               Arrays.
+* arrays as property values:            Objects with Properties.
+* artiste formerly known as Princess <1>: Answer 56.
+* artiste formerly known as Princess:   Parsing Nouns.
+* Arvo Part:                            Printing Output.
+* asking questions:                     Scope.
+* assembly language:                    Assembly Language.
+* assembly language, tracing switches:  Compiler Options.
+* assignments:                          Arithmetic Expressions.
+* associativity:                        Operators.
+* at character:                         Boxes.
+* attribute, definition of:             Using Attributes.
+* attributes:                           Getting Started.
+* attributes, defined in library:       Attributes.
+* attributes, maximum number of:        Run-Time Limitations.
+* audibility:                           Daemons.
+* Aviary:                               Classes and Inheritance.
+* background colour:                    Assembly Language.
+* background daemon:                    Daemons.
+* backslash character:                  Boxes.
+* bag of six coins:                     Plural Names.
+* ball and chain:                       Answer 34.
+* ball of pumice <1>:                   Things to Enter.
+* ball of pumice:                       Answer 15.
+* banana:                               Grammar Tokens.
+* base (of numbers):                    Numbers and Variables.
+* battery power:                        Switchable Objects.
+* beach full of stones:                 Dynamic Objects.
+* Beretta pistol:                       Living Creatures.
+* Bible <1>:                            Answer 16.
+* Bible:                                Reading Matter.
+* binary numbers:                       Numbers and Variables.
+* birds of prey:                        Classes and Inheritance.
+* Bitwise operators:                    Arithmetic Expressions.
+* Black Forest gateau:                  Helping the Parser.
+* blackboard:                           Answer 74.
+* Blake's 7 <1>:                        Answer 28.
+* Blake's 7:                            Living Creatures.
+* blindfold Adventure:                  Extending the Library.
+* Blofeld, Ernst Stavro:                Living Creatures.
+* blue liquid:                          Describing Objects.
+* boldface:                             Boxes.
+* Bond, James:                          Living Creatures.
+* Boris J. Parallelopiped:              Controlling Compilation.
+* bounds of arrays:                     Arrays.
+* brackets (arithmetic):                Arithmetic Expressions.
+* brain transference machine:           Player.
+* bridge which collapses <1>:           Answer 12.
+* bridge which collapses:               Doors.
+* broth (smell of):                     Places.
+* built-in functions:                   Random and Indirect.
+* byte arrays:                          Arrays.
+* C. P. Snow:                           Light and Dark.
+* C. S. Lewis <1>:                      Daemons.
+* C. S. Lewis:                          The Model World.
+* caged animals:                        Grammar Tokens.
+* Cambridge University:                 Introduction.
+* campaigns and scenarios <1>:          Assembly Language.
+* campaigns and scenarios:              Answer 89.
+* cannon-fire:                          Player.
+* Captain Picard <1>:                   Answer 29.
+* Captain Picard:                       Living Creatures.
+* cartoon:                              Answer 9.
+* carved inscriptions:                  Places.
+* case sensitivity of dictionary <1>:   Run-Time Limitations.
+* case sensitivity of dictionary:       Parsing Nouns.
+* catchrestic words:                    Parsing Nouns.
+* centred status line <1>:              Assembly Language.
+* centred status line:                  Answer 94.
+* Chambers English Dictionary:          Parsing Nouns.
+* changing articles:                    Describing Objects.
+* changing library messages:            Extending the Library.
+* changing room:                        Player.
+* changing scope:                       Scope.
+* changing short names:                 Describing Objects.
+* changing the player:                  Player.
+* changing the prompt <1>:              Answer 46.
+* changing the prompt:                  Extending the Library.
+* character (in sense of text):         Numbers and Variables.
+* character graphic:                    Boxes.
+* characters:                           Lexicon.
+* Charlotte's game <1>:                 Answer 20.
+* Charlotte's game:                     Living Creatures.
+* chemical reaction:                    Describing Objects.
+* cherubim <1>:                         Answer 63.
+* cherubim:                             Plural Names.
+* chessboard <1>:                       Answer 45.
+* chessboard:                           Constants and Scoring.
+* clapping game <1>:                    Living Creatures.
+* clapping game:                        Answer 21.
+* class, definition of:                 About Objects.
+* classes, and additive properties:     Messages and Classes.
+* classes, and subclasses:              Messages and Classes.
+* classes, inheritance rules:           Messages and Classes.
+* clearing the screen:                  Assembly Language.
+* closing credits:                      Constants and Scoring.
+* clues:                                Boxes.
+* code blocks:                          Code Blocks.
+* coding mazes:                         Places.
+* coiled snake:                         Living Creatures.
+* coins (in I Ching trigrams) <1>:      Listing Objects.
+* coins (in I Ching trigrams):          Answer 54.
+* coins (listed together) <1>:          Answer 53.
+* coins (listed together):              Listing Objects.
+* colours:                              Assembly Language.
+* command buffer:                       Parsing Nouns.
+* command line:                         ICL.
+* command line syntax:                  ICL.
+* comments:                             Example 1.
+* common properties:                    Common vs Individual.
+* communications badge <1>:             Answer 27.
+* communications badge:                 Living Creatures.
+* compass rose <1>:                     Assembly Language.
+* compass rose:                         Answer 93.
+* compilation:                          First Principles.
+* compiler switches:                    Compiler Options.
+* component parts of objects:           Scope.
+* computer (voice-activated) <1>:       Answer 19.
+* computer (voice-activated):           Living Creatures.
+* conditional compilation:              Controlling Compilation.
+* conditions:                           Conditions.
+* conditions as values:                 Conditions.
+* Connie Booth:                         Boxes.
+* constant:                             Numbers and Variables.
+* Consult action:                       Reading Matter.
+* copyright:                            Introduction.
+* copyright message:                    Getting Started.
+* cow pie:                              Answer 23.
+* crashing the interpreter:             Debugging.
+* creating data structures:             Directives and Constants.
+* creating objects:                     Dynamic Objects.
+* crowns:                               Plural Names.
+* Crowther and Woods:                   Parsing Verbs.
+* cubes of integers:                    Example 3.
+* cuckoo:                               Answer 41.
+* cultural value:                       Messages and Classes.
+* cursor keys:                          Assembly Language.
+* daemons:                              Daemons.
+* daemons, clash with timers:           Daemons.
+* daemons, maximum number active:       Daemons.
+* daemons, running order:               Answer 39.
+* daemons, starting and stopping:       Daemons.
+* Dalek:                                Actions and Reactions.
+* darkness:                             Light and Dark.
+* darkness, abolition of:               Light and Dark.
+* darkness, affecting scope:            Scope.
+* darkness, changing scope within <1>:  Answer 82.
+* darkness, changing scope within:      Scope.
+* darkness, moving through:             Light and Dark.
+* darkness, nightfall <1>:              Daemons.
+* darkness, nightfall:                  Answer 38.
+* darkness, special object:             Light and Dark.
+* darkness, when it occurs:             Light and Dark.
+* dartboard:                            Actions and Reactions.
+* data structures:                      Directives and Constants.
+* David M. Baggett <1>:                 Player.
+* David M. Baggett:                     Grammar Tokens.
+* David Seal:                           Introduction.
+* David Wagner <1>:                     Places.
+* David Wagner:                         Debugging.
+* daylight <1>:                         Daemons.
+* daylight:                             Answer 38.
+* deafness, a period of:                Player.
+* death:                                Player.
+* death, and resurrection:              Player.
+* debugging:                            Debugging.
+* debugging suite actions:              Actions and Fake Actions.
+* debugging, information file <1>:      Compiler Options.
+* debugging, information file:          Debugging.
+* debugging, referring to objects by number <1>: Parsing Nouns.
+* debugging, referring to objects by number: Answer 59.
+* debugging, suite of verbs:            Debugging.
+* debugging, switches to help assembly language debugging: Compiler Options.
+* debugging, tracing calls to every routine in game: Compiler Options.
+* debugging, using Infix <1>:           Compiler Options.
+* debugging, using Infix:               Debugging.
+* decimal numbers:                      Numbers and Variables.
+* decimal places:                       Grammar Tokens.
+* declared but not used:                Example 2.
+* decrement:                            Arithmetic Expressions.
+* defined constants:                    Directives and Constants.
+* deleting objects:                     Dynamic Objects.
+* Dennis Spooner:                       Switchable Objects.
+* desiccated priest:                    Living Creatures.
+* desktop (RISC OS):                    ICL.
+* dictionary:                           Lexicon.
+* dictionary of Mayan glyphs:           Reading Matter.
+* dictionary, as a data structure:      Special Data Structures.
+* dictionary, characters which can be part of words in: Parsing Nouns.
+* dictionary, maximum size of:          Run-Time Limitations.
+* dictionary, resolution and case sensitivity: Run-Time Limitations.
+* dictionary, tokenisation using:       Assembly Language.
+* dictionary, untypeable words in:      Parsing Nouns.
+* directions <1>:                       Scope.
+* directions:                           Places.
+* directions, compiling without the usual: Places.
+* directions, direction objects <1>:    Objects and Routines.
+* directions, direction objects <2>:    Answer 4.
+* directions, direction objects:        Answer 5.
+* directions, direction properties:     Properties.
+* directives:                           Directives and Constants.
+* directives, Array:                    Arrays.
+* directives, Attribute:                Using Attributes.
+* directives, Class:                    Classes and Inheritance.
+* directives, Constant:                 Directives and Constants.
+* directives, Extend:                   Parsing Verbs.
+* directives, Global:                   Global Variables.
+* directives, Object:                   Creating Objects.
+* directives, Property:                 Common vs Individual.
+* directives, Release:                  Special Data Structures.
+* directives, Serial:                   Special Data Structures.
+* directives, summary table of:         Directives.
+* directives, Verb:                     Parsing Verbs.
+* dirty tricks:                         Assembly Language.
+* disambiguation <1>:                   Answer 86.
+* disambiguation:                       Helping the Parser.
+* diverting actions:                    Places.
+* divided room <1>:                     Scope.
+* divided room:                         Answer 81.
+* division:                             Arithmetic Expressions.
+* division by zero:                     Arithmetic Expressions.
+* Doctor Who:                           Switchable Objects.
+* Don Woods:                            Introduction.
+* Donna Tartt:                          Actions and Reactions.
+* doors:                                Doors.
+* doors, trapping movement through:     Doors.
+* doors, two-way:                       Doors.
+* Dorothy Parker:                       Boxes.
+* double inventory <1>:                 Answer 51.
+* double inventory:                     Listing Objects.
+* double spacing:                       Compiler Options.
+* double-quote:                         Answer 74.
+* drawings:                             Boxes.
+* dummy verb:                           Answer 65.
+* dye:                                  Describing Objects.
+* Dylan Thurston:                       Example 7.
+* dynamic memory allocation:            Run-Time Limitations.
+* Dyslexic Dan <1>:                     Living Creatures.
+* Dyslexic Dan:                         Answer 22.
+* Earl Grey tea:                        Living Creatures.
+* earshot:                              Daemons.
+* east lintel:                          Places.
+* eating edible things for preference:  Helping the Parser.
+* eating worms:                         Objects with Properties.
+* eight-foot pumice ball <1>:           Things to Enter.
+* eight-foot pumice ball:               Answer 15.
+* Elizabeth Eisenstein:                 Reading Matter.
+* Elsinore:                             Example 2.
+* embedded routines:                    Objects with Properties.
+* encapsulation:                        About Objects.
+* encapsulation, setting up:            Private Properties.
+* English verb words:                   Parsing Verbs.
+* entry points:                         Entry Points.
+* epigrams:                             Boxes.
+* Ernst Stavro Blofeld:                 Living Creatures.
+* error:                                Error Messages.
+* error messages:                       Example 2.
+* error messages (list of):             Error Messages.
+* error messages, fatal errors:         Fatal Errors.
+* error messages, memory allocation <1>: Fatal Errors.
+* error messages, memory allocation:    Compiler Options.
+* escape character:                     Printing Output.
+* escape characters:                    Boxes.
+* exchanges of cards:                   Example 7.
+* exercises:                            Introduction.
+* exercises, acquisitive bag <1>:       Containers.
+* exercises, acquisitive bag:           Answer 8.
+* exercises, action validation <1>:     Answer 3.
+* exercises, action validation:         Actions and Reactions.
+* exercises, alarm clock <1>:           Living Creatures.
+* exercises, alarm clock:               Answer 24.
+* exercises, bearded psychiatrist <1>:  Answer 17.
+* exercises, bearded psychiatrist:      Living Creatures.
+* exercises, before on second noun <1>: Actions and Reactions.
+* exercises, before on second noun:     Answer 2.
+* exercises, cage to open and enter <1>: Things to Enter.
+* exercises, cage to open and enter:    Answer 13.
+* exercises, car that won't go east <1>: Things to Enter.
+* exercises, car that won't go east:    Answer 14.
+* exercises, Charlotte playing Simon Says <1>: Living Creatures.
+* exercises, Charlotte playing Simon Says: Answer 20.
+* exercises, Charlotte's clapping game <1>: Answer 21.
+* exercises, Charlotte's clapping game: Living Creatures.
+* exercises, cherubim plural <1>:       Plural Names.
+* exercises, cherubim plural:           Answer 63.
+* exercises, chessboard of rooms <1>:   Constants and Scoring.
+* exercises, chessboard of rooms:       Answer 45.
+* exercises, communications badge <1>:  Answer 27.
+* exercises, communications badge:      Living Creatures.
+* exercises, computer (voice-activated) <1>: Living Creatures.
+* exercises, computer (voice-activated): Answer 19.
+* exercises, double inventory <1>:      Listing Objects.
+* exercises, double inventory:          Answer 51.
+* exercises, drinks machine <1>:        Answer 57.
+* exercises, drinks machine:            Parsing Nouns.
+* exercises, dwarf breathing in dark <1>: Answer 82.
+* exercises, dwarf breathing in dark:   Scope.
+* exercises, Dyslexic Dan <1>:          Living Creatures.
+* exercises, Dyslexic Dan:              Answer 22.
+* exercises, exchanging "east"/"west" <1>: Places.
+* exercises, exchanging "east"/"west":  Answer 7.
+* exercises, extensions for one actor only <1>: Living Creatures.
+* exercises, extensions for one actor only: Answer 23.
+* exercises, floating-point numbers <1>: Answer 69.
+* exercises, floating-point numbers:    Grammar Tokens.
+* exercises, footnotes <1>:             Answer 67.
+* exercises, footnotes:                 Grammar Tokens.
+* exercises, genie muddling black and white <1>: Parsing Verbs.
+* exercises, genie muddling black and white: Answer 66.
+* exercises, Giant with conscience <1>: Player.
+* exercises, Giant with conscience:     Answer 44.
+* exercises, glass and steel boxes <1>: Answer 10.
+* exercises, glass and steel boxes:     Containers.
+* exercises, I Ching coins <1>:         Answer 54.
+* exercises, I Ching coins:             Listing Objects.
+* exercises, implementing parser primitives <1>: Answer 73.
+* exercises, implementing parser primitives: Grammar Tokens.
+* exercises, Invisiclues hints <1>:     Boxes.
+* exercises, Invisiclues hints:         Answer 88.
+* exercises, long time-scale game <1>:  Daemons.
+* exercises, long time-scale game:      Answer 40.
+* exercises, low numbers in French <1>: Grammar Tokens.
+* exercises, low numbers in French:     Answer 68.
+* exercises, macrame bag <1>:           Containers.
+* exercises, macrame bag:               Answer 11.
+* exercises, Martha the telepath <1>:   Answer 30.
+* exercises, Martha the telepath:       Living Creatures.
+* exercises, Mayan directions <1>:      Answer 5.
+* exercises, Mayan directions:          Places.
+* exercises, mid-air location <1>:      Answer 39.
+* exercises, mid-air location:          Daemons.
+* exercises, midnight <1>:              Daemons.
+* exercises, midnight:                  Answer 37.
+* exercises, moving to a room by typing its name <1>: Parsing Verbs.
+* exercises, moving to a room by typing its name: Answer 65.
+* exercises, mushroom picking <1>:      Answers.
+* exercises, mushroom picking:          Getting Started.
+* exercises, nightfall and daybreak <1>: Answer 38.
+* exercises, nightfall and daybreak:    Daemons.
+* exercises, nose attached to player <1>: Answer 83.
+* exercises, nose attached to player:   Scope.
+* exercises, opening medicine bottle <1>: Answer 1.
+* exercises, opening medicine bottle:   Messages and Classes.
+* exercises, orange cloud surrounding player <1>: Answer 4.
+* exercises, orange cloud surrounding player: Places.
+* exercises, ornate box (inventory inside) <1>: Describing Objects.
+* exercises, ornate box (inventory inside): Answer 49.
+* exercises, parsing adjectives <1>:    Answer 58.
+* exercises, parsing adjectives:        Parsing Nouns.
+* exercises, parsing any quoted text <1>: Answer 74.
+* exercises, parsing any quoted text:   Grammar Tokens.
+* exercises, parsing times of day <1>:  Answer 71.
+* exercises, parsing times of day:      Grammar Tokens.
+* exercises, pet moth escapes in the dark <1>: Light and Dark.
+* exercises, pet moth escapes in the dark: Answer 32.
+* exercises, phone numbers <1>:         Answer 70.
+* exercises, phone numbers:             Grammar Tokens.
+* exercises, Picard and Maharg <1>:     Living Creatures.
+* exercises, Picard and Maharg:         Answer 29.
+* exercises, plank bridge <1>:          Doors.
+* exercises, plank bridge:              Answer 12.
+* exercises, player reacting before <1>: Player.
+* exercises, player reacting before:    Answer 41.
+* exercises, printf routine <1>:        Assembly Language.
+* exercises, printf routine:            Answer 95.
+* exercises, printing pronouns <1>:     Describing Objects.
+* exercises, printing pronouns:         Answer 48.
+* exercises, pushing pumice ball uphill <1>: Answer 15.
+* exercises, pushing pumice ball uphill: Things to Enter.
+* exercises, putting everything in scope <1>: Answer 80.
+* exercises, putting everything in scope: Scope.
+* exercises, quotations in boxes <1>:   Answer 87.
+* exercises, quotations in boxes:       Boxes.
+* exercises, red sticky label <1>:      Scope.
+* exercises, red sticky label:          Answer 85.
+* exercises, referring to objects by number <1>: Parsing Nouns.
+* exercises, referring to objects by number: Answer 59.
+* exercises, reflecting the map east-west <1>: Answer 6.
+* exercises, reflecting the map east-west: Places.
+* exercises, removing conversation actions <1>: Living Creatures.
+* exercises, removing conversation actions: Answer 18.
+* exercises, replicator <1>:            Living Creatures.
+* exercises, replicator:                Answer 26.
+* exercises, room divided by glass window <1>: Scope.
+* exercises, room divided by glass window: Answer 81.
+* exercises, saving the character <1>:  Answer 89.
+* exercises, saving the character:      Assembly Language.
+* exercises, Scrabble pieces <1>:       Listing Objects.
+* exercises, Scrabble pieces:           Answer 52.
+* exercises, scuttling claws <1>:       Answer 35.
+* exercises, scuttling claws:           Daemons.
+* exercises, silencing player <1>:      Answer 42.
+* exercises, silencing player:          Player.
+* exercises, spaceship control panel <1>: Answer 72.
+* exercises, spaceship control panel:   Grammar Tokens.
+* exercises, status line invisible <1>: Answer 91.
+* exercises, status line invisible:     Assembly Language.
+* exercises, status line showing treasure <1>: Assembly Language.
+* exercises, status line showing treasure: Answer 92.
+* exercises, status line with centred room <1>: Assembly Language.
+* exercises, status line with centred room: Answer 94.
+* exercises, status line with compass rose <1>: Answer 93.
+* exercises, status line with compass rose: Assembly Language.
+* exercises, sterilising machine <1>:   Answer 84.
+* exercises, sterilising machine:       Scope.
+* exercises, television set <1>:        Containers.
+* exercises, television set:            Answer 9.
+* exercises, the artiste formerly known as Princess <1>: Answer 56.
+* exercises, the artiste formerly known as Princess: Parsing Nouns.
+* exercises, the player's wayhel <1>:   Answer 43.
+* exercises, the player's wayhel:       Player.
+* exercises, thief who wanders <1>:     Daemons.
+* exercises, thief who wanders:         Answer 33.
+* exercises, third noun for parser <1>: Grammar Tokens.
+* exercises, third noun for parser:     Answer 77.
+* exercises, three denominations of coin <1>: Answer 53.
+* exercises, three denominations of coin: Listing Objects.
+* exercises, title page <1>:            Assembly Language.
+* exercises, title page:                Answer 90.
+* exercises, tokens which never match <1>: Grammar Tokens.
+* exercises, tokens which never match:  Answer 75.
+* exercises, tomato in red or green <1>: Answer 55.
+* exercises, tomato in red or green:    Parsing Nouns.
+* exercises, tricorder <1>:             Answer 25.
+* exercises, tricorder:                 Living Creatures.
+* exercises, troll afraid of the dark <1>: Light and Dark.
+* exercises, troll afraid of the dark:  Answer 31.
+* exercises, Tyndale's Bible <1>:       Reading Matter.
+* exercises, Tyndale's Bible:           Answer 16.
+* exercises, varying the prompt <1>:    Answer 46.
+* exercises, varying the prompt:        Extending the Library.
+* exercises, very verbose mode <1>:     Describing Objects.
+* exercises, very verbose mode:         Answer 50.
+* exercises, weight--watching daemon <1>: Answer 34.
+* exercises, weight--watching daemon:   Daemons.
+* exercises, wild-card for a single object <1>: Answer 60.
+* exercises, wild-card for a single object: Parsing Nouns.
+* exercises, wild-card for multiple objects <1>: Parsing Nouns.
+* exercises, wild-card for multiple objects: Answer 61.
+* exercises, Zen flight computer <1>:   Living Creatures.
+* exercises, Zen flight computer:       Answer 28.
+* exercises, "fly in amber" <1>:        Parsing Nouns.
+* exercises, "fly in amber":            Answer 62.
+* exercises, "lock" and "unlock" inferring keys <1>: Helping the Parser.
+* exercises, "lock" and "unlock" inferring keys: Answer 86.
+* exercises, "megalook" verb <1>:       Answer 79.
+* exercises, "megalook" verb:           Scope.
+* exercises, "scope" verb <1>:          Answer 78.
+* exercises, "scope" verb:              Scope.
+* exotic forms of death:                Player.
+* expressions:                          Arithmetic Expressions.
+* extensions for one actor only <1>:    Answer 23.
+* extensions for one actor only:        Living Creatures.
+* extensions of the library:            Extending the Library.
+* external program:                     Linking.
+* factorials:                           Example 4.
+* fake actions:                         Plural Names.
+* fake actions, defined in library:     Actions and Fake Actions.
+* fake fake actions:                    Living Creatures.
+* fatal error:                          Error Messages.
+* fatigue daemon:                       Answer 34.
+* Fawlty Towers:                        Boxes.
+* filename translation:                 ICL.
+* five senses:                          Places.
+* fixed-pitch font:                     Boxes.
+* flag variables:                       Conditions.
+* flexible verbs:                       Parsing Verbs.
+* flight computer <1>:                  Answer 28.
+* flight computer:                      Living Creatures.
+* floating objects <1>:                 Player.
+* floating objects:                     Attributes.
+* floating-point numbers <1>:           Grammar Tokens.
+* floating-point numbers:               Answer 69.
+* fluorescent jellyfish:                Light and Dark.
+* fly in amber <1>:                     Parsing Nouns.
+* fly in amber:                         Answer 62.
+* foodstuffs:                           Listing Objects.
+* footnotes <1>:                        Answer 67.
+* footnotes:                            Grammar Tokens.
+* foreground colour:                    Assembly Language.
+* foreign languages:                    Extending the Library.
+* formatted text:                       Assembly Language.
+* four Gospels <1>:                     Reading Matter.
+* four Gospels:                         Answer 16.
+* Frank Booth:                          Arrays.
+* Frankenstein:                         Player.
+* French numbers <1>:                   Grammar Tokens.
+* French numbers:                       Answer 68.
+* fried green tomato:                   Parsing Nouns.
+* Frotz:                                Assembly Language.
+* ftp site:                             Introduction.
+* function arguments, maximum number of: Run-Time Limitations.
+* function keys:                        Assembly Language.
+* functions:                            Arguments and Return Values.
+* functions, built-in:                  Random and Indirect.
+* functions, child:                     Object Tree.
+* functions, children:                  Object Tree.
+* functions, indirect:                  Random and Indirect.
+* functions, metaclass:                 Object Tree.
+* functions, parent:                    Object Tree.
+* functions, random:                    Random and Indirect.
+* functions, sibling:                   Object Tree.
+* fuses:                                Daemons.
+* G. K. Chesterton:                     Describing Objects.
+* Game Over choice:                     Extending the Library.
+* game transcript:                      Boxes.
+* Gareth Rees <1>:                      Living Creatures.
+* Gareth Rees <2>:                      Listing Objects.
+* Gareth Rees <3>:                      Introduction.
+* Gareth Rees <4>:                      Describing Objects.
+* Gareth Rees <5>:                      Living Creatures.
+* Gareth Rees:                          Reading Matter.
+* gas mask <1>:                         Player.
+* gas mask:                             Answer 42.
+* general parsing routines <1>:         Objects and Routines.
+* general parsing routines:             Grammar Tokens.
+* genie <1>:                            Answer 66.
+* genie:                                Parsing Verbs.
+* gentleman thief <1>:                  Daemons.
+* gentleman thief:                      Answer 33.
+* Geoffrey's book:                      Describing Objects.
+* George Bernard Shaw:                  Scope.
+* giant magnet:                         Living Creatures.
+* Giant with a conscience <1>:          Player.
+* Giant with a conscience:              Answer 44.
+* girl playing Simon Says <1>:          Answer 20.
+* girl playing Simon Says:              Living Creatures.
+* glass box:                            Containers.
+* glass window <1>:                     Scope.
+* glass window:                         Answer 81.
+* global variables, maximum number of:  Run-Time Limitations.
+* glue:                                 Arithmetic Expressions.
+* glyphs:                               Reading Matter.
+* goldfish bowl:                        Light and Dark.
+* Gotham City:                          Switchable Objects.
+* Graham Nelson:                        Introduction.
+* grammar:                              Parsing Verbs.
+* grammar, definition of verbs:         Parsing Verbs.
+* grammar, extension of:                Parsing Verbs.
+* grammar, limits on:                   Run-Time Limitations.
+* grammar, lines of:                    Parsing Verbs.
+* grammar, replacement of:              Parsing Verbs.
+* grammar, summary of rules about:      Grammar.
+* grammar, tokens of:                   Grammar Tokens.
+* Grantland Rice:                       Constants and Scoring.
+* grouping of non-identical items in lists: Listing Objects.
+* groups of actions:                    Actions and Reactions.
+* groups of actions, group 1:           Actions and Fake Actions.
+* groups of actions, group 2:           Actions and Fake Actions.
+* groups of actions, group 3:           Actions and Fake Actions.
+* grues:                                Scope.
+* Gustave Flaubert:                     Programming Language.
+* hacker and urchin:                    Living Creatures.
+* Hamlet:                               Example 2.
+* hanging elses:                        Code Blocks.
+* heaps of food:                        Listing Objects.
+* hearing (sense):                      Places.
+* Hello World:                          Example 1.
+* help information:                     ICL.
+* hexadecimal numbers:                  Numbers and Variables.
+* hexadecimal, printing out:            Example 6.
+* hissing snake:                        Living Creatures.
+* hole in wall:                         Parsing Nouns.
+* holy searchlight:                     Switchable Objects.
+* home page:                            Introduction.
+* honeycomb:                            Messages and Classes.
+* horrid sludge:                        Describing Objects.
+* I Ching <1>:                          Answer 54.
+* I Ching:                              Listing Objects.
+* IBM PC, ugliness of:                  Assembly Language.
+* ICL:                                  ICL.
+* identifiers:                          Numbers and Variables.
+* implicit taking:                      Grammar Tokens.
+* in scope:                             Scope.
+* increment:                            Arithmetic Expressions.
+* indefinite article:                   Describing Objects.
+* indexed variables:                    Arrays.
+* individual properties:                Common vs Individual.
+* Infact:                               Debugging.
+* Infix <1>:                            Debugging.
+* Infix:                                Compiler Options.
+* Infocom, Inc.:                        Introduction.
+* Inform Command Language (ICL):        ICL.
+* Inform home page <1>:                 Extending the Library.
+* Inform home page:                     Introduction.
+* InfoTaskForce:                        Assembly Language.
+* inheritance:                          Classes and Inheritance.
+* initial possessions:                  Player.
+* instances:                            Classes and Inheritance.
+* internal text format:                 Assembly Language.
+* interpreter:                          First Principles.
+* interpreters:                         Assembly Language.
+* inventories:                          Describing Objects.
+* invisible status line <1>:            Answer 91.
+* invisible status line:                Assembly Language.
+* IsAWordIn (example):                  Parsing Nouns.
+* Ivan O. Ideas:                        Constants and Scoring.
+* jackdaws:                             Answer 67.
+* James Bond:                           Living Creatures.
+* James Shirley:                        Actions and Reactions.
+* Japanese cartoon:                     Answer 9.
+* Jean de la Bruyere:                   Player.
+* Jean Frederic Waldeck:                Reading Matter.
+* Jekyll and Hyde:                      Linking.
+* Joachim Baumann:                      Assembly Language.
+* John Christopher:                     Places.
+* John Cleese:                          Boxes.
+* John Donne:                           Introduction.
+* Jonathan Thackray:                    Introduction.
+* kestrels:                             Classes and Inheritance.
+* keyboard:                             Assembly Language.
+* keyboard buffer:                      Parsing Nouns.
+* keyboard input (direct access to):    Accepting Input.
+* King of Spades:                       Example 7.
+* label, red sticky <1>:                Answer 85.
+* label, red sticky:                    Scope.
+* labels (in programs):                 Jumping Around.
+* lamp (of genie) <1>:                  Parsing Verbs.
+* lamp (of genie):                      Answer 66.
+* large memory:                         Compiler Options.
+* last resort:                          Extending the Library.
+* left/right associativity:             Operators.
+* legibility:                           Reading Matter.
+* library routines:                     Objects and Routines.
+* light:                                Light and Dark.
+* light switch <1>:                     Answer 82.
+* light switch:                         Scope.
+* light, daylight <1>:                  Daemons.
+* light, daylight:                      Answer 38.
+* light, when it occurs:                Light and Dark.
+* limitations:                          Run-Time Limitations.
+* line of sight:                        Daemons.
+* lines:                                Parsing Verbs.
+* linking:                              Linking.
+* linking the library:                  Linking.
+* list style:                           Listing Objects.
+* literal characters:                   Boxes.
+* little red car <1>:                   Answer 14.
+* little red car:                       Things to Enter.
+* local variables:                      Numbers and Variables.
+* Long Count:                           Scope.
+* long description:                     Describing Objects.
+* long jump:                            Assembly Language.
+* Lord Byron:                           Getting Started.
+* Louis MacNeice <1>:                   Answers.
+* Louis MacNeice:                       Introduction.
+* low mist:                             Places.
+* low numbers in French <1>:            Answer 68.
+* low numbers in French:                Grammar Tokens.
+* Ludwig Wittgenstein <1>:              Describing and Parsing.
+* Ludwig Wittgenstein:                  Living Creatures.
+* Macbeth:                              Player.
+* macrame bag <1>:                      Answer 11.
+* macrame bag:                          Containers.
+* magpie:                               Objects with Properties.
+* Mahu:                                 Answer 33.
+* mainframe `Adventure':                Introduction.
+* making grammar:                       Actions and Reactions.
+* Manga:                                Answer 9.
+* map:                                  Doors.
+* map connection:                       Places.
+* Marc Blank <1>:                       Things to Enter.
+* Marc Blank:                           Doors.
+* Martha <1>:                           Living Creatures.
+* Martha:                               Answer 30.
+* matchbook:                            Describing Objects.
+* Max Beerbohm:                         Scope.
+* Mayan dictionary:                     Reading Matter.
+* Mayan directions <1>:                 Answer 5.
+* Mayan directions:                     Places.
+* meadow example:                       Object Tree.
+* medicine bottle:                      Messages and Classes.
+* medieval French:                      Extending the Library.
+* members:                              Classes and Inheritance.
+* memory:                               Compiler Options.
+* memory settings:                      ICL.
+* memory, compiler settings:            Compiler Options.
+* memory, dynamic allocation:           Run-Time Limitations.
+* memory, maximum size of game:         Run-Time Limitations.
+* memory, small, large or huge:         Compiler Options.
+* memory, typical consumption of by compiler: Compiler Options.
+* menu of text options:                 Boxes.
+* message:                              About Objects.
+* message numbers:                      Extending the Library.
+* messages:                             Messages.
+* messages, call:                       Sending Messages.
+* messages, copy:                       Dynamic Objects.
+* messages, create:                     Dynamic Objects.
+* messages, destroy:                    Dynamic Objects.
+* messages, parrot example:             Messages and Classes.
+* messages, print:                      Sending Messages.
+* messages, print to array:             Sending Messages.
+* messages, recreate:                   Dynamic Objects.
+* messages, remaining:                  Dynamic Objects.
+* messages, to routines, strings and classes: Sending Messages.
+* metaclass:                            Lexicon.
+* metaclass, definition of:             About Objects.
+* Metropolitan Museum:                  Messages and Classes.
+* Michel de Montaigne:                  Living Creatures.
+* microphones:                          Living Creatures.
+* mid-air location:                     Daemons.
+* midnight:                             Daemons.
+* Modo:                                 Answer 33.
+* Modular extensions:                   Extending the Library.
+* modules:                              Linking.
+* Moliere:                              Parsing Verbs.
+* Monty Python's Flying Circus:         Containers.
+* moving room:                          Player.
+* Mrofni <1>:                           Living Creatures.
+* Mrofni:                               Answer 29.
+* multiple inheritance:                 Classes and Inheritance.
+* mummified priest:                     Living Creatures.
+* mushroom:                             Getting Started.
+* nagual <1>:                           Player.
+* nagual:                               Answer 43.
+* named rooms <1>:                      Answer 65.
+* named rooms:                          Parsing Verbs.
+* names per object (limit):             Run-Time Limitations.
+* Naming of Cats:                       Parsing Nouns.
+* narrow inventory:                     Listing Objects.
+* neo-Platonist philosophy:             Daemons.
+* NetHack:                              Assembly Language.
+* New Testament <1>:                    Answer 16.
+* New Testament:                        Reading Matter.
+* nightfall <1>:                        Daemons.
+* nightfall:                            Answer 38.
+* nominative pronoun <1>:               Answer 48.
+* nominative pronoun:                   Describing Objects.
+* normal rules:                         Attributes.
+* nose <1>:                             Answer 83.
+* nose:                                 Scope.
+* Noslen Maharg <1>:                    Living Creatures.
+* Noslen Maharg:                        Answer 29.
+* number base:                          Numbers and Variables.
+* number puzzle:                        Example 5.
+* number-parsing:                       Grammar Tokens.
+* numbers:                              Numbers and Variables.
+* object 31:                            Parsing Nouns.
+* object orientation:                   First Principles.
+* object orientation, virtue of:        About Objects.
+* object tree:                          Object Tree.
+* object tree, setting up initial state: Creating Objects.
+* objects <1>:                          Getting Started.
+* objects:                              About Objects.
+* objects, child, sibling and parent of: Object Tree.
+* objects, creation and deletion during play: Dynamic Objects.
+* objects, defined in library:          Objects and Routines.
+* objects, definite articles of:        Describing Objects.
+* objects, direction and compass objects: Answer 4.
+* objects, duplicate and plural:        Plural Names.
+* objects, encapsulation of:            Private Properties.
+* objects, giving attributes to:        Using Attributes.
+* objects, giving properties to:        Objects with Properties.
+* objects, grouping of in lists:        Listing Objects.
+* objects, indefinite articles of:      Describing Objects.
+* objects, inheritance from classes:    Classes and Inheritance.
+* objects, inventory entries of:        Describing Objects.
+* objects, listed in room descriptions: Describing Objects.
+* objects, maximum number of:           Run-Time Limitations.
+* objects, maximum number of names for: Run-Time Limitations.
+* objects, metaclass of:                About Objects.
+* objects, moving around the tree:      Using the Tree.
+* objects, names of:                    Parsing Nouns.
+* objects, philosophy of:               Philosophy.
+* objects, printing lists of:           Listing Objects.
+* objects, referred to by number <1>:   Answer 59.
+* objects, referred to by number:       Parsing Nouns.
+* objects, removing from tree:          Using the Tree.
+* objects, sending messages to:         Messages.
+* objects, short names of:              Describing Objects.
+* objects, the four kinds of:           About Objects.
+* obsolete usages:                      Warnings.
+* Occitan:                              Extending the Library.
+* Octagonal Room:                       Messages.
+* ogre with limited patience:           Daemons.
+* Oliver Goldsmith:                     Run-Time Limitations.
+* once-only rules:                      Getting Started.
+* operands:                             Arithmetic Expressions.
+* operator precedence:                  Arithmetic Expressions.
+* operators:                            Numbers and Variables.
+* operators, full table of:             Operators.
+* orange cloud <1>:                     Answer 4.
+* orange cloud:                         Places.
+* ornate box <1>:                       Describing Objects.
+* ornate box:                           Answer 49.
+* other four senses:                    Places.
+* P. David Lebling <1>:                 Things to Enter.
+* P. David Lebling <2>:                 Living Creatures.
+* P. David Lebling <3>:                 Containers.
+* P. David Lebling:                     Doors.
+* pack of cards, shuffling:             Example 7.
+* packing case:                         Containers.
+* pairs of verbs to separate:           Parsing Verbs.
+* Palladas of Alexandria:               Using the Compiler.
+* parentheses:                          Arithmetic Expressions.
+* parrot:                               Messages and Classes.
+* parser:                               Parsing Nouns.
+* parser, breaking up text into word stream: Parsing Nouns.
+* parser, parsing quoted strings <1>:   Answer 74.
+* parser, parsing quoted strings:       Grammar Tokens.
+* parser, parsing the player's questions: Scope.
+* parser, tidying up questions asked by: Parsing Verbs.
+* parser, tracing and levels:           Debugging.
+* parsing, text buffer holding commands <1>: Grammar Tokens.
+* parsing, text buffer holding commands: Parsing Nouns.
+* path variables:                       ICL.
+* peculiar book:                        Describing Objects.
+* Pepper Room:                          Actions and Reactions.
+* Percy Bysshe Shelley:                 Daemons.
+* perfectionism:                        Places.
+* persona of player:                    Player.
+* pet moth <1>:                         Answer 32.
+* pet moth:                             Light and Dark.
+* philosophy of objects:                Philosophy.
+* phone number:                         Parsing Nouns.
+* phone number parsing <1>:             Answer 70.
+* phone number parsing:                 Grammar Tokens.
+* pidgin English:                       Describing Objects.
+* pinfocom:                             Assembly Language.
+* plagiarism:                           Constants and Scoring.
+* plank bridge <1>:                     Doors.
+* plank bridge:                         Answer 12.
+* platinum pyramid:                     Describing Objects.
+* Plato:                                Daemons.
+* player's origin:                      Player.
+* player-object:                        Objects and Routines.
+* plural objects:                       Plural Names.
+* portability:                          First Principles.
+* precedence of class inheritance:      Messages and Classes.
+* precedence of operators:              Arithmetic Expressions.
+* pregnant mouse:                       Describing Objects.
+* priest:                               Living Creatures.
+* Prince of darkness:                   Answer 33.
+* Princess <1>:                         Answer 56.
+* Princess:                             Parsing Nouns.
+* printf exercise <1>:                  Answer 95.
+* printf exercise:                      Assembly Language.
+* printing hexadecimal numbers:         Example 6.
+* printing output:                      Printing Output.
+* printing routines:                    Describing Objects.
+* procedural language:                  First Principles.
+* prompt <1>:                           Extending the Library.
+* prompt <2>:                           Boxes.
+* prompt:                               Answer 46.
+* pronouns <1>:                         Answer 48.
+* pronouns <2>:                         Helping the Parser.
+* pronouns <3>:                         Describing Objects.
+* pronouns:                             Living Creatures.
+* proper noun:                          Describing Objects.
+* properties:                           Getting Started.
+* properties, additive:                 Messages and Classes.
+* properties, common vs individual:     Common vs Individual.
+* properties, defined in library:       Properties.
+* properties, defining new common:      Extending the Library.
+* properties, definition of:            Objects with Properties.
+* properties, encapsulation of:         Private Properties.
+* properties, holding arrays:           Objects with Properties.
+* properties, holding routines <1>:     Messages and Classes.
+* properties, holding routines:         Objects with Properties.
+* properties, maximum number of common: Run-Time Limitations.
+* proportional font:                    Boxes.
+* pumice ball <1>:                      Things to Enter.
+* pumice ball:                          Answer 15.
+* punctuation in dictionary words:      Parsing Nouns.
+* purple liquid:                        Describing Objects.
+* pygmy statuette:                      Messages and Classes.
+* questionable practices:               Warnings.
+* questions, asking yes or no:          Boxes.
+* questions, parsing the player's:      Scope.
+* quotations beautiful:                 Boxes.
+* quoted text:                          Answer 74.
+* R. B. Sheridan:                       Extending the Library.
+* radio:                                Daemons.
+* radix:                                Numbers and Variables.
+* raw text:                             Grammar Tokens.
+* reached, statement which cannot be:   Printing Output.
+* reading books:                        Reading Matter.
+* real time:                            Assembly Language.
+* reasons for scope searching:          Scope.
+* receiving messages:                   Messages.
+* recursion:                            Example 4.
+* recursion (limit):                    Run-Time Limitations.
+* red sticky label <1>:                 Scope.
+* red sticky label:                     Answer 85.
+* red-tailed parrot:                    Messages and Classes.
+* reflecting the map <1>:               Answer 6.
+* reflecting the map:                   Places.
+* remainder:                            Arithmetic Expressions.
+* removing conversation actions <1>:    Living Creatures.
+* removing conversation actions:        Answer 18.
+* removing rules:                       Getting Started.
+* replacing grammar:                    Parsing Verbs.
+* replicator <1>:                       Living Creatures.
+* replicator:                           Answer 26.
+* resolution <1>:                       Run-Time Limitations.
+* resolution:                           Parsing Nouns.
+* resolving ambiguity:                  Helping the Parser.
+* restoring data:                       Assembly Language.
+* resurrection:                         Player.
+* return values:                        Arguments and Return Values.
+* reverse video:                        Boxes.
+* Richard Barnett:                      Places.
+* role-playing games <1>:               Assembly Language.
+* role-playing games:                   Answer 89.
+* roman text:                           Boxes.
+* room descriptions <1>:                Switchable Objects.
+* room descriptions:                    Describing Objects.
+* room divided in half <1>:             Scope.
+* room divided in half:                 Answer 81.
+* Rosencrantz:                          Example 2.
+* routines:                             Arguments and Return Values.
+* routines as property values:          Objects with Properties.
+* routines, as property values:         Messages and Classes.
+* routines, maximum depth of recursion: Run-Time Limitations.
+* routines, simple example of:          Getting Started.
+* routines, tracing calls to:           Debugging.
+* Royal Society For Putting Things On Top Of Other Things: Containers.
+* rucksack:                             Grammar Tokens.
+* run-time crashes <1>:                 Arithmetic Expressions.
+* run-time crashes:                     Debugging.
+* run-time format:                      Run-Time Limitations.
+* running out of memory:                Fatal Errors.
+* Sam Hulick:                           Daemons.
+* satchel:                              Constants and Scoring.
+* saving data:                          Assembly Language.
+* saving the character <1>:             Assembly Language.
+* saving the character:                 Answer 89.
+* scenery penalised:                    Helping the Parser.
+* scope:                                Scope.
+* scope, addition to <1>:               Scope.
+* scope, addition to:                   Containers.
+* scope, looping over:                  Scope.
+* scope, testing:                       Scope.
+* score notification:                   Constants and Scoring.
+* scoring in `Ruins':                   Messages and Classes.
+* scoring systems:                      Constants and Scoring.
+* Scott Adams <1>:                      Describing Objects.
+* Scott Adams:                          Introduction.
+* Scrabble pieces <1>:                  Listing Objects.
+* Scrabble pieces:                      Answer 52.
+* screen <1>:                           Answer 29.
+* screen:                               Living Creatures.
+* script of player's commands:          Assembly Language.
+* scrolling screen:                     Boxes.
+* scuttling claws <1>:                  Daemons.
+* scuttling claws:                      Answer 36.
+* sealed room <1>:                      Answer 30.
+* sealed room:                          Living Creatures.
+* searchlight:                          Switchable Objects.
+* semicolons:                           Example 1.
+* senses:                               Places.
+* shaft of sunlight:                    Places.
+* shopping mall:                        Extending the Library.
+* Shrine:                               Living Creatures.
+* shuffling a pack of cards:            Example 7.
+* silence, imposition on player <1>:    Answer 42.
+* silence, imposition on player:        Player.
+* silent actions:                       Actions and Reactions.
+* Simon Says <1>:                       Answer 20.
+* Simon Says:                           Living Creatures.
+* small memory:                         Compiler Options.
+* small prime numbers:                  Arrays.
+* Smalltalk-80 <1>:                     About Objects.
+* Smalltalk-80 <2>:                     Philosophy.
+* Smalltalk-80:                         Access to Superclass Values.
+* smell (sense):                        Places.
+* snake:                                Living Creatures.
+* sodium lamp:                          Switchable Objects.
+* sound of scuttling claws <1>:         Answer 36.
+* sound of scuttling claws:             Daemons.
+* source-level debugger:                Debugging.
+* Space Invaders:                       Assembly Language.
+* spaceship control panel <1>:          Answer 72.
+* spaceship control panel:              Grammar Tokens.
+* special objects:                      Objects and Routines.
+* speckled mushroom:                    Getting Started.
+* spiny trees:                          Places.
+* Square Chamber:                       Places.
+* squawking:                            Messages and Classes.
+* St John Passion:                      Printing Output.
+* St Peter:                             Parsing Verbs.
+* stack frame:                          Assembly Language.
+* stack usage (limit):                  Run-Time Limitations.
+* Standard games <1>:                   Boxes.
+* Standard games:                       Run-Time Limitations.
+* Star Trek, The Next Generation <1>:   Answer 29.
+* Star Trek, The Next Generation <2>:   Answer 27.
+* Star Trek, The Next Generation <3>:   Answer 26.
+* Star Trek, The Next Generation <4>:   Living Creatures.
+* Star Trek, The Next Generation:       Answer 25.
+* Starship Enterprise <1>:              Living Creatures.
+* Starship Enterprise:                  Answer 29.
+* statement cannot be reached <1>:      Warnings.
+* statement cannot be reached:          Printing Output.
+* statements:                           Example 1.
+* statements, box:                      Printing Output.
+* statements, do...until...:            Loops.
+* statements, font:                     Printing Output.
+* statements, for:                      Loops.
+* statements, give:                     Using Attributes.
+* statements, if:                       Conditions.
+* statements, if...else...:             Code Blocks.
+* statements, inversion:                Printing Output.
+* statements, jump:                     Jumping Around.
+* statements, move:                     Using the Tree.
+* statements, new line:                 Printing Output.
+* statements, objectloop:               Using the Tree.
+* statements, print <1>:                Example 1.
+* statements, print:                    Printing Output.
+* statements, quit:                     Jumping Around.
+* statements, read <1>:                 Accepting Input.
+* statements, read:                     Special Data Structures.
+* statements, remove:                   Using the Tree.
+* statements, restore:                  Jumping Around.
+* statements, return:                   Example 3.
+* statements, save:                     Jumping Around.
+* statements, spaces:                   Printing Output.
+* statements, style:                    Printing Output.
+* statements, summary table of:         Statements.
+* statements, switch...default...:      Code Blocks.
+* statements, while:                    Loops.
+* statistics:                           Compiler Options.
+* status line <1>:                      Answer 92.
+* status line:                          Boxes.
+* stealing actions:                     Places.
+* steel box:                            Containers.
+* steel grate:                          Doors.
+* Stephen Fry:                          Philosophy.
+* sterilising machine <1>:              Scope.
+* sterilising machine:                  Answer 84.
+* stone altar:                          Things to Enter.
+* stone door:                           Doors.
+* stone-cut steps <1>:                  Getting Started.
+* stone-cut steps:                      Messages and Classes.
+* story files:                          Introduction.
+* stream of words:                      Parsing Nouns.
+* stream running through forest:        Daemons.
+* streams of input/output:              Assembly Language.
+* strings of characters:                Arrays.
+* structures of data:                   Directives and Constants.
+* style of list:                        Listing Objects.
+* sub-objects <1>:                      Containers.
+* sub-objects:                          Scope.
+* subclasses:                           Classes and Inheritance.
+* summary of grammar:                   Grammar.
+* sunrise and sunset <1>:               Answer 38.
+* sunrise and sunset:                   Daemons.
+* superclass operator:                  Access to Superclass Values.
+* superclass, definition of:            Access to Superclass Values.
+* supporting scenery:                   Describing Objects.
+* switches (command line):              ICL.
+* switches (on command line):           Compiler Options.
+* sword:                                Daemons.
+* synonyms:                             Parsing Verbs.
+* T. S. Eliot:                          Parsing Nouns.
+* talking, preventing player from <1>:  Answer 42.
+* talking, preventing player from:      Player.
+* tape recorders:                       Living Creatures.
+* tapestry and key:                     Getting Started.
+* taste (sense):                        Places.
+* team of four adventurers:             Player.
+* Ted Hughes:                           Answer 87.
+* tedium of magpies, the:               Using Attributes.
+* telegraphese:                         Describing Objects.
+* telekinesis <1>:                      Answer 30.
+* telekinesis:                          Living Creatures.
+* telepathic contact <1>:               Answer 30.
+* telepathic contact:                   Living Creatures.
+* telephone number parsing <1>:         Grammar Tokens.
+* telephone number parsing:             Answer 70.
+* teleportation:                        Player.
+* television set <1>:                   Containers.
+* television set:                       Answer 9.
+* temperature dial:                     Scope.
+* Tera:                                 Introduction.
+* text buffer (of buffer):              Parsing Nouns.
+* text buffer (of parser):              Grammar Tokens.
+* text buffers:                         Arrays.
+* text cursor:                          Assembly Language.
+* text formatting:                      Assembly Language.
+* text of a command:                    Parsing Nouns.
+* text style:                           Boxes.
+* The Prisoner:                         Things to Enter.
+* The quick brown fox jumped over the lazy dog: Answer 67.
+* the Sun:                              Places.
+* thief in `Zork' <1>:                  Answer 33.
+* thief in `Zork':                      Daemons.
+* third parameter for parser <1>:       Answer 77.
+* third parameter for parser:           Grammar Tokens.
+* three denominations of coin <1>:      Answer 53.
+* three denominations of coin:          Listing Objects.
+* tidying-up operations:                Daemons.
+* tilde:                                Using Attributes.
+* time of day:                          Daemons.
+* time of day (parsing) <1>:            Grammar Tokens.
+* time of day (parsing):                Answer 71.
+* time sequence:                        Daemons.
+* timed input:                          Assembly Language.
+* timers:                               Daemons.
+* timers, clash with daemons:           Daemons.
+* timers, maximum number active:        Daemons.
+* timers, starting and stopping:        Daemons.
+* Timothy Anderson:                     Things to Enter.
+* title page <1>:                       Answer 90.
+* title page:                           Assembly Language.
+* toadstool poisoning:                  Getting Started.
+* token for `any object':               Answer 80.
+* token never matching anything <1>:    Grammar Tokens.
+* token never matching anything:        Answer 75.
+* tokenising <1>:                       Assembly Language.
+* tokenising:                           Answer 74.
+* tokens <1>:                           Parsing Verbs.
+* tokens <2>:                           Grammar Tokens.
+* tokens:                               Objects and Routines.
+* tomato:                               Parsing Nouns.
+* Tony Harrison:                        Using the Compiler.
+* too many errors:                      Fatal Errors.
+* toothed bag <1>:                      Answer 8.
+* toothed bag:                          Containers.
+* Torbjorn Andersson:                   Assembly Language.
+* touch (sense):                        Places.
+* tracing a routine:                    Debugging.
+* tracing routines, actions, daemons and timers: Debugging.
+* tracing the parser:                   Debugging.
+* transcript <1>:                       Assembly Language.
+* transcript:                           Boxes.
+* translating Inform to foreign languages: Extending the Library.
+* treasure class:                       Messages and Classes.
+* treasures on status line <1>:         Assembly Language.
+* treasures on status line:             Answer 92.
+* treating name as a word array:        Parsing Nouns.
+* tricorder <1>:                        Living Creatures.
+* tricorder:                            Answer 25.
+* trigrams <1>:                         Listing Objects.
+* trigrams:                             Answer 54.
+* troll:                                Light and Dark.
+* two-way door:                         Doors.
+* txd (disassembler):                   Debugging.
+* UHS format hints:                     Boxes.
+* unary minus:                          Arithmetic Expressions.
+* underlining:                          Boxes.
+* untypeable verbs:                     Living Creatures.
+* untypeable words:                     Parsing Nouns.
+* upper-level window:                   Assembly Language.
+* urchin and hacker:                    Living Creatures.
+* values as conditions:                 Conditions.
+* vampire:                              Daemons.
+* variable strings:                     Answer 7.
+* variables:                            Numbers and Variables.
+* vehicles:                             Things to Enter.
+* verbose mode:                         Describing Objects.
+* verbs (Inform and English):           Parsing Verbs.
+* versions of the Z-machine:            Run-Time Limitations.
+* very verbose mode <1>:                Answer 50.
+* very verbose mode:                    Describing Objects.
+* vocabulary size (limit):              Run-Time Limitations.
+* voice-activated computers:            Living Creatures.
+* VT100:                                Boxes.
+* W. H. Auden:                          Doors.
+* W. S. Gilbert:                        Listing Objects.
+* Waldeck's Mayan dictionary:           Reading Matter.
+* walking into walls:                   Extending the Library.
+* walls:                                Objects and Routines.
+* warning:                              Error Messages.
+* warning messages:                     Example 2.
+* warning messages (list):              Warnings.
+* warthog:                              Answer 43.
+* washing-machine:                      Scope.
+* weights <1>:                          Answer 34.
+* weights:                              Daemons.
+* weird thing:                          Parsing Nouns.
+* white space:                          Example 1.
+* wide inventory:                       Listing Objects.
+* wild boar:                            Answer 34.
+* wild-card <1>:                        Answer 61.
+* wild-card <2>:                        Answer 60.
+* wild-card:                            Parsing Nouns.
+* Will Crowther:                        Introduction.
+* William J. Clinton:                   Printing Output.
+* William Shakespeare <1>:              Printing Output.
+* William Shakespeare <2>:              Answer 90.
+* William Shakespeare <3>:              Scope.
+* William Shakespeare <4>:              Player.
+* William Shakespeare <5>:              Answer 63.
+* William Shakespeare:                  Answer 33.
+* William Tyndale <1>:                  Reading Matter.
+* William Tyndale:                      Answer 16.
+* window 0:                             Assembly Language.
+* wingspan:                             Objects with Properties.
+* wizened man:                          Parsing Nouns.
+* woodpecker:                           Debugging.
+* word array:                           Parsing Nouns.
+* word arrays:                          Arrays.
+* word breaking <1>:                    Parsing Nouns.
+* word breaking:                        Assembly Language.
+* word stream:                          Parsing Nouns.
+* world colours <1>:                    Places.
+* world colours:                        Answer 5.
+* World Wide Web:                       Introduction.
+* yes or no questions, primitive routine to ask: Special Data Structures.
+* Z-encoded text:                       Assembly Language.
+* Zen <1>:                              Answer 28.
+* Zen:                                  Living Creatures.
+* Zip <1>:                              Assembly Language.
+* Zip:                                  Debugging.
+* zterp:                                Assembly Language.
+* `A Nasal Twinge' <1>:                 Scope.
+* `A Nasal Twinge' <2>:                 Answer 84.
+* `A Nasal Twinge':                     Answer 83.
+* `A Scenic View':                      Places.
+* `Acheton':                            Introduction.
+* `Advent' <1>:                         Player.
+* `Advent' <2>:                         Actions and Reactions.
+* `Advent' <3>:                         Player.
+* `Advent' <4>:                         Containers.
+* `Advent' <5>:                         Assembly Language.
+* `Advent' <6>:                         Daemons.
+* `Advent' <7>:                         Living Creatures.
+* `Advent' <8>:                         Messages and Classes.
+* `Advent' <9>:                         Light and Dark.
+* `Advent' <10>:                        Places.
+* `Advent' <11>:                        Boxes.
+* `Advent' <12>:                        Living Creatures.
+* `Advent' <13>:                        Daemons.
+* `Advent' <14>:                        Compiler Options.
+* `Advent' <15>:                        Parsing Verbs.
+* `Advent' <16>:                        Introduction.
+* `Advent' <17>:                        Answer 92.
+* `Advent' <18>:                        Lexicon.
+* `Advent' <19>:                        Parsing Verbs.
+* `Advent' <20>:                        Debugging.
+* `Advent' <21>:                        Switchable Objects.
+* `Advent' <22>:                        Doors.
+* `Advent' <23>:                        Daemons.
+* `Advent':                             Parsing Verbs.
+* `Adventureland' <1>:                  Describing Objects.
+* `Adventureland' <2>:                  Daemons.
+* `Adventureland' <3>:                  Introduction.
+* `Adventureland' <4>:                  Containers.
+* `Adventureland':                      Daemons.
+* `Alice Through The Looking-Glass' <1>: Parsing Verbs.
+* `Alice Through The Looking-Glass' <2>: Parsing Nouns.
+* `Alice Through The Looking-Glass' <3>: Containers.
+* `Alice Through The Looking-Glass' <4>: Introduction.
+* `Alice Through The Looking-Glass' <5>: Living Creatures.
+* `Alice Through The Looking-Glass' <6>: Messages and Classes.
+* `Alice Through The Looking-Glass':    Things to Enter.
+* `Balances' <1>:                       Living Creatures.
+* `Balances' <2>:                       Things to Enter.
+* `Balances' <3>:                       Helping the Parser.
+* `Balances' <4>:                       Containers.
+* `Balances' <5>:                       Living Creatures.
+* `Balances' <6>:                       Scope.
+* `Balances' <7>:                       Containers.
+* `Balances' <8>:                       Parsing Nouns.
+* `Balances' <9>:                       Player.
+* `Balances' <10>:                      Plural Names.
+* `Balances' <11>:                      Extending the Library.
+* `Balances' <12>:                      Describing Objects.
+* `Balances' <13>:                      Listing Objects.
+* `Balances' <14>:                      Introduction.
+* `Balances' <15>:                      Messages and Classes.
+* `Balances' <16>:                      Daemons.
+* `Balances' <17>:                      Parsing Verbs.
+* `Balances' <18>:                      Daemons.
+* `Balances' <19>:                      Parsing Verbs.
+* `Balances':                           Messages and Classes.
+* `Beyond Zork':                        Boxes.
+* `Cafe Inform':                        Parsing Nouns.
+* `Christminster':                      Living Creatures.
+* `Colossal Cave':                      Parsing Verbs.
+* `companion volumes':                  Introduction.
+* `Curses' <1>:                         Compiler Options.
+* `Curses' <2>:                         Player.
+* `Curses':                             Answer 42.
+* `debugging code':                     Debugging.
+* `drunk player object':                Player.
+* `economy' mode:                       Compiler Options.
+* `Enchanter':                          Doors.
+* `Enchanter' trilogy:                  Extending the Library.
+* `Encyclopaedia Frobozzica' <1>:       Living Creatures.
+* `Encyclopaedia Frobozzica' <2>:       Answer 76.
+* `Encyclopaedia Frobozzica':           Reading Matter.
+* `focus' of game:                      Player.
+* `Follow my leader':                   Living Creatures.
+* `Freefall':                           Assembly Language.
+* `has light':                          Light and Dark.
+* `indistinguishable':                  Plural Names.
+* `Jigsaw':                             Compiler Options.
+* `Knight of Ages':                     Daemons.
+* `List Property':                      Listing Objects.
+* `meta' actions:                       Actions and Reactions.
+* `Museum of Inform':                   Introduction.
+* `northness':                          Objects and Routines.
+* `offers light':                       Light and Dark.
+* `Robots':                             Assembly Language.
+* `Romeo and Juliet':                   Printing Output.
+* `Ruins' <1>:                          Answer 15.
+* `Ruins' <2>:                          Containers.
+* `Ruins' <3>:                          Places.
+* `Ruins' <4>:                          Doors.
+* `Ruins' <5>:                          Daemons.
+* `Ruins' <6>:                          Containers.
+* `Ruins' <7>:                          Places.
+* `Ruins' <8>:                          Answer 13.
+* `Ruins' <9>:                          Constants and Scoring.
+* `Ruins' <10>:                         Getting Started.
+* `Ruins' <11>:                         Introduction.
+* `Ruins' <12>:                         Answer 90.
+* `Ruins' <13>:                         Assembly Language.
+* `Ruins' <14>:                         Messages and Classes.
+* `Ruins' <15>:                         Actions and Reactions.
+* `Ruins' <16>:                         Player.
+* `Ruins' <17>:                         Getting Started.
+* `Ruins' <18>:                         Messages and Classes.
+* `Ruins' <19>:                         Living Creatures.
+* `Ruins' <20>:                         Things to Enter.
+* `Ruins' <21>:                         Switchable Objects.
+* `Ruins' <22>:                         Answer 36.
+* `Ruins' <23>:                         Things to Enter.
+* `Ruins':                              Reading Matter.
+* `see-through':                        Scope.
+* `Shell':                              Getting Started.
+* `Skyfall' setup file:                 ICL.
+* `Sorcerer':                           Player.
+* `Sorceror':                           Debugging.
+* `Spellbreaker cubes':                 Plural Names.
+* `Spellbreaker' <1>:                   Actions and Fake Actions.
+* `Spellbreaker' <2>:                   Player.
+* `Spellbreaker':                       Places.
+* `Starcross' <1>:                      Living Creatures.
+* `Starcross':                          Answer 19.
+* `The Legend Lives':                   Grammar Tokens.
+* `The Thief' <1>:                      Listing Objects.
+* `The Thief' <2>:                      Answer 33.
+* `The Thief':                          Living Creatures.
+* `The Witness':                        Extending the Library.
+* `timewait.h' <1>:                     Grammar Tokens.
+* `timewait.h':                         Daemons.
+* `Toyshop' <1>:                        Daemons.
+* `Toyshop' <2>:                        Describing Objects.
+* `Toyshop' <3>:                        Introduction.
+* `Toyshop' <4>:                        Containers.
+* `Toyshop' <5>:                        Constants and Scoring.
+* `Toyshop' <6>:                        Places.
+* `Toyshop' <7>:                        Living Creatures.
+* `Toyshop' <8>:                        Answer 74.
+* `Toyshop' <9>:                        Constants and Scoring.
+* `Toyshop':                            Messages and Classes.
+* `Trinity' <1>:                        Places.
+* `Trinity' <2>:                        Assembly Language.
+* `Trinity':                            Answer 94.
+* `wandering monsters':                 Daemons.
+* `welcome' message:                    Getting Started.
+* `Witness' <1>:                        Answer 46.
+* `Witness':                            Extending the Library.
+* `Zork I':                             Daemons.
+* `Zork' <1>:                           Living Creatures.
+* `Zork':                               Daemons.
+* "*" <1>:                              Answer 61.
+* "*":                                  Parsing Nouns.
+* "abstract" verb:                      Debugging.
+* "actions" verb:                       Debugging.
+* "all":                                Helping the Parser.
+* "Area 400":                           Describing Objects.
+* "Beware of the Dog":                  Boxes.
+* "black" and "white" <1>:              Answer 66.
+* "black" and "white":                  Parsing Verbs.
+* "brief":                              Actions and Fake Actions.
+* "ceiling":                            Objects and Routines.
+* "computer, 143":                      Living Creatures.
+* "delores, yes":                       Living Creatures.
+* "employ" verb:                        Grammar Tokens.
+* "examine" v. "read":                  Reading Matter.
+* "floor":                              Objects and Routines.
+* "follower.h":                         Living Creatures.
+* "free" verb:                          Grammar Tokens.
+* "gonear" verb:                        Debugging.
+* "goto" verb:                          Debugging.
+* "her":                                Helping the Parser.
+* "him":                                Helping the Parser.
+* "his":                                Describing Objects.
+* "Infoclues":                          Boxes.
+* "Invisiclues" <1>:                    Answer 88.
+* "Invisiclues":                        Boxes.
+* "it":                                 Helping the Parser.
+* "junior astronaut":                   Entry Points.
+* "lock" and "unlock" disambiguation <1>: Answer 86.
+* "lock" and "unlock" disambiguation:   Helping the Parser.
+* "look inside":                        Containers.
+* "master catburglar":                  Entry Points.
+* "me":                                 Player.
+* "megalook" verb <1>:                  Answer 79.
+* "megalook" verb:                      Scope.
+* "myself":                             Player.
+* "notify" verb:                        Constants and Scoring.
+* "objects" verb:                       Constants and Scoring.
+* "on", "at" or "in":                   Grammar Tokens.
+* "out" verb:                           Things to Enter.
+* "places" verb:                        Constants and Scoring.
+* "pluralobj.h" <1>:                    Extending the Library.
+* "pluralobj.h":                        Describing Objects.
+* "purloin" verb <1>:                   Answer 80.
+* "purloin" verb <2>:                   Debugging.
+* "purloin" verb:                       Scope.
+* "quotes off" verb:                    Boxes.
+* "random" verb:                        Debugging.
+* "read" v. "examine":                  Reading Matter.
+* "recording" verb:                     Debugging.
+* "replay" verb:                        Debugging.
+* "routines" verb:                      Debugging.
+* "scope" verb:                         Debugging.
+* "scope" verb exercise <1>:            Answer 78.
+* "scope" verb exercise:                Scope.
+* "score" verb:                         Parsing Verbs.
+* "shazam" verb:                        Parsing Verbs.
+* "showobj.h":                          Debugging.
+* "smartcantgo.h":                      Places.
+* "snavig" spell:                       Player.
+* "superbrief":                         Actions and Fake Actions.
+* "take all":                           Helping the Parser.
+* "take" verb:                          Parsing Verbs.
+* "throw rock at dalek":                Actions and Reactions.
+* "timers" verb:                        Debugging.
+* "trace" verb:                         Debugging.
+* "tree" verb:                          Debugging.
+* "undo" verb <1>:                      Run-Time Limitations.
+* "undo" verb:                          Assembly Language.
+* "use" verb:                           Grammar Tokens.
+* "verbose":                            Describing Objects.
+* "verbose":                            Actions and Fake Actions.
+* "what is a grue":                     Scope.
+* "What next?" <1>:                     Answer 46.
+* "What next?":                         Extending the Library.
+* "white" and "black" <1>:              Answer 66.
+* "white" and "black":                  Parsing Verbs.
+* "xyzzy" verb:                         Parsing Verbs.
+* "you don't need to refer to":         Places.
+* "zero":                               Grammar Tokens.
+* "\#" <1>:                             Parsing Nouns.
+* "\#":                                 Answer 60.
+
