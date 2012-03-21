@@ -1,10 +1,11 @@
 This is Info file inform.info, produced by Makeinfo-1.64 from the input
 file inform.texi.
 
-This is the Inform Designer's Manual, third edition, 4 September 1996.
-It was converted to Info by Christopher J. Madsen <ac608@yfn.ysu.edu>.
+This is the Inform Designer's Manual, third edition, 4 September 1996,
+as updated 16 May 1997.  It was converted to Info by Christopher J.
+Madsen <ac608@yfn.ysu.edu>.
 
-Copyright 1996 Graham Nelson and Christopher J. Madsen
+Copyright 1996,1997 Graham Nelson and Christopher J. Madsen
 
 Permission is granted to make and distribute copies of this manual
 provided that:
@@ -38,6 +39,8 @@ them.
 * --:                                   Arithmetic Expressions.
 * -->:                                  Arrays.
 * ->:                                   Parsing Verbs.
+* /:                                    Grammar Tokens.
+* //p:                                  Plural Names.
 * =:                                    Numbers and Variables.
 * @ <1>:                                Boxes.
 * @:                                    Printing Output.
@@ -63,10 +66,10 @@ them.
 * Achieved(task):                       Constants and Scoring.
 * action_to_be <1>:                     Helping the Parser.
 * action_to_be:                         Parsing Verbs.
-* actor <1>:                            Parsing Verbs.
-* actor:                                Scope.
-* add_to_scope <1>:                     Scope.
-* add_to_scope:                         Containers.
+* actor <1>:                            Scope.
+* actor:                                Parsing Verbs.
+* add_to_scope <1>:                     Containers.
+* add_to_scope:                         Scope.
 * after <1>:                            Places.
 * after:                                Getting Started.
 * AfterLife:                            Player.
@@ -81,11 +84,11 @@ them.
 * Attack:                               Living Creatures.
 * Attribute <1>:                        Using Attributes.
 * Attribute:                            Linking.
-* BeforeParsing <1>:                    Answer 66.
-* BeforeParsing:                        Parsing Verbs.
+* BeforeParsing <1>:                    Parsing Verbs.
+* BeforeParsing:                        Answer 66.
 * Blorple:                              Actions and Reactions.
-* box <1>:                              Printing Output.
-* box:                                  Boxes.
+* box <1>:                              Boxes.
+* box:                                  Printing Output.
 * break:                                Loops.
 * buffer <1>:                           Grammar Tokens.
 * buffer <2>:                           Answer 74.
@@ -95,15 +98,15 @@ them.
 * capacity <1>:                         Player.
 * capacity:                             Containers.
 * ChangeDefault:                        Extending the Library.
-* ChangePlayer <1>:                     Player.
-* ChangePlayer:                         Describing Objects.
-* child <1>:                            Debugging.
-* child:                                Object Tree.
+* ChangePlayer <1>:                     Describing Objects.
+* ChangePlayer:                         Player.
+* child <1>:                            Object Tree.
+* child:                                Debugging.
 * children <1>:                         Object Tree.
 * children:                             Debugging.
 * ChooseObjects:                        Helping the Parser.
-* Class:                                About Objects.
 * class:                                Classes and Inheritance.
+* Class:                                About Objects.
 * compass:                              Places.
 * concealed <1>:                        Scope.
 * concealed:                            Describing Objects.
@@ -122,7 +125,8 @@ them.
 * DEBUG:                                Debugging.
 * Default:                              Controlling Compilation.
 * default:                              Places.
-* describe <1>:                         Switchable Objects.
+* describe <1>:                         Describing Objects.
+* describe <2>:                         Switchable Objects.
 * describe:                             Describing Objects.
 * do:                                   Loops.
 * DoMenu:                               Boxes.
@@ -142,21 +146,22 @@ them.
 * Fake_Action:                          Actions and Reactions.
 * false <1>:                            Numbers and Variables.
 * false:                                Conditions.
+* female:                               Describing Objects.
 * first:                                Parsing Verbs.
-* font <1>:                             Printing Output.
-* font:                                 Boxes.
+* font <1>:                             Boxes.
+* font:                                 Printing Output.
 * for:                                  Loops.
-* found_in <1>:                         Player.
-* found_in:                             Places.
+* found_in <1>:                         Places.
+* found_in:                             Player.
 * GamePreRoutine:                       Actions and Reactions.
 * general:                              Getting Started.
 * Give:                                 Living Creatures.
-* Go <1>:                               Places.
-* Go:                                   Things to Enter.
+* Go <1>:                               Things to Enter.
+* Go:                                   Places.
 * Grammar:                              Getting Started.
 * grammar:                              Living Creatures.
-* has <1>:                              Getting Started.
-* has:                                  Using Attributes.
+* has <1>:                              Using Attributes.
+* has:                                  Getting Started.
 * HasLightSource:                       Light and Dark.
 * herobj:                               Helping the Parser.
 * himobj:                               Helping the Parser.
@@ -170,18 +175,18 @@ them.
 * indirect:                             Debugging.
 * initial <1>:                          Getting Started.
 * initial:                              Player.
-* Initialise <1>:                       Daemons.
-* Initialise <2>:                       Player.
-* Initialise <3>:                       Entry Points.
-* Initialise:                           Getting Started.
+* Initialise <1>:                       Player.
+* Initialise <2>:                       Daemons.
+* Initialise <3>:                       Getting Started.
+* Initialise:                           Entry Points.
 * inp1 <1>:                             Actions and Reactions.
 * inp1:                                 Answer 81.
-* inp2 <1>:                             Actions and Reactions.
-* inp2:                                 Answer 81.
+* inp2 <1>:                             Answer 81.
+* inp2:                                 Actions and Reactions.
 * InScope:                              Answer 30.
 * invent:                               Describing Objects.
-* inventory_stage <1>:                  Describing Objects.
-* inventory_stage:                      Listing Objects.
+* inventory_stage <1>:                  Listing Objects.
+* inventory_stage:                      Describing Objects.
 * inversion:                            Printing Output.
 * item_name:                            Boxes.
 * item_width:                           Boxes.
@@ -202,6 +207,7 @@ them.
 * LookRoutine:                          Describing Objects.
 * LOOPOVERSCOPE_REASON:                 Scope.
 * Lowstring:                            Answer 7.
+* male:                                 Describing Objects.
 * MAX_CARRIED:                          Constants and Scoring.
 * MAX_SCORES:                           Constants and Scoring.
 * MAX_TIMERS:                           Daemons.
@@ -210,13 +216,13 @@ them.
 * meta:                                 Parsing Verbs.
 * metaclass:                            About Objects.
 * moved:                                Scope.
-* name <1>:                             Parsing Nouns.
-* name <2>:                             Places.
-* name:                                 Objects with Properties.
+* name <1>:                             Objects with Properties.
+* name <2>:                             Parsing Nouns.
+* name:                                 Places.
+* neuter:                               Describing Objects.
 * NewRoom:                              Player.
-* NextWord <1>:                         Grammar Tokens.
-* NextWord <2>:                         Parsing Nouns.
-* NextWord <3>:                         Answer 73.
+* NextWord <1>:                         Parsing Nouns.
+* NextWord <2>:                         Answer 73.
 * NextWord:                             Grammar Tokens.
 * NextWordStopped:                      Grammar Tokens.
 * NormalWorld:                          Answer 7.
@@ -230,8 +236,9 @@ them.
 * NULL:                                 Getting Started.
 * number:                               Getting Started.
 * NUMBER_TASKS:                         Constants and Scoring.
-* Object <1>:                           Getting Started.
-* Object:                               About Objects.
+* Object <1>:                           About Objects.
+* Object:                               Getting Started.
+* ObjectIsUntouchable(obj):             Scope.
 * OBJECT_SCORE:                         Constants and Scoring.
 * ofclass:                              Classes and Inheritance.
 * OffersLight:                          Light and Dark.
@@ -240,33 +247,34 @@ them.
 * open:                                 Containers.
 * openable:                             Containers.
 * Order:                                Living Creatures.
-* orders <1>:                           Player.
-* orders:                               Living Creatures.
+* orders <1>:                           Living Creatures.
+* orders:                               Player.
 * parent <1>:                           Object Tree.
 * parent:                               Debugging.
 * parse:                                Grammar Tokens.
-* parsed_number <1>:                    Grammar.
-* parsed_number:                        Grammar Tokens.
+* parsed_number <1>:                    Grammar Tokens.
+* parsed_number:                        Grammar.
 * ParseNoun:                            Parsing Nouns.
 * ParseNumber:                          Grammar Tokens.
 * Parser:                               Getting Started.
 * ParserError:                          Helping the Parser.
 * parser_one, parser_two, parser_action: Plural Names.
-* parse_name <1>:                       Plural Names.
-* parse_name <2>:                       Scope.
-* parse_name:                           Parsing Nouns.
+* parse_name <1>:                       Parsing Nouns.
+* parse_name <2>:                       Plural Names.
+* parse_name:                           Scope.
 * PARSING_REASON:                       Scope.
 * PlaceInScope:                         Scope.
 * PlayerTo:                             Player.
 * plural:                               Plural Names.
+* pluralname:                           Describing Objects.
 * pretty_flag:                          Boxes.
-* print <1>:                            Sending Messages.
-* print:                                Places.
+* print <1>:                            Places.
+* print:                                Sending Messages.
 * print (a) obj:                        Describing Objects.
 * print (address):                      Debugging.
 * print (name) obj:                     Describing Objects.
 * print (string):                       Debugging.
-* print (The) obj:                      Describing Objects.
+* print (the) obj:                      Describing Objects.
 * print object <1>:                     Debugging.
 * print object:                         Describing Objects.
 * PrintRank:                            Constants and Scoring.
@@ -274,43 +282,48 @@ them.
 * PrintVerb:                            Parsing Verbs.
 * print_to_array:                       Sending Messages.
 * private:                              Private Properties.
+* PronounNotice:                        Helping the Parser.
+* PronounValue:                         Helping the Parser.
 * proper:                               Describing Objects.
 * Property:                             Linking.
 * provides <1>:                         Private Properties.
 * provides:                             Objects with Properties.
 * PushDir:                              Things to Enter.
 * quit:                                 Jumping Around.
-* random <1>:                           Random and Indirect.
-* random:                               Debugging.
+* random <1>:                           Debugging.
+* random:                               Random and Indirect.
 * react_after:                          Living Creatures.
 * REACT_AFTER_REASON:                   Scope.
 * react_before <1>:                     Places.
 * react_before:                         Living Creatures.
 * REACT_BEFORE_REASON:                  Scope.
-* read <1>:                             Accepting Input.
-* read:                                 Special Data Structures.
+* read <1>:                             Special Data Structures.
+* read:                                 Accepting Input.
 * real_location:                        Player.
 * Receive:                              Containers.
 * receive_action:                       Containers.
 * REPARSE_CODE:                         Answer 77.
-* Replace:                              Extending the Library.
 * replace:                              Parsing Verbs.
+* Replace:                              Extending the Library.
+* reverse <1>:                          Grammar.
+* reverse:                              Parsing Verbs.
 * ReversedWorld:                        Answer 7.
 * ROOM_SCORE:                           Constants and Scoring.
 * Routine:                              About Objects.
 * SACK_OBJECT:                          Constants and Scoring.
-* scenery <1>:                          Places.
-* scenery:                              Describing Objects.
+* scenery <1>:                          Describing Objects.
+* scenery:                              Places.
 * scope_reason <1>:                     Daemons.
 * scope_reason <2>:                     Living Creatures.
 * scope_reason:                         Scope.
 * scope_stage:                          Scope.
-* Search <1>:                           Containers.
-* Search:                               Actions and Reactions.
+* Search <1>:                           Actions and Reactions.
+* Search:                               Containers.
 * second:                               Places.
-* self <1>:                             Messages.
-* self:                                 Classes and Inheritance.
+* self <1>:                             Classes and Inheritance.
+* self:                                 Messages.
 * sender:                               Messages.
+* SetPronoun:                           Helping the Parser.
 * SetTime:                              Daemons.
 * short_name:                           Describing Objects.
 * Show:                                 Living Creatures.
@@ -324,24 +337,24 @@ them.
 * Statusline:                           Daemons.
 * StopDaemon:                           Daemons.
 * StopTimer:                            Daemons.
+* String:                               Answer 7.
 * string:                               Arrays.
-* String <1>:                           Answer 7.
 * String:                               About Objects.
 * Stub:                                 Controlling Compilation.
 * style <1>:                            Boxes.
 * style:                                Printing Output.
-* supporter <1>:                        Things to Enter.
-* supporter:                            Containers.
+* supporter <1>:                        Containers.
+* supporter:                            Things to Enter.
 * switch:                               Code Blocks.
 * switchable:                           Switchable Objects.
 * Switches:                             Compiler Options.
-* System_file <1>:                      Controlling Compilation.
+* System_file <1>:                      Extending the Library.
 * System_file <2>:                      Warnings.
-* System_file:                          Extending the Library.
+* System_file:                          Controlling Compilation.
 * table:                                Arrays.
 * talkable:                             Living Creatures.
-* TALKING_REASON <1>:                   Scope.
-* TALKING_REASON:                       Living Creatures.
+* TALKING_REASON <1>:                   Living Creatures.
+* TALKING_REASON:                       Scope.
 * TASKS_PROVIDED:                       Constants and Scoring.
 * task_scores:                          Constants and Scoring.
 * Tell:                                 Living Creatures.
@@ -353,8 +366,8 @@ them.
 * ThrownAt:                             Actions and Reactions.
 * time_out:                             Daemons.
 * TitlePage:                            Player.
-* transparent <1>:                      Containers.
-* transparent:                          Living Creatures.
+* transparent <1>:                      Living Creatures.
+* transparent:                          Containers.
 * true <1>:                             Numbers and Variables.
 * true:                                 Conditions.
 * TryNumber:                            Parsing Nouns.
@@ -372,13 +385,13 @@ them.
 * when_closed:                          Doors.
 * when_open:                            Doors.
 * while:                                Loops.
-* with <1>:                             Getting Started.
-* with:                                 Objects with Properties.
+* with <1>:                             Objects with Properties.
+* with:                                 Getting Started.
 * WITHOUT_DIRECTIONS:                   Places.
 * with_key:                             Containers.
-* WordAddress <1>:                      Parsing Nouns.
-* WordAddress <2>:                      Answer 73.
-* WordAddress:                          Grammar Tokens.
+* WordAddress <1>:                      Answer 73.
+* WordAddress <2>:                      Grammar Tokens.
+* WordAddress:                          Parsing Nouns.
 * WordLength <1>:                       Answer 73.
 * WordLength <2>:                       Parsing Nouns.
 * WordLength:                           Grammar Tokens.

@@ -3,8 +3,14 @@
 /*              by the compiler (e.g. DefArt) which the program doesn't      */
 /*              provide                                                      */
 /*                                                                           */
-/*   Part of Inform 6.1                                                      */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   Part of Inform 6.21                                                     */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
+/*                                                                           */
+/*   Incorporates the patch by Andrew Plotkin/Torbörn Andersson which was    */
+/*   posted on r.a.i.f. on 5 May 1999 by Michael Baum.  This fixes a memory  */
+/*   problem on some platforms and also fixes a bug which occurs when debug  */
+/*   mode is off. Note that you have to turn off strict mode, i.e. -~S, to   */
+/*   turn off the debug mode.                                                */
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
@@ -23,14 +29,16 @@ extern void compile_initial_routine(void)
         In order not to impose these restrictions on "Main", we compile a
         trivial routine consisting of a call to "Main" followed by "quit".   */
 
-    int32 j;
+  int32 j;
     assembly_operand AO, AO2; dbgl null_dbgl;
     null_dbgl.b1 = 0; null_dbgl.b2 = 0; null_dbgl.b3 = 0; null_dbgl.cc = 0;
 
-    assign_symbol(j = symbol_index("Main__", -1),
-        assemble_routine_header(0, FALSE, "Main__", &null_dbgl),
+    j = symbol_index("Main__", -1);
+    assign_symbol(j,
+        assemble_routine_header(0, FALSE, "Main__", &null_dbgl, FALSE, j),
         ROUTINE_T);
     sflags[j] |= SYSTEM_SFLAG + USED_SFLAG;
+    if (trace_fns_setting==3) sflags[j] |= STAR_SFLAG;
 
     AO.value = 0; AO.type = LONG_CONSTANT_OT; AO.marker = MAIN_MV;
     AO2.value = 255; AO2.type = VARIABLE_OT; AO2.marker = 0;
@@ -50,8 +58,13 @@ extern void compile_initial_routine(void)
 /*   The rest of the veneer is applied at the end of the pass, as required.  */
 /* ------------------------------------------------------------------------- */
 
-static int   veneer_routine_needs_compilation[VENEER_ROUTINES];
+static int veneer_routine_needs_compilation[VENEER_ROUTINES];
 int32 veneer_routine_address[VENEER_ROUTINES];
+static int veneer_symbols_base;
+
+#define VR_UNUSED      0
+#define VR_CALLED      1
+#define VR_COMPILED    2
 
 typedef struct VeneerRoutine_s
 {   char *name;
@@ -138,7 +151,13 @@ static VeneerRoutine VRs[VENEER_ROUTINES] =
         "obj; print \"The \", obj; ]", "", "", "", "", ""
     },
     {   "PrintShortName",
-        "obj; @print_obj obj; ]", "", "", "", "", ""
+        "obj; switch(metaclass(obj))\
+         {   0: print \"nothing\";\
+             Object: @print_obj obj;\
+             Class: print \"class \"; @print_obj obj;\
+             Routine: print \"(routine at \", obj, \")\";\
+             String: print \"(string at \", obj, \")\";\
+         } ]", "", "", "", "", ""
     },
     {   "EnglishNumber",
         "obj; print obj; ]", "", "", "", "", ""
@@ -178,6 +197,11 @@ static VeneerRoutine VRs[VENEER_ROUTINES] =
         "obj identifier value x;\
          x = obj..&identifier;\
          if (x==0) { RT__Err(\"write to\", obj, identifier); return; }\
+         #ifdef INFIX;\
+         if (obj has infix__watching || (debug_flag & 15)) RT__TrPS(obj,identifier,value);\
+         #ifnot; #ifdef DEBUG;\
+         if (debug_flag & 15) RT__TrPS(obj,identifier,value);\
+         #endif; #endif;\
          x-->0 = value;\
          ]", "", "", "", "", ""
     },
@@ -223,25 +247,32 @@ static VeneerRoutine VRs[VENEER_ROUTINES] =
          @check_arg_count 3 ?~A__x;y++;@check_arg_count 4 ?~A__x;y++;\
          @check_arg_count 5 ?~A__x;y++;@check_arg_count 6 ?~A__x;y++;\
          @check_arg_count 7 ?~A__x;y++;@check_arg_count 8 ?~A__x;y++;.A__x;",
-        "#ifdef DEBUG;#ifdef InformLibrary;\
-         if (debug_flag & 1 ~= 0)\
-         { debug_flag--;\
+        "#ifdef INFIX;if (obj has infix__watching) n=1;#endif;\
+         #ifdef DEBUG;if (debug_flag & 1 ~= 0) n=1;#endif;\
+         if (n==1) {\
+           #ifdef DEBUG;n=debug_flag & 1;
+debug_flag=debug_flag-n;#endif;\
            print \"[ ~\", (name) obj, \"~.\", (property) id, \"(\";\
-     switch(y) { 1: print a; 2: print a,\",\",b; 3: print a,\",\",b,\",\",c;\
+     switch(y) { 1: print a; 2: print a,\",\",b; 3: print
+a,\",\",b,\",\",c;\
      4: print a,\",\",b,\",\",c,\",\",d;\
      5: print a,\",\",b,\",\",c,\",\",d,\",\",e;\
      6: print a,\",\",b,\",\",c,\",\",d,\",\",e,\",\",f; }\
-           print \") ]^\"; debug_flag++;\
-         }\
-         #endif;#endif;",
-        "if (id >= 0 && id < 64)\
-         { x = obj.&id; if (x==0) n=2; else n = obj.#id; }\
+           print \") ]^\";\
+           #ifdef DEBUG;debug_flag = debug_flag + n;#endif;\
+           }",
+        "if (id > 0 && id < 64)\
+         { x = obj.&id; if (x==0) { x=$000a-->0 + 2*(id-1); n=2; }\
+         else n = obj.#id; }\
          else\
-         { if (id>=64 && id<69 && obj in Class) return Cl__Ms(obj,id,a,b);\
+         { if (id>=64 && id<69 && obj in Class)\
+             return Cl__Ms(obj,id,y,a,b,c,d);\
            x = obj..&id;\
            if (x == 0) { .Call__Error;\
              RT__Err(\"send message\", obj, id); return; }\
            n = 0->(x-1);\
+           if (id&$C000==$4000)\
+             switch (n&$C0) { 0: n=1; $40: n=2; $80: n=n&$3F; }\
          }",
         "for (:2*m<n:m++)\
          {  if (x-->m==$ffff) rfalse;\
@@ -270,6 +301,11 @@ static VeneerRoutine VRs[VENEER_ROUTINES] =
         "obj identifier x;\
          x = obj..&identifier;\
          if (x==0) { RT__Err(\"increment\", obj, identifier); return; }\
+         #ifdef INFIX;\
+         if (obj has infix__watching || (debug_flag & 15)) RT__TrPS(obj,identifier,(x-->0)+1);\
+         #ifnot; #ifdef DEBUG;\
+         if (debug_flag & 15) RT__TrPS(obj,identifier,(x-->0)+1);\
+         #endif; #endif;\
          return ++(x-->0);\
          ]", "", "", "", "", ""
     },
@@ -280,6 +316,12 @@ static VeneerRoutine VRs[VENEER_ROUTINES] =
         "obj identifier x;\
          x = obj..&identifier;\
          if (x==0) { RT__Err(\"increment\", obj, identifier); return; }\
+         #ifdef INFIX;\
+         if (obj has infix__watching || (debug_flag & 15))\
+         RT__TrPS(obj,identifier,(x-->0)+1);\
+         #ifnot; #ifdef DEBUG;\
+         if (debug_flag & 15) RT__TrPS(obj,identifier,(x-->0)+1);\
+         #endif; #endif;\
          return (x-->0)++;\
          ]", "", "", "", "", ""
     },
@@ -290,6 +332,11 @@ static VeneerRoutine VRs[VENEER_ROUTINES] =
         "obj identifier x;\
          x = obj..&identifier;\
          if (x==0) { RT__Err(\"decrement\", obj, identifier); return; }\
+         #ifdef INFIX;\
+         if (obj has infix__watching || (debug_flag & 15)) RT__TrPS(obj,identifier,(x-->0)-1);\
+         #ifnot; #ifdef DEBUG;\
+         if (debug_flag & 15) RT__TrPS(obj,identifier,(x-->0)-1);\
+         #endif; #endif;\
          return --(x-->0);\
          ]", "", "", "", "", ""
     },
@@ -300,6 +347,11 @@ static VeneerRoutine VRs[VENEER_ROUTINES] =
         "obj identifier x;\
          x = obj..&identifier;\
          if (x==0) { RT__Err(\"decrement\", obj, identifier); return; }\
+         #ifdef INFIX;\
+         if (obj has infix__watching || (debug_flag & 15)) RT__TrPS(obj,identifier,(x-->0)-1);\
+         #ifnot; #ifdef DEBUG;\
+         if (debug_flag & 15) RT__TrPS(obj,identifier,(x-->0)-1);\
+         #endif; #endif;\
          return (x-->0)--;\
          ]", "", "", "", "", ""
     },
@@ -310,6 +362,7 @@ static VeneerRoutine VRs[VENEER_ROUTINES] =
 
         "RA__Pr",
         "obj identifier i otherid cla;\
+         if (obj==0) rfalse;\
          if (identifier<64 && identifier>0) return obj.&identifier;\
          if (identifier & $8000 ~= 0)\
          {   cla = #classes_table-->(identifier & $ff);\
@@ -356,6 +409,9 @@ static VeneerRoutine VRs[VENEER_ROUTINES] =
          if (identifier<64 && identifier>0) return obj.#identifier;\
          x = obj..&identifier;\
          if (x==0) rfalse;\
+         if (identifier&$C000==$4000)\
+             switch (((x-1)->0)&$C0)\
+             {  0: return 1;  $40: return 2;  $80: return ((x-1)->0)&$3F; }\
          return (x-1)->0;\
          ]", "", "", "", "", ""
     },
@@ -446,7 +502,7 @@ static VeneerRoutine VRs[VENEER_ROUTINES] =
          {   if (o2 has n) give o1 n;\
              else give o1 ~n;\
          }\
-         for (n=1:n<64:n++)\
+         for (n=1:n<64:n++) if (n~=2 or 3)\
          {   a1 = o1.&n; a2 = o2.&n; size = o1.#n;\
              if (a1~=0 && a2~=0 && size==o2.#n)\
              {   for (m=0:m<size:m++) a1->m=a2->m;\
@@ -467,13 +523,59 @@ static VeneerRoutine VRs[VENEER_ROUTINES] =
                       property                                               */
 
         "RT__Err",
-        "crime obj id size p;\
-         print \"^** Run-time error: \";\
-         if (obj in Class) print \"Class \";\
-         @print_obj obj;\
-         print \" (object number \", obj, \") \";\
-         if (id<0)\
-             print \"is not of class \", (name) -id;",
+        "crime obj id size p q;\
+         print \"^[** Programming error: \";\
+         if (crime<0) jump RErr;\
+         if (crime==1) { print \"class \"; @print_obj obj;\
+         \": 'create' can have 0 to 3 parameters only **]\";}\
+         if (crime == 32) \"objectloop broken because the object \",\
+         (name) obj, \" was moved while the loop passed through it **]\";\
+         if (crime == 33) \"tried to print (char) \", obj,\
+         \", which is not a valid ZSCII character code for output **]\";\
+         if (crime == 34) \"tried to print (address) on something not the \",\
+         \"byte address of a string **]\";\
+         if (crime == 35) \"tried to print (string) on something not a \",\
+         \"string **]\";\
+         if (crime == 36) \"tried to print (object) on something not an \",\
+         \"object or class **]\";",
+        "if (crime < 32) { print \"tried to \";\
+         if (crime >= 28) { if (crime==28 or 29) print \"read from \";\
+         else print \"write to \";\
+         if (crime==29 or 31) print \"-\"; print \"->\", obj,\
+         \" in the\"; if(size>=8) { print\" (->)\"; size=size-8; }\
+         if(size>=4) { print\" (-->)\"; size=size-4; }\
+         switch(size){0,1:q=0; 2:print \" string\";\
+         q=1; 3:print \" table\";q=1;} \" array ~\",\
+         (string) #array_names_offset-->p, \"~, which has entries \", q,\
+         \" up to \",id,\" **]\"; }\
+         if (crime >= 24 && crime <=27) { if (crime<=25) print \"read\";\
+         else print \"write\"; print \" outside memory using \";\
+         switch(crime) { 24,26:\"-> **]\"; 25,27:\"--> **]\"; } }\
+         if (crime < 4) print \"test \"; else\
+         if (crime < 12 || crime > 20) print \"find the \"; else\
+         if (crime < 14) print \"use \";\
+         if (crime==20) \"divide by zero **]\"; print \"~\";\
+         switch(crime) {\
+         2: print \"in~ or ~notin\"; 3: print \"has~ or ~hasnt\";\
+         4: print \"parent\"; 5: print \"eldest\"; 6: print \"child\";\
+         7: print \"younger\"; 8: print \"sibling\"; 9: print \"children\";\
+         10: print \"youngest\"; 11: print \"elder\";\
+         12: print \"objectloop\"; 13: print \"}~ at end of ~objectloop\";\
+         14: \"give~ an attribute to \", (name) obj, \" **]\";\
+         15: \"remove~ \", (name) obj, \" **]\";",
+        "16,17,18: print \"move~ \", (name) obj, \" to \", (name) id;\
+         if (crime==18) { print \", which would make a loop: \",(name) obj;\
+         p=id; do { print \" in \", (name) p; p=parent(p);} until (p==obj);\
+         \" in \", (name) p, \" **]\"; }\
+         \" **]\"; 19: \"give~ or test ~has~ or ~hasnt~ with a non-attribute\
+         on the object \",(name) obj,\" **]\";\
+         21: print \".&\"; 22: print \".#\"; 23: print \".\"; }\
+         \"~ of \", (name) obj, \" **]\"; }",
+        ".RErr; if (obj>=0 && obj<=(#largest_object-255)) {\
+         if (obj && obj in Class) print \"class \";\
+         if (obj) @print_obj obj;else print \"nothing\";print\" \";}\
+         print \"(object number \", obj, \") \";\
+         if (id<0) print \"is not of class \", (name) -id;",
         "else\
          {   print \" has no property \", (property) id;\
              p = #identifiers_table;\
@@ -481,8 +583,8 @@ static VeneerRoutine VRs[VENEER_ROUTINES] =
              if (id<0 || id>=size)\
                  print \" (and nor has any other object)\";\
          }\
-         print \" to \", (string) crime, \" **^\";\
-         ]", "", "", "", ""
+         print \" to \", (string) crime, \" **]^\";\
+         ]", ""
     },
     {   /*  Z__Region:  Determines whether a value is:
                         1  an object number
@@ -544,16 +646,22 @@ static VeneerRoutine VRs[VENEER_ROUTINES] =
     {   /*  Cl__Ms:   the five message-receiving properties of Classes       */
 
         "Cl__Ms",
-        "obj id a b x;\
+        "obj id y a b c d x;\
          switch(id)\
          {   create:\
                  if (children(obj)<=1) rfalse; x=child(obj);\
-                 remove x; if (x provides create) x..create(); return x;\
+                 remove x; if (x provides create) { if (y==0) x..create();\
+                 if (y==1) x..create(a); if (y==2) x..create(a,b);\
+                 if (y>3) RT__Err(1,obj); if (y>=3) x..create(a,b,c);}\
+                 return x;\
              recreate:\
                  if (~~(a ofclass obj))\
                  { RT__Err(\"recreate\", a, -obj); rfalse; }\
                  Copy__Primitive(a, child(obj));\
-                 if (a provides create) a..create(); rfalse;",
+                 if (a provides create) { if (y==1) a..create();\
+                 if (y==2) a..create(b); if (y==3) a..create(b,c);\
+                 if (y>4) RT__Err(1,obj); if (y>=4) a..create(b,c,d);\
+                 } rfalse;",
             "destroy:\
                  if (~~(a ofclass obj))\
                  { RT__Err(\"destroy\", a, -obj); rfalse; }\
@@ -570,87 +678,455 @@ static VeneerRoutine VRs[VENEER_ROUTINES] =
                  Copy__Primitive(a, b); rfalse;\
          }\
          ]", "", "", ""
+    },
+    {   /*  RT__ChT:  check at run-time that a proposed object move is legal
+                      cause error and do nothing if not; otherwise move */
+
+        "RT__ChT",
+        "obj1 obj2 x;\
+         if (obj1<5 || obj1>(#largest_object-255) || obj1 in 1)\
+             return RT__Err(16,obj1,obj2);\
+         if (obj2<5 || obj2>(#largest_object-255) || obj2 in 1)\
+             return RT__Err(17,obj1,obj2);",
+        "x=obj2; while (x~=0) { if (x==obj1) return RT__Err(18,obj1,obj2); \
+         x=parent(x); }\
+         #ifdef INFIX;\
+         if (obj1 has infix__watching\
+             || obj2 has infix__watching || (debug_flag & 15))\
+         print \"[Moving \", (name) obj1, \" to \", (name) obj2, \"]^\";\
+         #ifnot; #ifdef DEBUG;\
+         if (debug_flag & 15)\
+         print \"[Moving \", (name) obj1, \" to \", (name) obj2, \"]^\";\
+         #endif; #endif;\
+         @insert_obj obj1 obj2; ]", "", "", "", ""
+    },
+    {   /*  RT__ChR:  check at run-time that a proposed object remove is legal
+                      cause error and do nothing if not; otherwise remove */
+
+        "RT__ChR",
+        "obj1;\
+         if (obj1<5 || obj1>(#largest_object-255) || obj1 in 1)\
+             return RT__Err(15,obj1);",
+        "#ifdef INFIX;\
+         if (obj1 has infix__watching || (debug_flag & 15))\
+         print \"[Removing \", (name) obj1, \"]^\";\
+         #ifnot; #ifdef DEBUG;\
+         if (debug_flag & 15)\
+         print \"[Removing \", (name) obj1, \"]^\";\
+         #endif; #endif;\
+         @remove_obj obj1; ]", "", "", "", ""
+    },
+    {   /*  RT__ChG:  check at run-time that a proposed attr give is legal
+                      cause error and do nothing if not; otherwise give */
+
+        "RT__ChG",
+        "obj1 a;\
+         if (obj1<5 || obj1>(#largest_object-255) || obj1 in 1)\
+         return RT__Err(14,obj1); if (a<0 || a>=48) return RT__Err(19,obj1);\
+         if (obj1 has a) return;",
+        "#ifdef INFIX;\
+         if (a ~= workflag && (obj1 has infix__watching || (debug_flag & 15)))\
+         print \"[Giving \", (name) obj1, \" \", (DebugAttribute) a, \"]^\";\
+         #ifnot; #ifdef DEBUG;\
+         if (a ~= workflag && debug_flag & 15)\
+         print \"[Giving \", (name) obj1, \" \", (DebugAttribute) a, \"]^\";\
+         #endif; #endif;\
+         @set_attr obj1 a; ]", "", "", "", ""
+    },
+    {   /*  RT__ChGt:  check at run-time that a proposed attr give ~ is legal
+                      cause error and do nothing if not; otherwise give */
+
+        "RT__ChGt",
+        "obj1 a;\
+         if (obj1<5 || obj1>(#largest_object-255) || obj1 in 1)\
+         return RT__Err(14,obj1); if (a<0 || a>=48) return RT__Err(19,obj1);\
+         if (obj1 hasnt a) return;",
+        "#ifdef INFIX;\
+         if (a ~= workflag && (obj1 has infix__watching || (debug_flag & 15)))\
+         print \"[Giving \",(name) obj1,\" @@126\", (DebugAttribute) a, \"]^\";\
+         #ifnot; #ifdef DEBUG;\
+         if (a ~= workflag && debug_flag & 15)\
+         print \"[Giving \",(name) obj1,\" @@126\", (DebugAttribute) a, \"]^\";\
+         #endif; #endif;\
+         @clear_attr obj1 a; ]", "", "", "", ""
+    },
+    {   /*  RT__ChPS:  check at run-time that a proposed property set is legal
+                      cause error and do nothing if not; otherwise make it */
+
+        "RT__ChPS",
+        "obj prop val;\
+         if (obj<5 || obj>(#largest_object-255) || obj in 1 || obj.&prop==0)\
+         return RT__Err(\"set\", obj, prop);\
+         @put_prop obj prop val;",
+        "#ifdef INFIX;\
+         if (obj has infix__watching || (debug_flag & 15)) RT__TrPS(obj,prop,val);\
+         #ifnot; #ifdef DEBUG;\
+         if (debug_flag & 15) RT__TrPS(obj,prop,val);\
+         #endif; #endif;\
+         return val; ]", "", "", "", ""
+    },
+    {   /*  RT__TrPS:  trace property settings  */
+
+        "RT__TrPS",
+        "obj prop val;\
+         print \"[Setting \",(name) obj,\".\",(property) prop,\
+         \" to \",val,\"]^\"; ]",
+        "", "", "", "", ""
+    },
+    {   /*  RT__ChLDB:  check at run-time that it's safe to load a byte
+                        and return the byte */
+
+        "RT__ChLDB",
+        "base offset a val;\
+         a=base+offset;if (Unsigned__Compare(a,#readable_memory_offset)>=0)\
+         return RT__Err(24);",
+        "@loadb base offset -> val;return val; ]", "", "", "", ""
+    },
+    {   /*  RT__ChLDW:  check at run-time that it's safe to load a word
+                        and return the word */
+
+        "RT__ChLDW",
+        "base offset a val;\
+         a=base+2*offset;if (Unsigned__Compare(a,#readable_memory_offset)>=0)\
+         return RT__Err(25);",
+        "@loadw base offset -> val;return val; ]", "", "", "", ""
+    },
+    {   /*  RT__ChSTB:  check at run-time that it's safe to store a byte
+                        and store it */
+
+        "RT__ChSTB",
+        "base offset val a f;\
+         a=base+offset;\
+         if (Unsigned__Compare(a,#array__start)>=0\
+             && Unsigned__Compare(a,#array__end)<0) f=1; else\
+         if (Unsigned__Compare(a,#cpv__start)>=0\
+             && Unsigned__Compare(a,#cpv__end)<0) f=1; else\
+         if (Unsigned__Compare(a,#ipv__start)>=0\
+             && Unsigned__Compare(a,#ipv__end)<0) f=1; else\
+         if (a==$0011) f=1;\
+         if (f==0) return RT__Err(26);",
+        "@storeb base offset val; ]", "", "", "", ""
+    },
+    {   /*  RT__ChSTW:  check at run-time that it's safe to store a word
+                        and store it */
+
+        "RT__ChSTW",
+        "base offset val a f;\
+         a=base+2*offset;\
+         if (Unsigned__Compare(a,#array__start)>=0\
+             && Unsigned__Compare(a,#array__end)<0) f=1; else\
+         if (Unsigned__Compare(a,#cpv__start)>=0\
+             && Unsigned__Compare(a,#cpv__end)<0) f=1; else\
+         if (Unsigned__Compare(a,#ipv__start)>=0\
+             && Unsigned__Compare(a,#ipv__end)<0) f=1; else\
+         if (a==$0010) f=1;\
+         if (f==0) return RT__Err(27);",
+        "@storew base offset val; ]", "", "", "", ""
+    },
+    {   /*  RT__ChPrintC:  check at run-time that it's safe to print (char)
+                        and do so */
+
+        "RT__ChPrintC",
+        "c fl;\
+         if (c==0 or 9 or 11 or 13) fl=1;\
+         if (c>=32 && c<=126) fl=1; if (c>=155 && c<=251) fl=1;\
+         if (fl==0) return RT__Err(33,c);",
+        "@print_char c; ]", "", "", "", ""
+    },
+    {   /*  RT__ChPrintA:  check at run-time that it's safe to print (address)
+                        and do so */
+
+        "RT__ChPrintA",
+        "a;\
+         if (Unsigned__Compare(a, #readable_memory_offset)>=0)\
+         return RT__Err(34);",
+        "@print_addr a; ]", "", "", "", ""
+    },
+    {   /*  RT__ChPrintS:  check at run-time that it's safe to print (string)
+                        and do so */
+
+        "RT__ChPrintS",
+        "a;\
+         if (Z__Region(a)~=3) return RT__Err(35);",
+        "@print_paddr a; ]", "", "", "", ""
+    },
+    {   /*  RT__ChPrintO:  check at run-time that it's safe to print (object)
+                        and do so */
+
+        "RT__ChPrintO",
+        "a;\
+         if (Z__Region(a)~=1) return RT__Err(36);",
+        "@print_obj a; ]", "", "", "", ""
     }
 };
 
+static void mark_as_needed(int code)
+{   if (veneer_routine_needs_compilation[code] == VR_UNUSED)
+    {   veneer_routine_needs_compilation[code] = VR_CALLED;
+        /* Here each routine must mark every veneer routine it explicitly
+           calls as needed */
+        switch(code)
+        {   case WV__Pr_VR:
+                mark_as_needed(RT__TrPS_VR);
+                mark_as_needed(RT__Err_VR);
+                return;
+            case RV__Pr_VR:
+                mark_as_needed(RT__Err_VR);
+                return;
+            case CA__Pr_VR:
+                mark_as_needed(Z__Region_VR);
+                mark_as_needed(Cl__Ms_VR);
+                mark_as_needed(RT__Err_VR);
+                return;
+            case IB__Pr_VR:
+            case IA__Pr_VR:
+            case DB__Pr_VR:
+            case DA__Pr_VR:
+                mark_as_needed(RT__Err_VR);
+                mark_as_needed(RT__TrPS_VR);
+                return;
+            case RA__Pr_VR:
+                mark_as_needed(CP__Tab_VR);
+                return;
+            case RA__Sc_VR:
+                mark_as_needed(RT__Err_VR);
+                return;
+            case OP__Pr_VR:
+                mark_as_needed(Z__Region_VR);
+                return;
+            case OC__Cl_VR:
+                mark_as_needed(Z__Region_VR);
+                mark_as_needed(RT__Err_VR);
+                return;
+            case Z__Region_VR:
+                mark_as_needed(Unsigned__Compare_VR);
+                return;
+            case Metaclass_VR:
+                mark_as_needed(Z__Region_VR);
+                return;
+            case Cl__Ms_VR:
+                mark_as_needed(RT__Err_VR);
+                mark_as_needed(Copy__Primitive_VR);
+                return;
+            case RT__ChR_VR:
+            case RT__ChT_VR:
+            case RT__ChG_VR:
+            case RT__ChGt_VR:
+                mark_as_needed(RT__Err_VR);
+                return;
+            case RT__ChPS_VR:
+                mark_as_needed(RT__Err_VR);
+                mark_as_needed(RT__TrPS_VR);
+                return;
+            case RT__ChLDB_VR:
+            case RT__ChLDW_VR:
+            case RT__ChSTB_VR:
+            case RT__ChSTW_VR:
+                mark_as_needed(Unsigned__Compare_VR);
+                mark_as_needed(RT__Err_VR);
+                return;
+            case RT__ChPrintC_VR:
+                mark_as_needed(RT__Err_VR);
+                return;
+            case RT__ChPrintA_VR:
+                mark_as_needed(Unsigned__Compare_VR);
+                mark_as_needed(RT__Err_VR);
+                return;
+            case RT__ChPrintS_VR:
+            case RT__ChPrintO_VR:
+                mark_as_needed(RT__Err_VR);
+                mark_as_needed(Z__Region_VR);
+                return;
+        }
+    }
+}
+
 extern assembly_operand veneer_routine(int code)
 {   assembly_operand AO;
-
     AO.type = LONG_CONSTANT_OT;
     AO.marker = VROUTINE_MV;
     AO.value = code;
-    veneer_routine_needs_compilation[code] = TRUE;
-
-    if (code == CA__Pr_VR)
-    {   veneer_routine_needs_compilation[Copy__Primitive_VR] = TRUE;
-        veneer_routine_needs_compilation[Unsigned__Compare_VR] = TRUE;
-        veneer_routine_needs_compilation[Z__Region_VR] = TRUE;
-        veneer_routine_needs_compilation[Print__Pname_VR] = TRUE;
-        veneer_routine_needs_compilation[Cl__Ms_VR] = TRUE;
-    }
-
-    if ((code == OC__Cl_VR) || (code == OP__Pr_VR) || (code == Metaclass_VR))
-    {   veneer_routine_needs_compilation[Unsigned__Compare_VR] = TRUE;
-        veneer_routine_needs_compilation[Z__Region_VR] = TRUE;
-        veneer_routine_needs_compilation[CP__Tab_VR] = TRUE;
-        veneer_routine_needs_compilation[RA__Pr_VR] = TRUE;
-    }
-
-    if (code >= WV__Pr_VR)
-        veneer_routine_needs_compilation[RT__Err_VR] = TRUE;
-
-    if (code == RT__Err_VR)
-        veneer_routine_needs_compilation[Print__Pname_VR] = TRUE;
-
-    if (code == RA__Pr_VR)
-        veneer_routine_needs_compilation[CP__Tab_VR] = TRUE;
-
+    mark_as_needed(code);
     return(AO);
 }
 
+static void compile_symbol_table_routine(void)
+{   int32 j, nl, arrays_l, routines_l, constants_l;
+    assembly_operand AO, AO2, AO3, tv2, tv3; dbgl null_dbgl;
+    null_dbgl.b1 = 0; null_dbgl.b2 = 0; null_dbgl.b3 = 0; null_dbgl.cc = 0;
+
+    veneer_mode = TRUE; j = symbol_index("Symb__Tab", -1);
+    assign_symbol(j,
+        assemble_routine_header(2, FALSE, "Symb__Tab", &null_dbgl, FALSE, j),
+        ROUTINE_T);
+    sflags[j] |= SYSTEM_SFLAG + USED_SFLAG;
+    if (trace_fns_setting==3) sflags[j] |= STAR_SFLAG;
+    if (define_INFIX_switch == FALSE)
+    {   assemble_0(rfalse_zc);
+        variable_usage[1] = TRUE;
+        variable_usage[2] = TRUE;
+        assemble_routine_end(FALSE, &null_dbgl);
+        veneer_mode = FALSE;
+        return;
+    }
+
+    AO.value = 1; AO.type = VARIABLE_OT; AO.marker = 0;
+    AO2.type = SHORT_CONSTANT_OT; AO2.marker = 0;
+    AO3.type = LONG_CONSTANT_OT; AO3.marker = 0;
+
+    tv2.type = VARIABLE_OT; tv2.value = 254; tv2.marker = 0;
+    tv3.type = VARIABLE_OT; tv3.value = 253; tv3.marker = 0;
+
+    arrays_l = next_label++;
+    routines_l = next_label++;
+    constants_l = next_label++;
+
+    sequence_point_follows = FALSE;
+    AO2.value = 1;
+    assemble_2_branch(je_zc, AO, AO2, arrays_l, TRUE);
+    sequence_point_follows = FALSE;
+    AO2.value = 2;
+    assemble_2_branch(je_zc, AO, AO2, routines_l, TRUE);
+    sequence_point_follows = FALSE;
+    AO2.value = 3;
+    assemble_2_branch(je_zc, AO, AO2, constants_l, TRUE);
+    sequence_point_follows = FALSE;
+    assemble_0(rtrue_zc);
+
+    assemble_label_no(arrays_l);
+    AO.value = 2;
+    for (j=0; j<no_arrays; j++)
+    {   {   AO2.value = j;
+            if (AO2.value<256) AO2.type = SHORT_CONSTANT_OT;
+            else AO2.type = LONG_CONSTANT_OT;
+            nl = next_label++;
+            sequence_point_follows = FALSE;
+            assemble_2_branch(je_zc, AO, AO2, nl, FALSE);
+            AO3.value = array_sizes[j];
+            AO3.marker = 0;
+            assemble_store(tv2, AO3);
+            AO3.value = array_types[j];
+            if (sflags[array_symbols[j]] & (INSF_SFLAG+SYSTEM_SFLAG))
+                AO3.value = AO3.value + 16;
+            AO3.marker = 0;
+            assemble_store(tv3, AO3);
+            AO3.value = svals[array_symbols[j]];
+            AO3.marker = ARRAY_MV;
+            assemble_1(ret_zc, AO3);
+            assemble_label_no(nl);
+        }
+    }
+    sequence_point_follows = FALSE;
+    assemble_0(rtrue_zc);
+    assemble_label_no(routines_l);
+    for (j=0; j<no_named_routines; j++)
+    {   AO2.value = j;
+        if (AO2.value<256) AO2.type = SHORT_CONSTANT_OT;
+        else AO2.type = LONG_CONSTANT_OT;
+        nl = next_label++;
+        sequence_point_follows = FALSE;
+        assemble_2_branch(je_zc, AO, AO2, nl, FALSE);
+        AO3.value = 0;
+        if (sflags[named_routine_symbols[j]]
+            & (INSF_SFLAG+SYSTEM_SFLAG)) AO3.value = 16;
+        AO3.marker = 0;
+        assemble_store(tv3, AO3);
+        AO3.value = svals[named_routine_symbols[j]];
+        AO3.marker = IROUTINE_MV;
+        assemble_1(ret_zc, AO3);
+        assemble_label_no(nl);
+    }
+    sequence_point_follows = FALSE;
+    assemble_0(rtrue_zc);
+
+    assemble_label_no(constants_l);
+    for (j=0, no_named_constants=0; j<no_symbols; j++)
+    {   if (((stypes[j] == OBJECT_T) || (stypes[j] == CLASS_T)
+            || (stypes[j] == CONSTANT_T))
+            && ((sflags[j] & (UNKNOWN_SFLAG+ACTION_SFLAG))==0))
+        {   AO2.value = no_named_constants++;
+            if (AO2.value<256) AO2.type = SHORT_CONSTANT_OT;
+            else AO2.type = LONG_CONSTANT_OT;
+            nl = next_label++;
+            sequence_point_follows = FALSE;
+            assemble_2_branch(je_zc, AO, AO2, nl, FALSE);
+            AO3.value = 0;
+            if (stypes[j] == OBJECT_T) AO3.value = 2;
+            if (stypes[j] == CLASS_T) AO3.value = 1;
+            if (sflags[j] & (INSF_SFLAG+SYSTEM_SFLAG))
+                AO3.value = AO3.value + 16;
+            AO3.marker = 0;
+            assemble_store(tv3, AO3);
+            AO3.value = j;
+            AO3.marker = SYMBOL_MV;
+            assemble_1(ret_zc, AO3);
+            assemble_label_no(nl);
+        }
+    }
+    no_named_constants = 0; AO3.marker = 0;
+
+    sequence_point_follows = FALSE;
+    assemble_0(rfalse_zc);
+    variable_usage[1] = TRUE;
+    variable_usage[2] = TRUE;
+    assemble_routine_end(FALSE, &null_dbgl);
+    veneer_mode = FALSE;
+}
+
 extern void compile_veneer(void)
-{   int i, j;
+{   int i, j, try_veneer_again;
 
     if (module_switch) return;
 
     /*  Called at the end of the pass to insert as much of the veneer as is
         needed and not elsewhere compiled.  */
 
-    /*  for (i=0; i<VENEER_ROUTINES; i++)   
+    veneer_symbols_base = no_symbols;
+
+    /*  for (i=0; i<VENEER_ROUTINES; i++)
         printf("%s %d %d %d %d %d %d\n", VRs[i].name,
             strlen(VRs[i].source1), strlen(VRs[i].source2),
             strlen(VRs[i].source3), strlen(VRs[i].source4),
             strlen(VRs[i].source5), strlen(VRs[i].source6)); */
 
-    for (i=0; i<VENEER_ROUTINES; i++)
-    {   
-        if (veneer_routine_needs_compilation[i])
-        {   j = symbol_index(VRs[i].name, -1);
-            if (sflags[j] & UNKNOWN_SFLAG)
-            {   veneer_mode = TRUE;
-                strcpy(veneer_source_area, VRs[i].source1);
-                strcat(veneer_source_area, VRs[i].source2);
-                strcat(veneer_source_area, VRs[i].source3);
-                strcat(veneer_source_area, VRs[i].source4);
-                strcat(veneer_source_area, VRs[i].source5);
-                strcat(veneer_source_area, VRs[i].source6);
-                assign_symbol(j,
-                  parse_routine(veneer_source_area, FALSE, VRs[i].name, TRUE),
-                  ROUTINE_T);
-                veneer_mode = FALSE;
-            }
-            else
-            {   if (stypes[j] != ROUTINE_T)
+    try_veneer_again = TRUE;
+    while (try_veneer_again)
+    {   try_veneer_again = FALSE;
+        for (i=0; i<VENEER_ROUTINES; i++)
+        {   if (veneer_routine_needs_compilation[i] == VR_CALLED)
+            {   j = symbol_index(VRs[i].name, -1);
+                if (sflags[j] & UNKNOWN_SFLAG)
+                {   veneer_mode = TRUE;
+                    strcpy(veneer_source_area, VRs[i].source1);
+                    strcat(veneer_source_area, VRs[i].source2);
+                    strcat(veneer_source_area, VRs[i].source3);
+                    strcat(veneer_source_area, VRs[i].source4);
+                    strcat(veneer_source_area, VRs[i].source5);
+                    strcat(veneer_source_area, VRs[i].source6);
+                    assign_symbol(j,
+                        parse_routine(veneer_source_area, FALSE,
+                            VRs[i].name, TRUE, j),
+                        ROUTINE_T);
+                    veneer_mode = FALSE;
+                    if (trace_fns_setting==3) sflags[j] |= STAR_SFLAG;
+                }
+                else
+                {   if (stypes[j] != ROUTINE_T)
                 error_named("The following name is reserved by Inform for its \
 own use as a routine name; you can use it as a routine name yourself (to \
 override the standard definition) but cannot use it for anything else:",
-                    VRs[i].name);
-                else
-                    sflags[j] |= USED_SFLAG;
+                        VRs[i].name);
+                    else
+                        sflags[j] |= USED_SFLAG;
+                }
+                veneer_routine_address[i] = svals[j];
+                veneer_routine_needs_compilation[i] = VR_COMPILED;
+                try_veneer_again = TRUE;
             }
-            veneer_routine_address[i] = svals[j];
         }
     }
+
+    compile_symbol_table_routine();
 }
 
 /* ========================================================================= */
@@ -665,13 +1141,13 @@ extern void veneer_begin_pass(void)
 {   int i;
     veneer_mode = FALSE;
     for (i=0; i<VENEER_ROUTINES; i++)
-    {   veneer_routine_needs_compilation[i] = FALSE;
+    {   veneer_routine_needs_compilation[i] = VR_UNUSED;
         veneer_routine_address[i] = 0;
     }
 }
 
 extern void veneer_allocate_arrays(void)
-{   veneer_source_area = my_malloc(3072, "veneer source code area");
+{   veneer_source_area = my_malloc(16384, "veneer source code area");
 }
 
 extern void veneer_free_arrays(void)

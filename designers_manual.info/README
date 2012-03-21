@@ -1,7 +1,7 @@
 ===============================================================================
-README              Inform Designer's Manual, third edition         25-Oct-1996
+README          Inform Designer's Manual, revised third edition      8-Jun-1997
 ===============================================================================
-                         Copyright 1996 Graham Nelson and Christopher J. Madsen
+                    Copyright 1996,1997 Graham Nelson and Christopher J. Madsen
 
 Installation
 ------------
@@ -18,10 +18,10 @@ copy, get the original TeX version and print that.  This Info version
 is only designed for online reading.
 
 Comments about the manual should be sent to its author, Graham Nelson
-<nelson@vax.ox.ac.uk>.  Comments about the formatting of this Info
-version should be sent to me, Chris Madsen <ac608@yfn.ysu.edu>.  While
-the formatting could certainly be improved, and so could the index, I
-haven't time to do it.  Feel free to volunteer.
+<graham@gnelson.demon.co.uk>.  Comments about the formatting of this
+Info version should be sent to me, Chris Madsen <ac608@yfn.ysu.edu>.
+While the formatting could certainly be improved, and so could the
+index, I haven't time to do it.  Feel free to volunteer.
 
 On the other hand, I haven't given this new edition as thorough a
 proofreading as I would like, because I wanted to get it released.
@@ -32,6 +32,10 @@ I may have overlooked it.
 Revision History
 ----------------
   *  Inform Designer's Manual, third edition, 4 September 1996
+
+     *  Info version 4 by Christopher J. Madsen, 8 June 1997
+
+        Incorporated the official errata from 16 May 1997.
 
      *  Info version 2 by Christopher J. Madsen, 25 October 1996
 

@@ -1,8 +1,8 @@
 /* ------------------------------------------------------------------------- */
 /*   "expressc" :  The expression code generator                             */
 /*                                                                           */
-/*   Part of Inform 6.1                                                      */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   Part of Inform 6.21                                                     */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
@@ -150,9 +150,9 @@ operator operators[9*NUM_OPERATORS] =
                          /*  Level 7:  ->  -->       */
                          /* ------------------------ */
 
-  { 7, SEP_TT, ARROW_SEP,       IN_U, L_A, 0, loadb_zc, 0, 0,
+  { 7, SEP_TT, ARROW_SEP,       IN_U, L_A, 0, -1, 0, 0,
       "byte array operator '->'" },
-  { 7, SEP_TT, DARROW_SEP,      IN_U, L_A, 0, loadw_zc, 0, 0,
+  { 7, SEP_TT, DARROW_SEP,      IN_U, L_A, 0, -1, 0, 0,
       "word array operator '-->'" },
 
                          /* ------------------------ */
@@ -181,7 +181,7 @@ operator operators[9*NUM_OPERATORS] =
                          /*            ..&  ..#      */
                          /* ------------------------ */
 
-  {10, SEP_TT, PROPADD_SEP,     IN_U, L_A, 0, get_prop_addr_zc, 0, 0,
+  {10, SEP_TT, PROPADD_SEP,     IN_U, L_A, 0, -1, 0, 0,
       "property address operator '.&'" },
   {10, SEP_TT, PROPNUM_SEP,     IN_U, L_A, 0, -1, 0, 0,
       "property length operator '.#'" },
@@ -203,7 +203,7 @@ operator operators[9*NUM_OPERATORS] =
 
   {12, SEP_TT, MESSAGE_SEP,     IN_U, L_A, 0, -1, 0, 0,
       "individual property selector '..'" },
-  {12, SEP_TT, PROPERTY_SEP,    IN_U, L_A, 0, get_prop_zc, 0, 0,
+  {12, SEP_TT, PROPERTY_SEP,    IN_U, L_A, 0, -1, 0, 0,
       "property selector '.'" },
 
                          /* ------------------------ */
@@ -344,6 +344,16 @@ static void value_in_void_context(assembly_operand AO)
             break;
     }
     vivc_flag = TRUE;
+
+    if (strcmp(t, "print_paddr") == 0)
+    obsolete_warning("ignoring 'print_paddr': use 'print (string)' instead");
+    else
+    if (strcmp(t, "print_addr") == 0)
+    obsolete_warning("ignoring 'print_addr': use 'print (address)' instead");
+    else
+    if (strcmp(t, "print_char") == 0)
+    obsolete_warning("ignoring 'print_char': use 'print (char)' instead");
+    else
     ebf_error("assignment or statement", t);
 }
 
@@ -353,12 +363,291 @@ static void write_result(assembly_operand to, assembly_operand from)
     else               assemble_store(to, from);
 }
 
+static void pop_zm_stack(void)
+{   assembly_operand st;
+    if (version_number < 5) assemble_0(pop_zc);
+    else
+    {   st.marker = 0; st.type = VARIABLE_OT; st.value = 0;
+        assemble_1_branch(jz_zc, st, -2, TRUE);
+    }
+}
+
+static void access_memory(int oc, assembly_operand AO1, assembly_operand AO2,
+    assembly_operand AO3)
+{   int vr;
+    if ((!runtime_error_checking_switch) || (veneer_mode))
+    {   if ((oc == loadb_zc) || (oc == loadw_zc))
+            assemble_2_to(oc, AO1, AO2, AO3);
+        else
+            assemble_3(oc, AO1, AO2, AO3);
+        return;
+    }
+
+    /* If we recognise AO1 as arising textually from a declared
+       array, we can check bounds explicitly. */
+
+    if (AO1.marker == ARRAY_MV)
+    {   assembly_operand zero_ao, max_ao, size_ao, en_ao, type_ao, an_ao,
+            index_ao;
+        int passed_label = next_label++, failed_label = next_label++,
+            final_label = next_label++, x, y, byte_flag, read_flag;
+        if ((oc == loadb_zc) || (oc == storeb_zc)) byte_flag=TRUE;
+        else byte_flag = FALSE;
+        if ((oc == loadb_zc) || (oc == loadw_zc)) read_flag=TRUE;
+        else read_flag = FALSE;
+
+        zero_ao.type = SHORT_CONSTANT_OT;
+        zero_ao.value = 0; zero_ao.marker = 0;
+
+        size_ao = zero_ao; size_ao.value = -1;
+        for (x=0; x<no_arrays; x++)
+        {   if (AO1.value == svals[array_symbols[x]])
+            {   size_ao.value = array_sizes[x]; y=x;
+            }
+        }
+        if (size_ao.value==-1) compiler_error("Array size can't be found");
+
+        type_ao = zero_ao; type_ao.value = array_types[y];
+
+        /* Calculate the largest permitted array entry + 1
+           Here "size_ao.value" = largest permitted entry of its own kind */
+        max_ao = size_ao;
+        if (byte_flag
+            && ((array_types[y] == WORD_ARRAY)
+                || (array_types[y] == TABLE_ARRAY)))
+        {   max_ao.value = size_ao.value*2 + 1;
+            type_ao.value += 4;
+        }
+        if ((!byte_flag)
+            && ((array_types[y] == BYTE_ARRAY)
+                || (array_types[y] == STRING_ARRAY)))
+        {   if ((size_ao.value % 2) == 0)
+                 max_ao.value = size_ao.value/2 - 1;
+            else max_ao.value = (size_ao.value-1)/2;
+            type_ao.value += 8;
+        }
+        max_ao.value++;
+
+        if (size_ao.value >= 256) size_ao.type = LONG_CONSTANT_OT;
+        if (max_ao.value >= 256) max_ao.type = LONG_CONSTANT_OT;
+
+        /* Can't write to the size entry in a string or table */
+        if (((array_types[y] == STRING_ARRAY)
+             || (array_types[y] == TABLE_ARRAY))
+            && (!read_flag))
+        {   if ((array_types[y] == TABLE_ARRAY) && byte_flag)
+                zero_ao.value = 2;
+            else zero_ao.value = 1;
+        }
+
+        en_ao = zero_ao; en_ao.value = ABOUNDS_RTE;
+    switch(oc) { case loadb_zc:  en_ao.value = ABOUNDS_RTE; break;
+                 case loadw_zc:  en_ao.value = ABOUNDS_RTE+1; break;
+                 case storeb_zc: en_ao.value = ABOUNDS_RTE+2; break;
+                 case storew_zc: en_ao.value = ABOUNDS_RTE+3; break; }
+
+        index_ao = AO2;
+        if ((AO2.type == VARIABLE_OT)&&(AO2.value == 0))
+        {   assemble_store(temp_var1, AO2);
+            assemble_store(AO2, temp_var1);
+            index_ao = temp_var1;
+        }
+        assemble_2_branch(jl_zc, index_ao, zero_ao, failed_label, TRUE);
+        assemble_2_branch(jl_zc, index_ao, max_ao, passed_label, TRUE);
+        assemble_label_no(failed_label);
+        an_ao = zero_ao; an_ao.value = y;
+        assemble_6(call_vn2_zc, veneer_routine(RT__Err_VR), en_ao,
+            index_ao, size_ao, type_ao, an_ao);
+
+        /* We have to clear any of AO1, AO2, AO3 off the stack if
+           present, so that we can achieve the same effect on the stack
+           that executing the opcode would have had */
+
+        if ((AO1.type == VARIABLE_OT) && (AO1.value == 0)) pop_zm_stack();
+        if ((AO2.type == VARIABLE_OT) && (AO2.value == 0)) pop_zm_stack();
+        if ((AO3.type == VARIABLE_OT) && (AO3.value == 0))
+        {   if ((oc == loadb_zc) || (oc == loadw_zc))
+            {   assemble_store(AO3, zero_ao);
+            }
+            else pop_zm_stack();
+        }
+        assemble_jump(final_label);
+
+        assemble_label_no(passed_label);
+        if ((oc == loadb_zc) || (oc == loadw_zc))
+            assemble_2_to(oc, AO1, AO2, AO3);
+        else
+            assemble_3(oc, AO1, AO2, AO3);
+        assemble_label_no(final_label);
+        return;
+    }
+
+    /* Otherwise, compile a call to the veneer which verifies that
+       the proposed read/write is within dynamic Z-machine memory. */
+
+    switch(oc) { case loadb_zc: vr = RT__ChLDB_VR; break;
+                 case loadw_zc: vr = RT__ChLDW_VR; break;
+                 case storeb_zc: vr = RT__ChSTB_VR; break;
+                 case storew_zc: vr = RT__ChSTW_VR; break; }
+
+    if ((oc == loadb_zc) || (oc == loadw_zc))
+        assemble_3_to(call_vs_zc, veneer_routine(vr), AO1, AO2, AO3);
+    else
+        assemble_4(call_vn_zc, veneer_routine(vr), AO1, AO2, AO3);
+}
+
+extern assembly_operand check_nonzero_at_runtime(assembly_operand AO1,
+        int error_label, int rte_number)
+{   assembly_operand AO2, AO3;
+    int check_sp = FALSE, passed_label, failed_label, last_label;
+    if (veneer_mode) return AO1;
+
+    /*  Assemble to code to check that the operand AO1 is ofclass Object:
+        if it is, execution should continue and the stack should be
+        unchanged.  Otherwise, call the veneer's run-time-error routine
+        with the given error number, and then: if the label isn't -1,
+        switch execution to this label, with the value popped from
+        the stack if it was on the stack in the first place;
+        if the label is -1, either replace the top of the stack with
+        the constant 2, or return the operand (short constant) 2.
+
+        The point of 2 is that object 2 is the class-object Object
+        and therefore has no parent, child or sibling, so that the
+        built-in tree functions will safely return 0 on this object. */
+
+    /*  Sometimes we can already see that the object number is valid. */
+    if (((AO1.type == LONG_CONSTANT_OT) || (AO1.type == SHORT_CONSTANT_OT))
+        && (AO1.marker == 0) && (AO1.value >= 1) && (AO1.value < no_objects))
+        return AO1;
+
+    passed_label = next_label++;
+    failed_label = next_label++;
+    AO2.type = LONG_CONSTANT_OT;
+    AO2.value = actual_largest_object_SC;
+    AO2.marker = INCON_MV;
+    AO3.value = 5; AO3.type = SHORT_CONSTANT_OT; AO3.marker = 0;
+
+    if ((rte_number == IN_RTE) || (rte_number == HAS_RTE)
+        || (rte_number == PROPERTY_RTE) || (rte_number == PROP_NUM_RTE)
+        || (rte_number == PROP_ADD_RTE))
+    {   /* Allow classes */
+        AO3.value = 1;
+        if ((AO1.type == VARIABLE_OT) && (AO1.value == 0))
+        {   /* That is, if AO1 is the stack pointer */
+            check_sp = TRUE;
+            assemble_store(temp_var2, AO1);
+            assemble_store(AO1, temp_var2);
+            assemble_2_branch(jg_zc, AO3, temp_var2, failed_label, TRUE);
+            assemble_2_branch(jg_zc, temp_var2, AO2, passed_label, FALSE);
+        }
+        else
+        {   assemble_2_branch(jg_zc, AO3, AO1, failed_label, TRUE);
+            assemble_2_branch(jg_zc, AO1, AO2, passed_label, FALSE);
+        }
+    }
+    else
+    {   if ((AO1.type == VARIABLE_OT) && (AO1.value == 0))
+        {   /* That is, if AO1 is the stack pointer */
+            check_sp = TRUE;
+            assemble_store(temp_var2, AO1);
+            assemble_store(AO1, temp_var2);
+            assemble_2_branch(jg_zc, AO3, temp_var2, failed_label, TRUE);
+            assemble_2_branch(jg_zc, temp_var2, AO2, failed_label, TRUE);
+            AO3.value = 1;
+            assemble_2_branch(jin_zc, temp_var2, AO3, passed_label, FALSE);
+        }
+        else
+        {   assemble_2_branch(jg_zc, AO3, AO1, failed_label, TRUE);
+            assemble_2_branch(jg_zc, AO1, AO2, failed_label, TRUE);
+            AO3.value = 1;
+            assemble_2_branch(jin_zc, AO1, AO3, passed_label, FALSE);
+        }
+    }
+
+    assemble_label_no(failed_label);
+    AO2.type = SHORT_CONSTANT_OT; AO2.value = rte_number; AO2.marker = 0;
+    if (version_number >= 5)
+      assemble_3(call_vn_zc, veneer_routine(RT__Err_VR), AO2, AO1);
+    else
+      assemble_3_to(call_zc, veneer_routine(RT__Err_VR), AO2, AO1, temp_var2);
+
+    if (error_label != -1)
+    {   /* Jump to the error label */
+        if (error_label == -3) assemble_0(rfalse_zc);
+        else if (error_label == -4) assemble_0(rtrue_zc);
+        else assemble_jump(error_label);
+    }
+    else
+    {   if (check_sp)
+        {   /* Push the short constant 2 */
+            AO2.type = SHORT_CONSTANT_OT; AO2.value = 2; AO2.marker = 0;
+            assemble_store(AO1, AO2);
+        }
+        else
+        {   /* Store either short constant 2 or the operand's value in
+               the temporary variable */
+            AO2.type = SHORT_CONSTANT_OT; AO2.value = 2; AO2.marker = 0;
+            AO3 = temp_var2; assemble_store(AO3, AO2);
+            last_label = next_label++;
+            assemble_jump(last_label);
+            assemble_label_no(passed_label);
+            assemble_store(AO3, AO1);
+            assemble_label_no(last_label);
+            return AO3;
+        }
+    }
+    assemble_label_no(passed_label);
+    return AO1;
+}
+
 static void compile_conditional(int oc,
     assembly_operand AO1, assembly_operand AO2, int label, int flag)
-{   assembly_operand AO3; int the_zc;
+{   assembly_operand AO3; int the_zc, error_label = label,
+    va_flag = FALSE, va_label;
 
     if (oc<200)
-    {   assemble_2_branch(oc, AO1, AO2, label, flag); return;
+    {   if ((runtime_error_checking_switch) && (oc == jin_zc))
+        {   if (flag) error_label = next_label++;
+            AO1 = check_nonzero_at_runtime(AO1, error_label, IN_RTE);
+        }
+        if ((runtime_error_checking_switch) && (oc == test_attr_zc))
+        {   if (flag) error_label = next_label++;
+            AO1 = check_nonzero_at_runtime(AO1, error_label, HAS_RTE);
+            switch(AO2.type)
+            {   case SHORT_CONSTANT_OT:
+                case LONG_CONSTANT_OT:
+                    if (AO2.marker == 0)
+                    {   if ((AO2.value < 0) || (AO2.value > 47))
+                error("'has'/'hasnt' applied to illegal attribute number");
+                        break;
+                    }
+                case VARIABLE_OT:
+                {   int pa_label = next_label++, fa_label = next_label++;
+                    assembly_operand en_ao, zero_ao, max_ao;
+                    assemble_store(temp_var1, AO1);
+                    if ((AO1.type == VARIABLE_OT)&&(AO1.value == 0))
+                        assemble_store(AO1, temp_var1);
+                    assemble_store(temp_var2, AO2);
+                    if ((AO2.type == VARIABLE_OT)&&(AO2.value == 0))
+                        assemble_store(AO2, temp_var2);
+                    zero_ao.type = SHORT_CONSTANT_OT; zero_ao.marker = 0;
+                    zero_ao.value = 0; max_ao = zero_ao; max_ao.value = 48;
+                    assemble_2_branch(jl_zc,temp_var2,zero_ao,fa_label,TRUE);
+                    assemble_2_branch(jl_zc,temp_var2,max_ao,pa_label,TRUE);
+                    assemble_label_no(fa_label);
+                    en_ao = zero_ao; en_ao.value = 19;
+                    assemble_4(call_vn_zc, veneer_routine(RT__Err_VR),
+                        en_ao, temp_var1, temp_var2);
+                    va_flag = TRUE; va_label = next_label++;
+                    assemble_jump(va_label);
+                    assemble_label_no(pa_label);
+                }
+            }
+        }
+        assemble_2_branch(oc, AO1, AO2, label, flag);
+        if (error_label != label) assemble_label_no(error_label);
+        if (va_flag) assemble_label_no(va_label);
+        return;
     }
 
     AO3.type = VARIABLE_OT; AO3.value = 0; AO3.marker = 0;
@@ -621,16 +910,48 @@ static void generate_code_from(int n, int void_flag)
             take two operands whereas pre/postfix operators take only one */
 
         if (operators[opnum].usage == IN_U)
-            assemble_2_to(operators[opnum].opcode_number, ET[below].value,
+        {   int o_n = operators[opnum].opcode_number;
+            if (runtime_error_checking_switch && (!veneer_mode)
+                && ((o_n == div_zc) || (o_n == mod_zc)))
+            {   assembly_operand by_ao, error_ao; int ln;
+                by_ao = ET[ET[below].right].value;
+                if ((by_ao.value != 0) && (by_ao.marker == 0)
+                    && ((by_ao.type == SHORT_CONSTANT_OT)
+                        || (by_ao.type == LONG_CONSTANT_OT)))
+                    assemble_2_to(o_n, ET[below].value,
+                        by_ao, Result);
+                else
+                {   assemble_store(temp_var1, ET[below].value);
+                    assemble_store(temp_var2, by_ao);
+                    ln = next_label++;
+                    assemble_1_branch(jz_zc, temp_var2, ln, FALSE);
+                    error_ao.type = SHORT_CONSTANT_OT; error_ao.marker = 0;
+                    error_ao.value = DBYZERO_RTE;
+                    assemble_2(call_vn_zc, veneer_routine(RT__Err_VR),
+                        error_ao);
+                    assemble_inc(temp_var2);
+                    assemble_label_no(ln);
+                    assemble_2_to(o_n, temp_var1, temp_var2, Result);
+                }
+            }
+            else
+            assemble_2_to(o_n, ET[below].value,
                 ET[ET[below].right].value, Result);
-
+        }
         else
             assemble_1_to(operators[opnum].opcode_number, ET[below].value,
                 Result);
     }
     else
     switch(opnum)
-    {
+    {   case ARROW_OP:
+             access_memory(loadb_zc, ET[below].value,
+                                     ET[ET[below].right].value, Result);
+             break;
+        case DARROW_OP:
+             access_memory(loadw_zc, ET[below].value,
+                                     ET[ET[below].right].value, Result);
+             break;
         case UNARY_MINUS_OP:
              assemble_2_to(sub_zc, zero_operand, ET[below].value, Result);
              break;
@@ -638,13 +959,37 @@ static void generate_code_from(int n, int void_flag)
              assemble_1_to(not_zc, ET[below].value, Result);
              break;
 
+        case PROP_ADD_OP:
+             {   assembly_operand AO = ET[below].value;
+                 if (runtime_error_checking_switch && (!veneer_mode))
+                     AO = check_nonzero_at_runtime(AO, -1, PROP_ADD_RTE);
+                 assemble_2_to(get_prop_addr_zc, AO,
+                     ET[ET[below].right].value, temp_var1);
+                 if (!void_flag) write_result(Result, temp_var1);
+             }
+             break;
+
         case PROP_NUM_OP:
-             assemble_2_to(get_prop_addr_zc, ET[below].value,
-                 ET[ET[below].right].value, temp_var1);
-             assemble_1_branch(jz_zc, temp_var1, next_label++, TRUE);
-             assemble_1_to(get_prop_len_zc, temp_var1, temp_var1);
-             assemble_label_no(next_label-1);
-             if (!void_flag) write_result(Result, temp_var1);
+             {   assembly_operand AO = ET[below].value;
+                 if (runtime_error_checking_switch && (!veneer_mode))
+                     AO = check_nonzero_at_runtime(AO, -1, PROP_NUM_RTE);
+                 assemble_2_to(get_prop_addr_zc, AO,
+                     ET[ET[below].right].value, temp_var1);
+                 assemble_1_branch(jz_zc, temp_var1, next_label++, TRUE);
+                 assemble_1_to(get_prop_len_zc, temp_var1, temp_var1);
+                 assemble_label_no(next_label-1);
+                 if (!void_flag) write_result(Result, temp_var1);
+             }
+             break;
+
+        case PROPERTY_OP:
+             {   assembly_operand AO = ET[below].value;
+                 if (runtime_error_checking_switch && (!veneer_mode))
+                     AO = check_nonzero_at_runtime(AO, -1, PROPERTY_RTE);
+                 assemble_2_to(get_prop_zc, AO,
+                     ET[ET[below].right].value, temp_var1);
+                 if (!void_flag) write_result(Result, temp_var1);
+             }
              break;
 
         case MESSAGE_OP:
@@ -746,22 +1091,38 @@ static void generate_code_from(int n, int void_flag)
                          break;
 
                      case PARENT_SYSF:
-                         assemble_1_to(get_parent_zc,
-                             ET[ET[below].right].value, Result);
+                         {  assembly_operand AO;
+                            AO = ET[ET[below].right].value;
+                            if (runtime_error_checking_switch)
+                                AO = check_nonzero_at_runtime(AO, -1,
+                                    PARENT_RTE);
+                            assemble_1_to(get_parent_zc, AO, Result);
+                         }
                          break;
 
                      case ELDEST_SYSF:
                      case CHILD_SYSF:
-                         assemble_objcode(get_child_zc,
-                             ET[ET[below].right].value,
-                             Result, -2, TRUE);
+                         {  assembly_operand AO;
+                            AO = ET[ET[below].right].value;
+                            if (runtime_error_checking_switch)
+                               AO = check_nonzero_at_runtime(AO, -1,
+                               (sf_number==CHILD_SYSF)?CHILD_RTE:ELDEST_RTE);
+                            assemble_objcode(get_child_zc,
+                               AO, Result, -2, TRUE);
+                         }
                          break;
 
                      case YOUNGER_SYSF:
                      case SIBLING_SYSF:
-                         assemble_objcode(get_sibling_zc,
-                             ET[ET[below].right].value,
-                             Result, -2, TRUE);
+                         {  assembly_operand AO;
+                            AO = ET[ET[below].right].value;
+                            if (runtime_error_checking_switch)
+                               AO = check_nonzero_at_runtime(AO, -1,
+                               (sf_number==SIBLING_SYSF)
+                                   ?SIBLING_RTE:YOUNGER_RTE);
+                            assemble_objcode(get_sibling_zc,
+                               AO, Result, -2, TRUE);
+                         }
                          break;
 
                      case INDIRECT_SYSF:
@@ -769,35 +1130,50 @@ static void generate_code_from(int n, int void_flag)
                          goto IndirectFunctionCall;
 
                      case CHILDREN_SYSF:
-                         assemble_store(temp_var1, zero_operand);
-                         assemble_objcode(get_child_zc,
-                             ET[ET[below].right].value,
-                             stack_pointer, next_label+1, FALSE);
-                         assemble_label_no(next_label);
-                         assemble_inc(temp_var1);
-                         assemble_objcode(get_sibling_zc,
-                             stack_pointer, stack_pointer, next_label, TRUE);
-                         assemble_label_no(next_label+1);
-                         assemble_store(temp_var2, stack_pointer);
-                         if (!void_flag) write_result(Result, temp_var1);
-                         next_label += 2; break;
+                         {  assembly_operand AO;
+                             AO = ET[ET[below].right].value;
+                             if (runtime_error_checking_switch)
+                                 AO = check_nonzero_at_runtime(AO, -1,
+                                     CHILDREN_RTE);
+                             assemble_store(temp_var1, zero_operand);
+                             assemble_objcode(get_child_zc,
+                                 AO, stack_pointer, next_label+1, FALSE);
+                             assemble_label_no(next_label);
+                             assemble_inc(temp_var1);
+                             assemble_objcode(get_sibling_zc,
+                                 stack_pointer, stack_pointer,
+                                 next_label, TRUE);
+                             assemble_label_no(next_label+1);
+                             assemble_store(temp_var2, stack_pointer);
+                             if (!void_flag) write_result(Result, temp_var1);
+                             next_label += 2;
+                         }
+                         break;
 
                      case YOUNGEST_SYSF:
-                         assemble_objcode(get_child_zc,
-                             ET[ET[below].right].value,
-                             temp_var1, next_label+1, FALSE);
-                         assemble_1(push_zc, temp_var1);
-                         assemble_label_no(next_label);
-                         assemble_store(temp_var1, stack_pointer);
-                         assemble_objcode(get_sibling_zc,
-                             temp_var1, stack_pointer, next_label, TRUE);
-                         assemble_label_no(next_label+1);
-                         if (!void_flag) write_result(Result, temp_var1);
-                         next_label += 2; break;
+                         {  assembly_operand AO;
+                             AO = ET[ET[below].right].value;
+                             if (runtime_error_checking_switch)
+                                 AO = check_nonzero_at_runtime(AO, -1,
+                                     YOUNGEST_RTE);
+                             assemble_objcode(get_child_zc,
+                                 AO, temp_var1, next_label+1, FALSE);
+                             assemble_1(push_zc, temp_var1);
+                             assemble_label_no(next_label);
+                             assemble_store(temp_var1, stack_pointer);
+                             assemble_objcode(get_sibling_zc,
+                                 temp_var1, stack_pointer, next_label, TRUE);
+                             assemble_label_no(next_label+1);
+                             if (!void_flag) write_result(Result, temp_var1);
+                             next_label += 2;
+                         }
+                         break;
 
                      case ELDER_SYSF:
-                         assemble_store(temp_var1,
-                             ET[ET[below].right].value);
+                         assemble_store(temp_var1, ET[ET[below].right].value);
+                         if (runtime_error_checking_switch)
+                             check_nonzero_at_runtime(temp_var1, -1,
+                                 ELDER_RTE);
                          assemble_1_to(get_parent_zc, temp_var1, temp_var3);
                          assemble_1_branch(jz_zc, temp_var3,next_label+1,TRUE);
                          assemble_store(temp_var2, temp_var3);
@@ -880,50 +1256,56 @@ static void generate_code_from(int n, int void_flag)
 
         case PROPERTY_SETEQUALS_OP:
              if (!void_flag)
-             {   assemble_store(temp_var1,
-                     ET[ET[ET[below].right].right].value);
-                 assemble_3(put_prop_zc, ET[below].value,
-                     ET[ET[below].right].value,
-                     temp_var1);
-                 write_result(Result, temp_var1);
+             {   if (runtime_error_checking_switch)
+                     assemble_4_to(call_zc, veneer_routine(RT__ChPS_VR),
+                         ET[below].value, ET[ET[below].right].value,
+                         ET[ET[ET[below].right].right].value, Result);
+                 else
+                 {   assemble_store(temp_var1,
+                         ET[ET[ET[below].right].right].value);
+                     assemble_3(put_prop_zc, ET[below].value,
+                         ET[ET[below].right].value,
+                         temp_var1);
+                     write_result(Result, temp_var1);
+                 }
              }
              else
-             {   assemble_3(put_prop_zc, ET[below].value,
+             {   if (runtime_error_checking_switch && (!veneer_mode))
+                     assemble_4(call_vn_zc, veneer_routine(RT__ChPS_VR),
+                         ET[below].value, ET[ET[below].right].value,
+                         ET[ET[ET[below].right].right].value);
+                 else assemble_3(put_prop_zc, ET[below].value,
                      ET[ET[below].right].value,
                      ET[ET[ET[below].right].right].value);
              }
              break;
-
         case ARROW_SETEQUALS_OP:
              if (!void_flag)
              {   assemble_store(temp_var1,
                      ET[ET[ET[below].right].right].value);
-                 assemble_3(storeb_zc, ET[below].value,
+                 access_memory(storeb_zc, ET[below].value,
                      ET[ET[below].right].value,
                      temp_var1);
                  write_result(Result, temp_var1);
              }
-             else
-             {   assemble_3(storeb_zc, ET[below].value,
+             else access_memory(storeb_zc, ET[below].value,
                      ET[ET[below].right].value,
                      ET[ET[ET[below].right].right].value);
-             }
              break;
 
         case DARROW_SETEQUALS_OP:
              if (!void_flag)
              {   assemble_store(temp_var1,
                      ET[ET[ET[below].right].right].value);
-                 assemble_3(storew_zc, ET[below].value,
+                 access_memory(storew_zc, ET[below].value,
                      ET[ET[below].right].value,
                      temp_var1);
                  write_result(Result, temp_var1);
              }
              else
-             {   assemble_3(storew_zc, ET[below].value,
+                 access_memory(storew_zc, ET[below].value,
                      ET[ET[below].right].value,
                      ET[ET[ET[below].right].right].value);
-             }
              break;
 
         case INC_OP:
@@ -946,73 +1328,73 @@ static void generate_code_from(int n, int void_flag)
         case ARROW_INC_OP:
              assemble_store(temp_var1, ET[below].value);
              assemble_store(temp_var2, ET[ET[below].right].value);
-             assemble_2_to(loadb_zc, temp_var1, temp_var2, temp_var3);
+             access_memory(loadb_zc, temp_var1, temp_var2, temp_var3);
              assemble_inc(temp_var3);
-             assemble_3(storeb_zc, temp_var1, temp_var2, temp_var3);
+             access_memory(storeb_zc, temp_var1, temp_var2, temp_var3);
              if (!void_flag) write_result(Result, temp_var3);
              break;
 
         case ARROW_DEC_OP:
              assemble_store(temp_var1, ET[below].value);
              assemble_store(temp_var2, ET[ET[below].right].value);
-             assemble_2_to(loadb_zc, temp_var1, temp_var2, temp_var3);
+             access_memory(loadb_zc, temp_var1, temp_var2, temp_var3);
              assemble_dec(temp_var3);
-             assemble_3(storeb_zc, temp_var1, temp_var2, temp_var3);
+             access_memory(storeb_zc, temp_var1, temp_var2, temp_var3);
              if (!void_flag) write_result(Result, temp_var3);
              break;
 
         case ARROW_POST_INC_OP:
              assemble_store(temp_var1, ET[below].value);
              assemble_store(temp_var2, ET[ET[below].right].value);
-             assemble_2_to(loadb_zc, temp_var1, temp_var2, temp_var3);
+             access_memory(loadb_zc, temp_var1, temp_var2, temp_var3);
              if (!void_flag) write_result(Result, temp_var3);
              assemble_inc(temp_var3);
-             assemble_3(storeb_zc, temp_var1, temp_var2, temp_var3);
+             access_memory(storeb_zc, temp_var1, temp_var2, temp_var3);
              break;
 
         case ARROW_POST_DEC_OP:
              assemble_store(temp_var1, ET[below].value);
              assemble_store(temp_var2, ET[ET[below].right].value);
-             assemble_2_to(loadb_zc, temp_var1, temp_var2, temp_var3);
+             access_memory(loadb_zc, temp_var1, temp_var2, temp_var3);
              if (!void_flag) write_result(Result, temp_var3);
              assemble_dec(temp_var3);
-             assemble_3(storeb_zc, temp_var1, temp_var2, temp_var3);
+             access_memory(storeb_zc, temp_var1, temp_var2, temp_var3);
              break;
 
         case DARROW_INC_OP:
              assemble_store(temp_var1, ET[below].value);
              assemble_store(temp_var2, ET[ET[below].right].value);
-             assemble_2_to(loadw_zc, temp_var1, temp_var2, temp_var3);
+             access_memory(loadw_zc, temp_var1, temp_var2, temp_var3);
              assemble_inc(temp_var3);
-             assemble_3(storew_zc, temp_var1, temp_var2, temp_var3);
+             access_memory(storew_zc, temp_var1, temp_var2, temp_var3);
              if (!void_flag) write_result(Result, temp_var3);
              break;
 
         case DARROW_DEC_OP:
              assemble_store(temp_var1, ET[below].value);
              assemble_store(temp_var2, ET[ET[below].right].value);
-             assemble_2_to(loadw_zc, temp_var1, temp_var2, temp_var3);
+             access_memory(loadw_zc, temp_var1, temp_var2, temp_var3);
              assemble_dec(temp_var3);
-             assemble_3(storew_zc, temp_var1, temp_var2, temp_var3);
+             access_memory(storew_zc, temp_var1, temp_var2, temp_var3);
              if (!void_flag) write_result(Result, temp_var3);
              break;
 
         case DARROW_POST_INC_OP:
              assemble_store(temp_var1, ET[below].value);
              assemble_store(temp_var2, ET[ET[below].right].value);
-             assemble_2_to(loadw_zc, temp_var1, temp_var2, temp_var3);
+             access_memory(loadw_zc, temp_var1, temp_var2, temp_var3);
              if (!void_flag) write_result(Result, temp_var3);
              assemble_inc(temp_var3);
-             assemble_3(storew_zc, temp_var1, temp_var2, temp_var3);
+             access_memory(storew_zc, temp_var1, temp_var2, temp_var3);
              break;
 
         case DARROW_POST_DEC_OP:
              assemble_store(temp_var1, ET[below].value);
              assemble_store(temp_var2, ET[ET[below].right].value);
-             assemble_2_to(loadw_zc, temp_var1, temp_var2, temp_var3);
+             access_memory(loadw_zc, temp_var1, temp_var2, temp_var3);
              if (!void_flag) write_result(Result, temp_var3);
              assemble_dec(temp_var3);
-             assemble_3(storew_zc, temp_var1, temp_var2, temp_var3);
+             access_memory(storew_zc, temp_var1, temp_var2, temp_var3);
              break;
 
         case PROPERTY_INC_OP:
@@ -1020,7 +1402,10 @@ static void generate_code_from(int n, int void_flag)
              assemble_store(temp_var2, ET[ET[below].right].value);
              assemble_2_to(get_prop_zc, temp_var1, temp_var2, temp_var3);
              assemble_inc(temp_var3);
-             assemble_3(put_prop_zc, temp_var1, temp_var2, temp_var3);
+             if (runtime_error_checking_switch && (!veneer_mode))
+                  assemble_4(call_vn_zc, veneer_routine(RT__ChPS_VR),
+                         temp_var1, temp_var2, temp_var3);
+             else assemble_3(put_prop_zc, temp_var1, temp_var2, temp_var3);
              if (!void_flag) write_result(Result, temp_var3);
              break;
 
@@ -1029,7 +1414,10 @@ static void generate_code_from(int n, int void_flag)
              assemble_store(temp_var2, ET[ET[below].right].value);
              assemble_2_to(get_prop_zc, temp_var1, temp_var2, temp_var3);
              assemble_dec(temp_var3);
-             assemble_3(put_prop_zc, temp_var1, temp_var2, temp_var3);
+             if (runtime_error_checking_switch && (!veneer_mode))
+                  assemble_4(call_vn_zc, veneer_routine(RT__ChPS_VR),
+                         temp_var1, temp_var2, temp_var3);
+             else assemble_3(put_prop_zc, temp_var1, temp_var2, temp_var3);
              if (!void_flag) write_result(Result, temp_var3);
              break;
 
@@ -1039,7 +1427,10 @@ static void generate_code_from(int n, int void_flag)
              assemble_2_to(get_prop_zc, temp_var1, temp_var2, temp_var3);
              if (!void_flag) write_result(Result, temp_var3);
              assemble_inc(temp_var3);
-             assemble_3(put_prop_zc, temp_var1, temp_var2, temp_var3);
+             if (runtime_error_checking_switch && (!veneer_mode))
+                  assemble_4(call_vn_zc, veneer_routine(RT__ChPS_VR),
+                         temp_var1, temp_var2, temp_var3);
+             else assemble_3(put_prop_zc, temp_var1, temp_var2, temp_var3);
              break;
 
         case PROPERTY_POST_DEC_OP:
@@ -1048,13 +1439,16 @@ static void generate_code_from(int n, int void_flag)
              assemble_2_to(get_prop_zc, temp_var1, temp_var2, temp_var3);
              if (!void_flag) write_result(Result, temp_var3);
              assemble_dec(temp_var3);
-             assemble_3(put_prop_zc, temp_var1, temp_var2, temp_var3);
+             if (runtime_error_checking_switch && (!veneer_mode))
+                  assemble_4(call_vn_zc, veneer_routine(RT__ChPS_VR),
+                         temp_var1, temp_var2, temp_var3);
+             else assemble_3(put_prop_zc, temp_var1, temp_var2, temp_var3);
              break;
 
         default:
             printf("** Trouble op = %d i.e. '%s' **\n",
                 opnum, operators[opnum].description);
-            error("*** Expr code gen: Can't generate yet ***\n");
+            compiler_error("Expr code gen: Can't generate yet");
     }
 
     ET[n].value = Result;

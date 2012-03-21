@@ -1,10 +1,11 @@
 This is Info file inform.info, produced by Makeinfo-1.64 from the input
 file inform.texi.
 
-This is the Inform Designer's Manual, third edition, 4 September 1996.
-It was converted to Info by Christopher J. Madsen <ac608@yfn.ysu.edu>.
+This is the Inform Designer's Manual, third edition, 4 September 1996,
+as updated 16 May 1997.  It was converted to Info by Christopher J.
+Madsen <ac608@yfn.ysu.edu>.
 
-Copyright 1996 Graham Nelson and Christopher J. Madsen
+Copyright 1996,1997 Graham Nelson and Christopher J. Madsen
 
 Permission is granted to make and distribute copies of this manual
 provided that:
@@ -19,9 +20,10 @@ File: inform,  Node: Top,  Next: Introduction,  Prev: (dir),  Up: (dir)
 Inform Designer's Manual
 ************************
 
-   This is the Inform Designer's Manual, third edition, 4 September 1996.
-It was converted to Info by Christopher J. Madsen <ac608@yfn.ysu.edu>.
-This is revision 2 of the Info version, last updated on 25 October 1996.
+   This is the Inform Designer's Manual, third edition, 4 September 1996,
+as updated 16 May 1997.  It was converted to Info by Christopher J. Madsen
+<ac608@yfn.ysu.edu>.  This is revision 4 of the Info version, last updated
+on 8 June 1997.
 
 * Menu:
 
@@ -242,11 +244,11 @@ rooms or objects are created, and is programmable and highly flexible.
 It can handle ambiguities, clarify its input by asking questions
 ("Which key do you mean...?") and can cope properly with plurals,
 vagueness, conversation, pronouns and the player becoming someone else
-in mid-game.  The world-model includes rooms, items, vehicles,
-duplicates, containers, doors, things on top of other things, light and
-darkness, switching things on and off, opening, closing and locking
-things, looking up information in books, entering things, scoring and
-so forth.
+in mid-game.  It can be configured to languages other than English.
+The world-model includes rooms, items, vehicles, duplicates,
+containers, doors, things on top of other things, light and darkness,
+switching things on and off, opening, closing and locking things,
+looking up information in books, entering things, scoring and so forth.
 
    Just as Inform has two strands -- compiler and library -- so this
 manual has two parts: Programming and Designing.  In Book One, small
@@ -268,9 +270,9 @@ both leaden and patronising.)  Passages which divert the main story,
 usually to tell an unexpurgated truth which may confuse or bore a
 newcomer, are marked with warning exclamation points `!!'.  Examples of
 program are set in typewriter font.  Mundane or irrelevant passages in
-longer examples are sometimes replaced with a line reading just ...
+longer examples are sometimes replaced with a line reading just "..."
 
-   To keep from Book Two from clogging up with examples, many are set as
+   To keep Book Two from clogging up with examples, many are set as
 "exercises", with "answers" given in full at the back of the book.
 Harder exercises are marked with exclamation points and some are very
 hard indeed.  I emphasize that the exercises are often intended as a
@@ -296,9 +298,7 @@ for Inform), `Balances' (a short story consisting of puzzles which
 stretch the parser's abilities) and `Toyshop' (hardly a game: more an
 incoherent collection of unusual objects).  In addition, the little
 game `Ruins' is developed in the course of Chapters III and IV of this
-manual.  There is also a `Shell' game consisting of the minimum code to
-get going, but it's only 14 lines long and it's essentially given in
-*Note Routines:: anyway.
+manual.
 
    Finally, the "game" called `Museum of Inform' simulates a museum
 whose exhibits are solutions to the exercises in this manual.
@@ -317,22 +317,22 @@ libraries) then belongs to its author, and may be sold for profit if
 desired, provided that its game banner contains the information that it
 was compiled by Inform, and the Inform version number.
 
-   The best source for Inform material (executables of the compiler for
-different machines, source code, the library files and example games)
-is the German National Research Centre for Computer Science, where
-Volker Blasius maintains an archive at the anonymous FTP site
-ftp.gmd.de.  Inform's home directory at this site is:
+   The Internet source for Inform material (executables of the compiler
+for different machines, source code, the library files and example
+games) is the German National Research Centre for Computer Science,
+where Volker Blasius maintains an archive at the anonymous FTP site
+ftp.gmd.de.  Inform can be found at:
 
-/if-archive/infocom/compilers/inform
+ftp://ftp.gmd.de/if-archive/infocom/compilers/inform6
 
-Another useful resource is the Inform home page on the `World Wide Web',
-currently maintained by Gareth Rees at:
+Another useful resource is the Inform 6 home page on the `World Wide
+Web', which includes Gareth Rees's `Alice' tutorial, located at:
 
-http://www.cl.cam.ac.uk/users/gdr11/inform
+http://www.gnelson.demon.co.uk/inform.html
 
-This manual describes Inform release 6.04 (or later), using library
-release 6/2 (or later).  Inform 6.01 to 6.03 and library 6/1 are very
-similar but 5.5 and 5/12 very different.
+This manual describes Inform release 6.13 (or later), using library
+release 6/5 (or later).  Earlier Inform 6 compilers and libraries are
+very similar but Inform 5.5 and 5/12 are very different.
 
    This manual has evolved from seven earlier publications, once rather
 makeshift and sometimes defensive ("Inform is an easel, not a
@@ -341,12 +341,14 @@ literary critiques of games gone by: like an oven manual padded out
 with both a cookery book and a detailed plan of the gas mains.  This
 book contains just the instructions for the oven.
 
-   So there are three `companion volumes'.  The Craft of Adventure is
-an essay on the design of adventure games;  The Z-Machine Standards
+   So there are four `companion volumes'.  The Craft of Adventure is an
+essay on the design of adventure games;  The Z-Machine Standards
 Document minutely covers the run-time format and Inform assembly
 language, its lowest level; and The Inform Technical Manual documents
 Inform's internal working in great detail, and includes a formal
-context-free grammar for the Inform language.
+context-free grammar for the Inform language.  The Inform Translator's
+Manual describes how to write a language definition file for games
+which speak languages other than English.
 
    Some of the ideas of Inform came from an incremental multi-player
 game called Tera, on the Cambridge University mainframe, written by
@@ -372,7 +374,7 @@ the authors of Infocom, Inc.
 
                                                    Graham Nelson
                                                    Oxford
-                                                   September 1996
+                                                   May 1997
 
      And if no piece of chronicle we prove,
      We'll build in sonnets pretty rooms;
@@ -905,7 +907,7 @@ the glue around the * is stronger than that around the +, so that 2 and
    Some operators do not simply act on values but actually change the
 current values of variables: expressions containing these are called
 "assignments" (because they assign values as well as working them out).
-One such operator is =:
+One such operator is `set equals':
 
     alpha = 72
 
@@ -1013,9 +1015,11 @@ immediately be thrown away as unwanted.
 
     Routine(arg1, ...)
 
-the arguments given (there can be any number from none up to 7) are
-substituted into the first variables declared for Routine, and execution
-begins running through Routine.
+the arguments given are substituted into the first variables declared
+for Routine, and execution begins running through Routine.  Usually,
+there can be any number of arguments from none up to 7, though a limit
+of 3 applies if Inform has been told to compile an early-model story
+file (see *Note Run-Time Limitations:: for details).
 
    If execution runs into the ] end-of-routine marker, so that the
 routine is finished without having specified any definite return value,
@@ -1101,7 +1105,17 @@ gives alternative possibilities.  For example,
 where two or more values are given with the word or between.  Scott is
 printed if alpha has value either 3 or 4, and Amundsen if the value of
 alpha is not 5, is not 7 and is not 9.  or can be used with any of the
-conditions, and any number of alternatives can be given.
+conditions, and any number of alternatives can be given.  For example
+
+    if (player in Forest or Village or Building) ...
+
+often makes code much clearer than writing three separate conditions
+out; or
+
+    if (x > 100 or y) ...
+
+can be convenient to check whether x is bigger than the minimum of 100
+or y.
 
    Conditions can also be built up from simpler ones (just as long
 expressions are built up from single operators) using the three logical
@@ -1172,49 +1186,4 @@ This only matters when working out conditions like
 
 where it can be important to know that the Routine is never called if x
 has a value other than 7.
-
-
-File: inform,  Node: Example 4,  Next: Code Blocks,  Prev: Conditions,  Up: Routines
-
-Example 4: Factorials
----------------------
-
-   The factorial of a positive integer n is defined as the product
-
-       1 * 2 * 3 * ... * n
-
-so that, for example, the factorial of 4 is 24.  Here is an Inform
-routine to calculate factorials:
-
-    [ Main;
-      print Factorial(7), "^";
-    ];
-    [ Factorial n;
-      if (n==1) return 1;
-      return n*Factorial(n-1);
-    ];
-
-This calculates 7 factorial and comes up with 5040.  (Factorials grow
-rapidly and 8 factorial is already too large to hold in a standard
-Inform number, so calling Factorial(8) would give a wrong answer.)
-
-   The routine Factorial actually calls itself: this is called
-"recursion".  Execution reaches "seven routines deep" before starting
-to return back up.  Each of these copies of Factorial runs with its own
-private copy of the variable n.
-
-   Recursion is hazardous.  If one calls the routine
-
-    [ Disaster;
-      return Disaster();
-    ];
-
-then despite the reassuring presence of the word return, execution is
-tied up forever, unable to finish evaluating the return value.  The
-first call to Disaster needs to make a second before it can finish; the
-second needs to make a third; and so on.  This is an example of a
-programming error which will prove disastrous when the program is run,
-yet will cause no errors when the source code is compiled.  (It can be
-proved that it is impossible to construct a compiler capable of
-detecting this general class of mistake.  Inform does not even try.)
 

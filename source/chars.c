@@ -1,8 +1,8 @@
 /* ------------------------------------------------------------------------- */
 /*   "chars" : Character set mappings and the Z-machine alphabet table       */
 /*                                                                           */
-/*   Part of Inform 6.1                                                      */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   Part of Inform 6.21                                                     */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 /*  Inform uses six different character representations:                     */
@@ -119,7 +119,7 @@ int iso_to_alphabet_grid[0x100];
    and ISO circumflex ^ is interpreted as ZSCII new-line, in accordance
    with the Inform syntax for strings.  This is automatic from the
    structure of alphabet[][]:
-   
+
    alphabet[i][j] = the ZSCII code of letter j (0 to 25)
                         in alphabet i (0 to 2)
 
@@ -137,7 +137,11 @@ int iso_to_alphabet_grid[0x100];
                                    written into the Z-machine, this entry
                                    is changed back to ".
 
-   Note that the alphabet can only hold ZSCII values between 0 and 255.     */
+   Note that the alphabet can only hold ZSCII values between 0 and 255.
+
+   The array is dimensioned as [3][27], not [3][26], to make it easier to
+   initialise using strcpy (see below), but the zero entries [x][26] are
+   not used                                                                 */
 
 int zscii_to_alphabet_grid[0x100];
 
@@ -219,7 +223,7 @@ extern void map_new_zchar(int32 unicode)
 }
 
 extern void new_alphabet(char *text, int which_alph)
-{   
+{
     /*  Called three times in succession, with which_alph = 0, 1, 2  */
 
     int i, j, zscii; int32 unicode;
@@ -272,6 +276,7 @@ entered into Zcharacter table", unicode);
 /*                                                                           */
 /*      00         remains 0 (meaning "end of file")                         */
 /*      TAB        becomes SPACE                                             */
+/*      0c         ("form feed") becomes '\n'                                */
 /*      0d         becomes '\n'                                              */
 /*      other control characters become '?'                                  */
 /*      7f         becomes '?'                                               */
@@ -290,6 +295,7 @@ static void make_source_to_iso_grid(void)
     source_to_iso_grid[0] = (char) 0;
     for (n=1; n<32; n++) source_to_iso_grid[n] = '?';
     source_to_iso_grid[10] = '\n';
+    source_to_iso_grid[12] = '\n';
     source_to_iso_grid[13] = '\n';
     source_to_iso_grid[127] = '?';
     source_to_iso_grid[TAB_CHARACTER] = ' ';
@@ -798,7 +804,8 @@ int32 zscii_to_unicode_grid[0x61];
 
 static void zscii_unicode_map(int zscii, int32 unicode)
 {   if ((zscii < 155) || (zscii > 251))
-    {   error("*** Attempted to map a non-accent ZSCII value ***");
+    {   compiler_error("Attempted to map a Unicode character into the ZSCII \
+set at an illegal position");
         return;
     }
     zscii_to_unicode_grid[zscii-155] = unicode;
@@ -864,8 +871,8 @@ int32 default_zscii_to_unicode_c3[]
         0x016C, 0x015C, 0x00DF, 0x00E0, 0x00E1, 0x00E2, 0x00E4, 0x010B,
         0x0109, 0x00E7, 0x00E8, 0x00E9, 0x00EA, 0x00EB, 0x00EC, 0x00ED,
         0x00EE, 0x00EF, 0x00F1, 0x00F2, 0x00F3, 0x00F4, 0x0121, 0x00F6,
-        0x011D, 0x00F9, 0x00FA, 0x00FB, 0x00FC, 0x016D, 0x015D }; 
- 
+        0x011D, 0x00F9, 0x00FA, 0x00FB, 0x00FC, 0x016D, 0x015D };
+
 int32 default_zscii_to_unicode_c4[]
     = { /* The 82 accented letters in Latin4 */
         0x0104, 0x0138, 0x0156, 0x0128, 0x013B, 0x0160, 0x0112, 0x0122,
@@ -878,8 +885,8 @@ int32 default_zscii_to_unicode_c4[]
         0x00E4, 0x00E5, 0x00E6, 0x012F, 0x010D, 0x00E9, 0x0119, 0x00EB,
         0x0117, 0x00ED, 0x00EE, 0x012B, 0x0111, 0x0146, 0x014D, 0x0137,
         0x00F4, 0x00F5, 0x00F6, 0x00F8, 0x0173, 0x00FA, 0x00FB, 0x00FC,
-        0x0169, 0x016B }; 
- 
+        0x0169, 0x016B };
+
 int32 default_zscii_to_unicode_c5[]
     = { /* The 92 accented letters in Cyrillic */
         0x0401, 0x0402, 0x0403, 0x0404, 0x0405, 0x0406, 0x0407, 0x0408,
@@ -893,8 +900,8 @@ int32 default_zscii_to_unicode_c5[]
         0x0442, 0x0443, 0x0444, 0x0445, 0x0446, 0x0447, 0x0448, 0x0449,
         0x044A, 0x044B, 0x044C, 0x044D, 0x044E, 0x044F, 0x0451, 0x0452,
         0x0453, 0x0454, 0x0455, 0x0456, 0x0457, 0x0458, 0x0459, 0x045A,
-        0x045B, 0x045C, 0x045E, 0x045F }; 
- 
+        0x045B, 0x045C, 0x045E, 0x045F };
+
 int32 default_zscii_to_unicode_c6[]
     = { /* The 48 accented letters in Arabic */
         0x060C, 0x061B, 0x061F, 0x0621, 0x0622, 0x0623, 0x0624, 0x0625,
@@ -902,8 +909,8 @@ int32 default_zscii_to_unicode_c6[]
         0x062E, 0x062F, 0x0630, 0x0631, 0x0632, 0x0633, 0x0634, 0x0635,
         0x0636, 0x0637, 0x0638, 0x0639, 0x063A, 0x0640, 0x0641, 0x0642,
         0x0643, 0x0644, 0x0645, 0x0646, 0x0647, 0x0648, 0x0649, 0x064A,
-        0x064B, 0x064C, 0x064D, 0x064E, 0x064F, 0x0650, 0x0651, 0x0652 }; 
- 
+        0x064B, 0x064C, 0x064D, 0x064E, 0x064F, 0x0650, 0x0651, 0x0652 };
+
 int32 default_zscii_to_unicode_c7[]
     = { /* The 71 accented letters in Greek */
         0x0384, 0x0385, 0x0386, 0x0388, 0x0389, 0x038A, 0x038C, 0x038E,
@@ -914,15 +921,15 @@ int32 default_zscii_to_unicode_c7[]
         0x03B0, 0x03B1, 0x03B2, 0x03B3, 0x03B4, 0x03B5, 0x03B6, 0x03B7,
         0x03B8, 0x03B9, 0x03BA, 0x03BB, 0x03BC, 0x03BD, 0x03BE, 0x03BF,
         0x03C0, 0x03C1, 0x03C2, 0x03C3, 0x03C4, 0x03C5, 0x03C6, 0x03C7,
-        0x03C8, 0x03C9, 0x03CA, 0x03CB, 0x03CC, 0x03CD, 0x03CE }; 
- 
+        0x03C8, 0x03C9, 0x03CA, 0x03CB, 0x03CC, 0x03CD, 0x03CE };
+
 int32 default_zscii_to_unicode_c8[]
     = { /* The 27 accented letters in Hebrew */
         0x05D0, 0x05D1, 0x05D2, 0x05D3, 0x05D4, 0x05D5, 0x05D6, 0x05D7,
         0x05D8, 0x05D9, 0x05DA, 0x05DB, 0x05DC, 0x05DD, 0x05DE, 0x05DF,
         0x05E0, 0x05E1, 0x05E2, 0x05E3, 0x05E4, 0x05E5, 0x05E6, 0x05E7,
-        0x05E8, 0x05E9, 0x05EA }; 
- 
+        0x05E8, 0x05E9, 0x05EA };
+
 int32 default_zscii_to_unicode_c9[]
     = { /* The 62 accented letters in Latin5 */
         0x00C0, 0x00C1, 0x00C2, 0x00C3, 0x00C4, 0x00C5, 0x00C6, 0x00C7,
@@ -932,8 +939,8 @@ int32 default_zscii_to_unicode_c9[]
         0x00E1, 0x00E2, 0x00E3, 0x00E4, 0x00E5, 0x00E6, 0x00E7, 0x00E8,
         0x00E9, 0x00EA, 0x00EB, 0x00EC, 0x00ED, 0x00EE, 0x00EF, 0x011F,
         0x00F1, 0x00F2, 0x00F3, 0x00F4, 0x00F5, 0x00F6, 0x00F8, 0x00F9,
-        0x00FA, 0x00FB, 0x00FC, 0x0131, 0x015F, 0x00FF }; 
- 
+        0x00FA, 0x00FB, 0x00FC, 0x0131, 0x015F, 0x00FF };
+
 static void make_unicode_zscii_map(void)
 {   int i;
 
@@ -1168,7 +1175,7 @@ extern void init_chars_vars(void)
     strcpy(alphabet[2], " ^0123456789.,!?_#'~/\\-:()");
 
     alphabet_modified = FALSE;
-    
+
     for (n=0; n<78; n++) alphabet_used[n] = 'N';
 
     change_character_set();

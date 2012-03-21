@@ -1,10 +1,11 @@
 This is Info file inform.info, produced by Makeinfo-1.64 from the input
 file inform.texi.
 
-This is the Inform Designer's Manual, third edition, 4 September 1996.
-It was converted to Info by Christopher J. Madsen <ac608@yfn.ysu.edu>.
+This is the Inform Designer's Manual, third edition, 4 September 1996,
+as updated 16 May 1997.  It was converted to Info by Christopher J.
+Madsen <ac608@yfn.ysu.edu>.
 
-Copyright 1996 Graham Nelson and Christopher J. Madsen
+Copyright 1996,1997 Graham Nelson and Christopher J. Madsen
 
 Permission is granted to make and distribute copies of this manual
 provided that:
@@ -53,8 +54,8 @@ Object -> bag "toothed bag"
        ],
        after
        [; Receive:
-                 print_ret "The bag wriggles hideously as it swallows ",
-                           (the) noun, ".";
+                 "The bag wriggles hideously as it swallows ",
+                 (the) noun, ".";
        ],
   has  container open;
 
@@ -131,7 +132,7 @@ Object -> macrame_bag "macrame bag"
            WriteListFrom(child(self), ENGLISH_BIT); ".";
        ],
   has  container transparent;
-Object watch "gold watch" macrame_bag
+Object -> -> "gold watch"
   with name "gold" "watch",
        description "The watch has no hands, oddly.",
        react_before
@@ -189,7 +190,8 @@ Object -> cage "iron cage"
           "An iron-barred cage, large enough to stoop over inside,
            looms ominously here.",
        when_closed "The iron cage is closed.",
-  has  enterable container openable open static;
+       inside_description "You stare out through the bars.",
+  has  enterable container openable open transparent static;
 
    *Note Exercise 14: Things to Enter.
 
@@ -247,12 +249,12 @@ Object -> bible "black Tyndale Bible"
                    default: "There are only the four Gospels.";
                }
                if (consult_words==1)
-                   print_ret "You read the ", (string) x, " right through.";
+                   "You read the ", (string) x, " right through.";
                w = TryNumber(wn);
                if (w==-1000)
-                   print_ret "I was expecting a chapter number in the ",
+                   "I was expecting a chapter number in the ",
                              (string) x, ".";
-               print_ret "Chapter ", (number) w, " of the ", (string) x,
+               "Chapter ", (number) w, " of the ", (string) x,
                      " is too sacred for you to understand now.";
        ];
 
@@ -298,14 +300,15 @@ Answer to Exercise 19: removing conversation actions
 
 [ SayInsteadSub; "[To talk to someone, please type ~someone, something~
 or else ~ask someone about something~.]"; ];
-Extend "answer" replace * ConTopic -> SayInstead;
-Extend "tell"   replace * ConTopic -> SayInstead;
+Extend "answer" replace * topic -> SayInstead;
+Extend "tell"   replace * topic -> SayInstead;
 
 A slight snag is that this will throw out "nigel, tell me about the
 grunfeld defence" (which the library will normally convert to an Ask
-action, but can't if the grammar for "tell" is missing); to avoid this,
-you could instead Replace the TellSub routine (*note Extending the
-Library::.) by the SayInsteadSub one.
+action, but can't if the grammar for "tell" is missing).  To avoid
+this, you could (instead of making the above directives) Replace the
+TellSub routine (*note Extending the Library::.) by the SayInsteadSub
+one.
 
    *Note Exercise 19: Living Creatures.
 
@@ -358,6 +361,9 @@ Object -> Charlotte "Charlotte"
        initial "Charlotte wants to play Simon Says.",
   has  animate female proper;
 
+(The variable i isn't needed yet, but will be used by the code added in
+the answer to the next exercise.)
+
    *Note Exercise 21: Living Creatures.
 
 
@@ -409,9 +415,9 @@ Object -> Dan "Dyslexic Dan"
        ],
        orders
        [ i;
-           Take: print_ret "~What,~ says Dan, ~ you want me to take ",
+           Take: "~What,~ says Dan, ~ you want me to take ",
                      (the) noun, "?~";
-           Drop: print_ret "~What,~ says Dan, ~ you want me to drop ",
+           Drop: "~What,~ says Dan, ~ you want me to drop ",
                      (the) noun, "?~";
            Inv: "~That I can do,~ says Dan. ~I'm empty-handed.~";
            No: "~Right you be then.~";
@@ -459,8 +465,8 @@ Object -> alarm_clock "alarm clock"
        description
        [;  print "The alarm is ";
            if (self has general) print "on, "; else print "off, but ";
-           print_ret "the clock reads ", (PrintTime) the_time,
-                 " and the alarm is set for ", (PrintTime) self.number, ".";
+           "the clock reads ", (PrintTime) the_time,
+           " and the alarm is set for ", (PrintTime) self.number, ".";
        ],
        react_after
        [;  Inv:  if (self in player)   { new_line; <<Examine self>>; }
@@ -535,17 +541,19 @@ Object replicator "replicator"
        grammar [;  return 'rc,'; ],
        orders
        [;  Give:
-               print_ret "The replicator serves up a cup of ",
+               if (noun in self)
+                   "The replicator serves up a cup of ",
                    (name) noun, " which you drink eagerly.";
+               "~That is not something I can replicate.~";
            default: "The replicator is unable to oblige.";
        ],
        life
        [;  Ask, Answer, Tell: "The replicator has no conversation skill.";
        ],
   has  talkable;
-Object -> earl_grey "Earl Grey tea"    with name "earl" "grey" "tea";
-Object -> brandy    "Aldebaran brandy" with name "aldebaran" "brandy";
-Object -> water     "distilled water"  with name "distilled" "water";
+Object -> "Earl Grey tea"    with name "earl" "grey" "tea";
+Object -> "Aldebaran brandy" with name "aldebaran" "brandy";
+Object -> "distilled water"  with name "distilled" "water";
 ...
 Verb "rc,"    * held      -> Give;
 
@@ -568,9 +576,9 @@ is
        orders
        [;  Examine:
                if (parent(noun)==0)
-                   print_ret "~", (name) noun,
+                   "~", (name) noun,
                        " is no longer aboard this demonstration game.~";
-               print_ret "~", (name) noun, " is in ", (name) parent(noun), ".~";
+               "~", (name) noun, " is in ", (name) parent(noun), ".~";
            default: "The computer's only really good for locating the crew.";
        ],
 
@@ -579,8 +587,7 @@ and the grammar simply returns 'stc,' which is defined as
 [ Crew i;
   switch(scope_stage)
   {  1: rfalse;
-     2: for (i=selfobj+1:i<=top_object:i++)
-            if (i has crewmember) PlaceInScope(i); rtrue;
+     2: objectloop (i has crewmember) PlaceInScope(i); rtrue;
   }
 ];
 Verb "stc,"   * "where" "is" scope=Crew -> Examine;
@@ -602,22 +609,23 @@ Object Zen "Zen" Flight_Deck
   with name "zen" "flight" "computer",
        initial "Square lights flicker unpredictably across a hexagonal
                 fascia on one wall, indicating that Zen is on-line.",
-       grammar [;  return 'zen,'; ],
+       grammar [;  return -'zen,'; ],
        orders
-       [;  Show: print_ret "The main screen shows a starfield,
-                     turning through ", noun, " degrees.";
+       [;  Show: "The main screen shows a starfield,
+                  turning through ", noun, " degrees.";
            Go:  "~Confirmed.~  The ship turns to a new bearing.";
            SetTo: if (noun==0) "~Confirmed.~  The ship comes to a stop.";
-               if (noun>12) print_ret "~Standard by ", (number) noun,
-                                " exceeds design tolerances.~";
-               print_ret "~Confirmed.~  The ship's engines step to
-                   standard by ", (number) noun, ".";
+               if (noun>12) "~Standard by ", (number) noun,
+                            " exceeds design tolerances.~";
+               "~Confirmed.~  The ship's engines step to
+                standard by ", (number) noun, ".";
            Take: if (noun~=force_wall) "~Please clarify.~";
                 "~Force wall raised.~";
            Drop: if (noun~=blasters)   "~Please clarify.~";
               "~Battle-computers on line.
                 Neutron blasters cleared for firing.~";
-           default: "~Language banks unable to decode.~";
+           NotUnderstood: "~Language banks unable to decode.~";
+           default: "~Information. That function is unavailable.~";
        ],
   has  talkable proper static;
 Object -> force_wall "force wall"     with name "force" "wall" "shields";
@@ -675,7 +683,7 @@ Object -> martha "Martha"
                if (noun notin r) "~That's beyond my telekinesis.~";
                if (noun==self) "~Teleportation's too hard for me.~";
                move noun to player;
-               print_ret "~Here goes...~ and Martha's telekinetic talents
+               "~Here goes...~ and Martha's telekinetic talents
                    magically bring ", (the) noun, " to your hands.";
            Look:
                print "~", (string) r.description;
@@ -726,7 +734,7 @@ Answer to Exercise 33: pet moth escapes in the dark
 
    We could solve this using a daemon, but for the sake of
 demonstrating a feature of thedark we won't.  In Initialise, write
-thedark.initial = #r$GoMothGo; and add the routine:
+thedark.initial = GoMothGo; and add the routine:
 
 [ GoMothGo;
    if (moth in player)
@@ -758,13 +766,13 @@ Object -> thief "thief"
            p=parent(thief);
            objectloop (i in compass)
            {   j=p.(i.door_dir);
-               if (ZRegion(j)==1 && j hasnt door) n++;
+               if (j ofclass Object && j hasnt door) n++;
            }
            if (n==0) rfalse;
            k=random(n); n=0;
            objectloop (i in compass)
            {   j=p.(i.door_dir);
-               if (ZRegion(j)==1 && j hasnt door) n++;
+               if (j ofclass Object && j hasnt door) n++;
                if (n==k)
                {   move self to j;
                    if (p==location) "^The thief stalks away!";
@@ -775,13 +783,13 @@ Object -> thief "thief"
        ],
   has  animate;
 
-ZRegion(j) works out what kind of value j is: 1 means `is a valid
-object number'.  So the thief walks at random but never via doors,
-bridges and the like (because these may be locked or have rules
-attached); it's only a first approximation, and in a good game one
-should occasionally see the thief do something surprising, such as open
-a secret door.  As for the name, note that `The Prince of darkness is a
-gentleman. Modo he's called, and Mahu' (William Shakespeare, `King
+(Not forgetting to StartDaemon(thief) at some point, for instance in
+the game's Initialise routine.)  So the thief walks at random but never
+via doors, bridges and the like (because these may be locked or have
+rules attached); it's only a first approximation, and in a good game
+one should occasionally see the thief do something surprising, such as
+open a secret door.  As for the name, note that `The Prince of darkness
+is a gentleman. Modo he's called, and Mahu' (William Shakespeare, `King
 Lear' III iv).
 
    *Note Exercise 34: Daemons.
@@ -792,50 +800,75 @@ File: inform,  Node: Answer 35,  Next: Answer 36,  Prev: Answer 34,  Up: Answers
 Answer to Exercise 35: weight--watching daemon
 ==============================================
 
-   First define a new property for object weight:
-
-Property weight 10;
-
-(10 being an average sort of weight).  Containers weigh more when they
-hold things, so we will need:
+   We shall use a new property called weight and decide that any object
+which doesn't provide any particular weight will weigh 10 units.
+Clearly, an object which contains other objects will carry their weight
+too, so:
 
 [ WeightOf obj t i;
-   t = obj.weight;
-   objectloop (i in obj) t=t+WeightOf(i);
+   if (obj provides weight) t = obj.weight; else t = 10;
+   objectloop (i in obj) t = t + WeightOf(i);
    return t;
 ];
 
-Now for the daemon which monitors the player's fatigue:
+Once every turn we shall check how much the player is carrying and
+adjust a measure of the player's fatigue accordingly.  There are many
+ways we could choose to calculate this: for the sake of example we'll
+define two constants:
 
-Object weigher "weigher"
-  with number 500,
-       time_left 5,
+Constant CARRYING_STRENGTH = 500;
+Constant HEAVINESS_THRESHOLD = 100;
+
+Initially the player's strength will be the maximum possible, which
+we'll set to 500.  Each turn the amount of weight being carried is
+substracted from this, but 100 is also added on (without exceeding the
+maximum value).  So if the player carries more than 100 units, then her
+strength declines, but by dropping things to get the weight below 100
+she can allow it to recover.  If she drops absolutely everything, her
+entire strength will recuperate in at most 5 turns.  Exhaustion sets in
+if her strength reaches 0, and at this point she is forced to drop
+something, which gives her strength a slight boost.  Anyway, here's an
+implementation of all this:
+
+Object weight_monitor
+  with players_strength,
+       warning_level 5,
+       activate
+       [;  self.players_strength = CARRYING_STRENGTH; StartDaemon(self);
+       ],
        daemon
        [ w s b bw;
-            w=WeightOf(player)-100-player.weight;
-            s=self.number; s=s-w; if (s<0) s=0; if (s>500) s=500;
-            self.number = s;
+            if (location ~= Weights_Room) { StopDaemon(self); return; }
+            s = self.players_strength
+                - WeightOf(player) + HEAVINESS_THRESHOLD;
+            if (s<0) s=0; if (s>CARRYING_STRENGTH) s=CARRYING_STRENGTH;
+            self.players_strength = s;
             if (s==0)
             {   bw=-1;
                 objectloop(b in player)
-                    if (WeightOf(b)>bw) { bw=WeightOf(b); w=b; }
+                    if (WeightOf(b) > bw) { bw = WeightOf(b); w=b; }
+                self.players_strength = self.players_strength + bw;
                 print "^Exhausted with carrying so much, you decide
                     to discard ", (the) w, ": "; <<Drop w>>;
             }
-            w=s/100; if (w==self.time_left) rfalse;
-            if (w==3) print "^You are feeling a little tired.^";
-            if (w==2) print "^You possessions are weighing you down.^";
-            if (w==1) print "^Carrying so much weight is wearing you out.^";
-            self.time_left = w;
+            w=s/100; if (w==self.warning_level) return;
+            self.warning_level = w;
+            switch(w)
+            {   3: "^You are feeling a little tired.";
+                2: "^You possessions are weighing you down.";
+                1: "^Carrying so much weight is wearing you out.";
+                0: "^You're nearly exhausted enough to drop everything
+                     at an inconvenient moment.";
+            }
        ];
 
 Notice that items are actually dropped with Drop actions: one of them
 might be, say, a wild boar, which would bolt away into the forest when
 released.  The daemon tries to drop the heaviest item.  (Obviously a
 little improvement would be needed if the game contained, say, an
-un-droppable but very heavy ball and chain.)  Now the daemon is going
-to run every turn forever, but needs to be started: so put
-StartDaemon(weigher); into the game's Initialise routine.
+un-droppable but very heavy ball and chain.)  Finally, of course, at
+some point the weight monitor has to be sent an activate message to get
+things going.
 
    *Note Exercise 35: Daemons.
 
@@ -1005,8 +1038,8 @@ Object hog "Warthog" Caldera
        number 0,
        initial "A warthog snuffles and grunts about in the ash.",
        orders
-       [; if (action~=##Go or ##Look or ##Examine)
-              "Warthogs can't do anything as tricky as that!";
+       [;  Go, Look, Examine, Eat, Smell, Taste, Touch: rfalse;
+           default: "Warthogs can't do anything as tricky as that!";
        ],
   has  animate proper;
 
@@ -1074,11 +1107,11 @@ File: inform,  Node: Answer 48,  Next: Answer 49,  Prev: Answer 47,  Up: Answers
 Answer to Exercise 48
 =====================
 
-   The details are left to the reader.  One must provide a new grammar
-file (generating the same actions but from different syntax) and a very
-large LibraryMessages object.  Translations have been made, with some
-success, into Spanish, German, French and Italian: at present quite
-some work is required, but LibraryMessages is a start.
+   See the `Inform Translator's Manual'.  One must provide a new
+grammar file (generating the same actions but from different syntax),
+tables showing how pronouns, possessives and articles work in the new
+language, a sheaf of translated library messages and so on.  But it can
+be done.
 
    *Note Exercise 48: Extending the Library.
 
@@ -1205,21 +1238,8 @@ Answer to Exercise 54: three denominations of coin
 ==================================================
 
 Class  Coin
-  with name "coin",
+  with name "coin" "coins//p",
        description "A round unstamped disc, presumably local currency.",
-       parse_name
-       [ i j w;
-         if (parser_action==##TheSame)
-         {   if ((parser_one.&name)-->0 == (parser_two.&name)-->0) return -1;
-             return -2;
-         }
-         w=(self.&name)-->0;
-         for (::i++)
-         {   j=NextWord();
-             if (j=='coins') parser_action=##PluralFound;
-             else if (j~='coin' or w) return i;
-         }
-       ],
        list_together "coins",
        plural
        [;  print (string) (self.&name)-->0;
@@ -1231,8 +1251,7 @@ Class  Coin
        ],
        article
        [;  if (listing_together ofclass Coin) print "one"; else print "a";
-       ],
-  has  is_coin;
+       ];
 Class  Gold_coin   class Coin with name "gold";
 Class  Silver_coin class Coin with name "silver";
 Class  Bronze_coin class Coin with name "bronze";
@@ -1247,25 +1266,55 @@ File: inform,  Node: Answer 55,  Next: Answer 56,  Prev: Answer 54,  Up: Answers
 Answer to Exercise 55: I Ching coins
 ====================================
 
-   For brevity, the following answer omits the routines:
-CoinsTogether(attr) which finds if the three coins with this attr
-(is_gold or is_silver) are together, returning 0 if they aren't and
-otherwise the object of which they are children; and Trigram(attr)
-which prints out the trigram currently showing on the coins of that
-attr, e.g., "Tails, Tails, Heads (Chen)".
+   Firstly, a printing rule to print the state of coins.  Coin-objects
+will have a property called way_up which is always either 1 or 2:
 
-[ Face x; if (x.face_up==1) print "Heads"; else print "Tails"; ];
-[ CoinsLT whichclass k i c;
-  if (inventory_stage == 1)
-  {   if (whichclass == GoldChing) print "the gold"; else print "the silver";
+[ Face x; if (x.way_up==1) print "Heads"; else print "Tails"; ];
+
+There are two kinds of coin but we'll implement them with three
+classes: Coin and two sub-categories, GoldCoin and SilverCoin.  Since
+the coins only join up into trigrams when present in groups of three,
+we need a routine to detect this:
+
+[ CoinsTogether cla i x y;
+  objectloop (i ofclass cla)
+  {   x=parent(i);
+      if (y==0) y=x; else { if (x~=y) return 0; }
+  }
+  return y;
+];
+
+Thus CoinsTogether(cla) decides whether all objects of class cla are in
+the same place.  (cla will always be either GoldCoin or SilverCoin.)
+We must now write the class definitions:
+
+Class  Coin
+  with name "coin" "coins//p",
+       way_up 1, article "the",
+       after
+       [; Drop, PutOn:
+             self.way_up = random(2); print (Face) self;
+             if (CoinsTogether(self.which_class))
+             {   print ". The ";
+                 if (self.which_class == GoldCoin)
+                     print "gold"; else print "silver";
+                 " trigram is now ", (Trigram) self.which_class;
+             }
+             ".";
+       ];
+[ CoinLT k i c;
+  if (inventory_stage==1)
+  {   if (self.which_class == GoldCoin)
+          print "the gold"; else print "the silver";
       print " coins ";
-      k=CoinsTogether(whichclass);
-      if (k==location)
-      {   objectloop(i ofclass whichclass)
+      k=CoinsTogether(self.which_class);
+      if (k==location || k has supporter)
+      {   objectloop (i ofclass self.which_class)
           {   print (name) i;
               switch(++c)
               {  1: print ", "; 2: print " and ";
-                 3: print " (showing the trigram ", (Trigram) whichclass, ")";
+                 3: print " (showing the trigram ",
+                    (Trigram) self.which_class, ")";
               }
           }
           rtrue;
@@ -1277,54 +1326,54 @@ attr, e.g., "Tails, Tails, Heads (Chen)".
   }
   rfalse;
 ];
-Class  Ching
-  with face_up 1, article "the",
-       parse_name
-       [ i j w;
-         if (parser_action==##TheSame) return -2;
-         w='gold'; if (self ofclass SilverChing) w='silver';
-         for (::i++)
-         {   j=NextWord();
-             if (j=='coins') parser_action=##PluralFound;
-             else if (j~='coin' or w or self.name) return i;
-         }
-       ],
-       after
-       [ j;  Drop, PutOn:
-                 self.face_up=random(2); print (Face) self, ". ";
-                 if (self ofclass GoldChing) j=GoldChing; else j=SilverChing;
-                 if (CoinsTogether(j)~=0)
-                 {   print "The ";
-                     if (j==GoldChing) print "gold"; else print "silver";
-                     print_ret " trigram is now ", (Trigram) j, ".";
-                 }
-                 new_line; rtrue;
-       ];
-Class  GoldChing class Ching
-  with list_together [; return CoinsLT(GoldChing); ];
-Class  SilverChing class Ching
-  with list_together [; return CoinsLT(SilverChing); ];
-...
-GoldChing -> goat "goat"       with name "goat";
-GoldChing -> deer "deer"       with name "deer";
-GoldChing -> chicken "chicken" with name "chicken";
-SilverChing -> robin "robin"   with name "robin";
-SilverChing -> snake "snake"   with name "snake";
-SilverChing -> bison "bison"   with name "bison";
+Class  GoldCoin class Coin
+  with name "gold", which_class GoldCoin,
+       list_together [; return CoinLT(); ];
+Class  SilverCoin class Coin
+  with name "silver", which_class SilverCoin,
+       list_together [; return CoinLT(); ];
 
-There are two unusual points here.  Firstly, the CoinsLT routine is not
-simply given as the common list_together value in the coin class since,
-if it were, all six coins would be grouped together: we want two groups
-of three, so the gold and silver coins have to have different
+(There are two unusual points here.  Firstly, the CoinsLT routine is
+not simply given as the common list_together value in the coin class
+since, if it were, all six coins would be grouped together: we want two
+groups of three, so the gold and silver coins have to have different
 list_together values.  Secondly, if a trigram is together and on the
 floor, it is not good enough to simply append text like "showing Tails,
-Heads, Heads (Tui)" at inventory_stage 2 since the coins may be listed
-in a funny order: for example, in the order snake, robin, bison.  In
-that event, the order the coins are listed in doesn't correspond to the
-order their values are listed in, which is misleading.  So instead
+Heads, Heads (change)" at inventory_stage 2 since the coins may be
+listed in a funny order: for example, in the order snake, robin, bison.
+In that event, the order the coins are listed in doesn't correspond to
+the order their values are listed in, which is misleading.  So instead
 CoinsLT takes over entirely at inventory_stage 1 and prints out the
 list of three itself, returning true to stop the list from being
-printed out by the library as well.
+printed out by the library as well.) To resume: whenever coins are
+listed together, they are grouped into gold and silver.  Whenever
+trigrams are visible they are to be described by either
+Trigram(GoldClass) or Trigram(SilverClass):
+
+Array gold_trigrams -->   "fortune" "change" "river flowing" "chance"
+                          "immutability" "six stones in a circle"
+                          "grace" "divine assistance";
+Array silver_trigrams --> "happiness" "sadness" "ambition" "grief"
+                          "glory" "charm" "sweetness of nature"
+                          "the countenance of the Hooded Man";
+[ Trigram cla i k state;
+  objectloop (i ofclass cla)
+  {   print (Face) i; if (k++<2) print ","; print " ";
+      state=state*2 + (i.way_up-1);
+  }
+  if (cla == GoldCoin) i=gold_trigrams; else i=silver_trigrams;
+  print "(", (string) i-->state, ")";
+];
+
+(These interpretations of the coins are quite bogus.)  Finally, we have
+to make the six actual coins:
+
+GoldCoin ->   "goat"    with name "goat";
+GoldCoin ->   "deer"    with name "deer";
+GoldCoin ->   "chicken" with name "chicken";
+SilverCoin -> "robin"   with name "robin";
+SilverCoin -> "snake"   with name "snake";
+SilverCoin -> "bison"   with name "bison";
 
    *Note Exercise 55: Listing Objects.
 
@@ -1352,108 +1401,37 @@ File: inform,  Node: Answer 57,  Next: Answer 58,  Prev: Answer 56,  Up: Answers
 Answer to Exercise 57: the artiste formerly known as Princess
 =============================================================
 
-Object -> princess "/?%?/ (the artiste formerly known as Princess)"
+Object -> "/?%?/ (the artiste formerly known as Princess)"
   with name "princess" "artiste" "formerly" "known" "as",
        short_name
        [;   if (self hasnt general) { print "Princess"; rtrue; }
        ],
+       react_before
+       [;  Listen: print_ret (name) self, " sings a soft siren song.";
+       ],
+       initial
+       [;  print_ret (name) self, " is singing softly.";
+       ],
        parse_name
-       [ x; if (self hasnt general)
+       [ x n; if (self hasnt general)
             {   if (NextWord()=='princess') return 1;
                 return 0;
             }
             x=WordAddress(wn);
             if (   x->0 == '/' && x->1 == '?' && x->2 == '%'
-                && x->3 == '?' && x->4 == '/') return 1;
+                && x->3 == '?' && x->4 == '/')
+            {   while (wn<=parse->1 && WordAddress(wn++)<x+5) n++;
+                return n;
+            }
             return -1;
        ],
-       react_before
-       [;  Listen: if (noun==0)
-               print_ret (name) self, " sings a soft siren song.";
-       ],
        life
-       [;  Kiss: give self general; self.life = NULL;
-              "In a fairy-tale transformation, the Princess
-               steps back and astonishes the world by announcing
-               that she will henceforth be known as ~/?%?/~.";
+       [;   Kiss: give self general; self.life = NULL;
+                "In a fairy-tale transformation, the Princess
+                 steps back and astonishes the world by announcing
+                 that she will henceforth be known as ~/?%?/~.";
        ],
   has  animate proper female;
 
    *Note Exercise 57: Parsing Nouns.
-
-
-File: inform,  Node: Answer 58,  Next: Answer 59,  Prev: Answer 57,  Up: Answers
-
-Answer to Exercise 58: drinks machine
-=====================================
-
-   Something to note here is that the button can't be called just
-"coffee" when the player's holding a cup of coffee: this means the game
-responds sensibly to the sequence "press coffee" and "drink coffee".
-Also note the way itobj is set to the delivered drink, so that "drink
-it" works nicely.
-
-Object -> drinksmat "drinks machine",
-  with name "drinks" "machine",
-       initial
-          "A drinks machine here has buttons for Cola, Coffee and Tea.",
-  has  static;
-Object -> thebutton "drinks machine button"
-  has  scenery
- with  parse_name
-       [ i flag type;
-            for (: flag == 0: i++)
-            {   flag = 1;
-                switch(NextWord())
-                {   'button', 'for': flag = 0;
-                    'coffee': if (type == 0) { flag = 0; type = 1; }
-                    'tea':    if (type == 0) { flag = 0; type = 2; }
-                    'cola':   if (type == 0) { flag = 0; type = 3; }
-                }
-            }
-            if (type==drink.number && i==2 && type~=0 && drink in player)
-                return 0;
-            self.number=type; return i-1;
-        ],
-        number 0,
-        before
-        [; Push, SwitchOn:
-             if (self.number == 0)
-                "You'll have to say which button to press.";
-             if (parent(drink) ~= 0) "The machine's broken down.";
-             drink.number = self.number; move drink to player; itobj = drink;
-             print_ret "Whirr!  The machine puts ", (a) drink, " into your \
-                 glad hands.";
-           Attack: "The machine shudders and squirts cola at you.";
-           Drink:  "You can't drink until you've worked the machine.";
-        ];
-Object  drink "drink"
-  with  parse_name
-        [ i flag type;
-            for (: flag == 0: i++)
-            {   flag = 1;
-                switch(NextWord())
-                {   'drink', 'cup', 'of': flag = 0;
-                    'coffee': if (type == 0) { flag = 0; type = 1; }
-                    'tea':    if (type == 0) { flag = 0; type = 2; }
-                    'cola':   if (type == 0) { flag = 0; type = 3; }
-                }
-            }
-            if (type ~= 0 && type ~= self.number) return 0;
-            return i-1;
-        ],
-        short_name
-        [;  print "cup of ";
-            switch (self.number)
-            { 1: print "coffee"; 2: print "tea"; 3: print "cola"; }
-            rtrue;
-        ],
-        number 0,
-        before
-        [; Drink: remove self;
-            "Ugh, that was awful.  You crumple the cup and responsibly \
-             dispose of it.";
-        ];
-
-   *Note Exercise 58: Parsing Nouns.
 

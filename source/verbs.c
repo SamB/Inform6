@@ -2,8 +2,8 @@
 /*   "verbs" :  Manages actions and grammar tables; parses the directives    */
 /*              Verb and Extend.                                             */
 /*                                                                           */
-/*   Part of Inform 6.1                                                      */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   Part of Inform 6.21                                                     */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
@@ -184,6 +184,7 @@ extern assembly_operand action_of_name(char *name)
     AO.value = svals[j];
     AO.marker = ACTION_MV;
     AO.type = (module_switch)?LONG_CONSTANT_OT:SHORT_CONSTANT_OT;
+    if (svals[j] >= 256) AO.type = LONG_CONSTANT_OT;
     return AO;
 }
 
@@ -221,11 +222,14 @@ static int make_adjective(char *English_word)
 
         Note that (partly for historical reasons) adjectives are numbered
         from 0xff downwards.  (And partly to make them stand out as tokens.)
-        
+
         This routine is used only in grammar version 1: the corresponding
         table is left empty in GV2.                                          */
 
     int i; dict_word new_sort_code;
+
+    if (no_adjectives >= MAX_ADJECTIVES)
+        memoryerror("MAX_ADJECTIVES", MAX_ADJECTIVES);
 
     new_sort_code = dictionary_prepare(English_word);
     for (i=0; i<no_adjectives; i++)
@@ -245,7 +249,7 @@ static int make_parsing_routine(int32 routine_address)
 {
     /*  This routine is used only in grammar version 1: the corresponding
         table is left empty in GV2.                                          */
-  
+
     int l;
     for (l=0; l<no_grammar_token_routines; l++)
         if (grammar_token_routine[l] == routine_address)

@@ -1,8 +1,8 @@
 /* ------------------------------------------------------------------------- */
 /*   "linker" : For compiling and linking modules                            */
 /*                                                                           */
-/*   Part of Inform 6.1                                                      */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   Part of Inform 6.21                                                     */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
@@ -192,9 +192,8 @@ static int get_next_record(uchar *p)
             if (linker_trace_level >= 2) describe_importexport(&IE);
             break;
         default:
-            printf("*** Error: illegal import/export type %d ***\n",
-                record_type);
-            error("*** Link: illegal import/export type ***");
+            printf("Marker value of %d\n", record_type);
+            compiler_error("Link: illegal import/export marker value");
             return -1;
     }
     return record_type;
@@ -441,7 +440,12 @@ static int32 backpatch_backpatch(int32 v)
             break;
 
         case ARRAY_MV:
-            v += dynamic_array_area_size - 0x1e0;
+            if (v < 0x1e0)
+            {   v = 2*(variables_map[v/2 + 16] - 16);
+            }
+            else
+            {   v += dynamic_array_area_size - 0x1e0;
+            }
             break;
 
         case DWORD_MV:
@@ -520,7 +524,7 @@ void link_module(char *given_filename)
     if (vn != 64 + version_number)
     {   char ebuff[100];
         sprintf(ebuff,
-           "Module compiled as Version %d (so it can't link\
+           "module compiled as Version %d (so it can't link\
  into this V%d game):", vn-64, version_number);
         error_named(ebuff, filename);
         fclose(fin); return;
@@ -543,7 +547,7 @@ void link_module(char *given_filename)
                 if (l != p[m]) k = TRUE;
             }
             if (k)
-        link_error("Module and game both define non-standard character sets, \
+        link_error("module and game both define non-standard character sets, \
 but they disagree");
             k = FALSE;
         }
@@ -554,11 +558,11 @@ but they disagree");
         else k = FALSE;
     }
     if (k)
-        link_error("Module and game use different character sets");
+        link_error("module and game use different character sets");
 
     i = p[1];
     if (i > MODULE_VERSION_NUMBER)
-        warning_named("Module has a more advanced format than this release \
+        warning_named("module has a more advanced format than this release \
 of the Inform 6 compiler knows about: it may not link in correctly", filename);
 
     /* (2) Calculate offsets: see the header-writing code in "tables.c"  */
@@ -759,7 +763,13 @@ of the Inform 6 compiler knows about: it may not link in correctly", filename);
                     case INDIVIDUAL_PROP_ZA:
                         offset += individuals_length; break;
                     case DYNAMIC_ARRAY_ZA:
-                        offset += dynamic_array_area_size - 0x1e0; break;
+                        if (offset < 0x1e0)
+                        {   offset = 2*(variables_map[offset/2 + 16] - 16);
+                        }
+                        else
+                        {   offset += dynamic_array_area_size - 0x1e0;
+                        }
+                        break;
                 }
                 backpatch_zmachine(backpatch_marker, zmachine_area, offset);
                 break;

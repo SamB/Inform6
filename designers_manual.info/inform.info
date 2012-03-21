@@ -1,10 +1,11 @@
 This is Info file inform.info, produced by Makeinfo-1.64 from the input
 file inform.texi.
 
-This is the Inform Designer's Manual, third edition, 4 September 1996.
-It was converted to Info by Christopher J. Madsen <ac608@yfn.ysu.edu>.
+This is the Inform Designer's Manual, third edition, 4 September 1996,
+as updated 16 May 1997.  It was converted to Info by Christopher J.
+Madsen <ac608@yfn.ysu.edu>.
 
-Copyright 1996 Graham Nelson and Christopher J. Madsen
+Copyright 1996,1997 Graham Nelson and Christopher J. Madsen
 
 Permission is granted to make and distribute copies of this manual
 provided that:
@@ -15,219 +16,220 @@ provided that:
 
 
 Indirect:
-inform-01: 569
-inform-02: 50335
-inform-03: 98287
-inform-04: 144834
-inform-05: 193089
-inform-06: 241774
-inform-07: 287176
-inform-08: 332106
-inform-09: 381990
-inform-10: 431086
-inform-11: 478500
-inform-12: 528245
-inform-13: 578228
-inform-14: 622975
-inform-15: 705095
+inform.01: 599
+inform.02: 49306
+inform.03: 99211
+inform.04: 146809
+inform.05: 195574
+inform.06: 244618
+inform.07: 291139
+inform.08: 336327
+inform.09: 376793
+inform.10: 418065
+inform.11: 450508
+inform.12: 494894
+inform.13: 544355
+inform.14: 593830
+inform.15: 641916
+inform.16: 724718
 
 Tag Table:
 (Indirect)
-Node: Top569
-Node: Introduction10069
-Node: Programming Language19283
-Node: Routines19860
-Node: First Principles21228
-Node: Example 123736
-Node: Example 226630
-Node: Numbers and Variables29648
-Node: Arithmetic Expressions35069
-Node: Arguments and Return Values41250
-Node: Example 343594
-Node: Conditions44343
-Node: Example 448773
-Node: Code Blocks50335
-Node: Loops54419
-Node: Example 558594
-Node: Jumping Around60074
-Node: Printing Output62514
-Node: Example 672469
-Node: Random and Indirect73183
-Node: Accepting Input74892
-Node: Data Structures76895
-Node: Directives and Constants77424
-Node: Global Variables81595
-Node: Arrays82311
-Node: Example 786313
-Node: Special Data Structures88796
-Node: Objects93067
-Node: About Objects94395
-Node: Object Tree98287
-Node: Creating Objects100642
-Node: Using the Tree102666
-Node: Objects with Properties105832
-Node: Private Properties111186
-Node: Using Attributes112424
-Node: Classes and Inheritance114077
-Node: Messages118038
-Node: Access to Superclass Values122098
-Node: Philosophy124467
-Node: Sending Messages131269
-Node: Dynamic Objects133323
-Node: Common vs Individual137957
-Node: Using the Compiler138983
-Node: The Language of Inform139523
-Node: ICL139874
-Node: Controlling Compilation144834
-Node: Linking148477
-Node: Compiler Options152505
-Node: Error Messages161711
-Node: Fatal Errors162346
-Node: Errors164772
-Node: Warnings176326
-Node: Fundamentals180849
-Node: Getting Started181196
-Node: Messages and Classes193089
-Node: Actions and Reactions202531
-Node: The Model World218439
-Node: Places219650
-Node: Containers230757
-Node: Doors237035
-Node: Switchable Objects241774
-Node: Things to Enter245313
-Node: Reading Matter249910
-Node: Living Creatures254970
-Node: Light and Dark273712
-Node: Daemons277894
-Node: Player287176
-Node: Constants and Scoring296670
-Node: Extending the Library302426
-Node: Describing and Parsing311207
-Node: Describing Objects312048
-Node: Listing Objects325288
-Node: Parsing Nouns332106
-Node: Plural Names340778
-Node: Parsing Verbs345914
-Node: Grammar Tokens358322
-Node: Scope369901
-Node: Helping the Parser381990
-Node: Testing and Hacking386670
-Node: Debugging387074
-Node: Run-Time Limitations394991
-Node: Boxes400931
-Node: Assembly Language408513
-Node: Appendix420245
-Node: Operators421192
-Node: Statements424194
-Node: Directives425858
-Node: Grammar427067
-Node: Attributes431086
-Node: Properties439329
-Node: Objects and Routines458331
-Node: Actions and Fake Actions466123
-Node: Library Messages468797
-Node: Entry Points478500
-Node: Program Order484647
-Node: Lexicon486693
-Node: Answers518100
-Node: Answer 1523625
-Node: Answer 2524485
-Node: Answer 3525232
-Node: Answer 4525793
-Node: Answer 5526277
-Node: Answer 6527098
-Node: Answer 7527856
-Node: Answer 8528245
-Node: Answer 9529084
-Node: Answer 10529768
-Node: Answer 11530640
-Node: Answer 12531091
-Node: Answer 13532358
-Node: Answer 14533813
-Node: Answer 15534330
-Node: Answer 16534837
-Node: Answer 17535236
-Node: Answer 18536530
-Node: Answer 19537607
-Node: Answer 20538433
-Node: Answer 21539078
-Node: Answer 22539991
-Node: Answer 23541124
-Node: Answer 24542273
-Node: Answer 25543050
-Node: Answer 26545109
-Node: Answer 27545807
-Node: Answer 28546891
-Node: Answer 29548159
-Node: Answer 30549988
-Node: Answer 31550605
-Node: Answer 32552534
-Node: Answer 33552796
-Node: Answer 34553375
-Node: Answer 35555130
-Node: Answer 36556978
-Node: Answer 37557198
-Node: Answer 38558849
-Node: Answer 39559149
-Node: Answer 40560323
-Node: Answer 41560843
-Node: Answer 42561254
-Node: Answer 43562048
-Node: Answer 44562453
-Node: Answer 45563275
-Node: Answer 46563834
-Node: Answer 47564285
-Node: Answer 48564852
-Node: Answer 49565364
-Node: Answer 50566040
-Node: Answer 51566680
-Node: Answer 52567115
-Node: Answer 53567899
-Node: Answer 54568852
-Node: Answer 55570177
-Node: Answer 56573801
-Node: Answer 57574243
-Node: Answer 58575463
-Node: Answer 59578228
-Node: Answer 60578898
-Node: Answer 61579233
-Node: Answer 62579557
-Node: Answer 63579987
-Node: Answer 64580483
-Node: Answer 65581355
-Node: Answer 66581734
-Node: Answer 67583571
-Node: Answer 68584623
-Node: Answer 69585773
-Node: Answer 70586255
-Node: Answer 71587564
-Node: Answer 72588694
-Node: Answer 73591349
-Node: Answer 74592922
-Node: Answer 75593368
-Node: Answer 76594532
-Node: Answer 77594781
-Node: Answer 78595107
-Node: Answer 79595745
-Node: Answer 80596174
-Node: Answer 81596544
-Node: Answer 82597330
-Node: Answer 83599854
-Node: Answer 84601648
-Node: Answer 85602917
-Node: Answer 86604362
-Node: Answer 87606456
-Node: Answer 88607374
-Node: Answer 89608010
-Node: Answer 90608783
-Node: Answer 91609273
-Node: Answer 92610200
-Node: Answer 93611125
-Node: Answer 94611836
-Node: Answer 95613723
-Node: Answer 96614826
-Node: Index616062
-Node: Concept Index622975
-Node: Secondary Index705095
+Node: Top599
+Node: Introduction10121
+Node: Programming Language19396
+Node: Routines19973
+Node: First Principles21341
+Node: Example 123849
+Node: Example 226743
+Node: Numbers and Variables29761
+Node: Arithmetic Expressions35182
+Node: Arguments and Return Values41374
+Node: Example 343877
+Node: Conditions44626
+Node: Example 449306
+Node: Code Blocks50868
+Node: Loops54952
+Node: Example 559197
+Node: Jumping Around60677
+Node: Printing Output63117
+Node: Example 673473
+Node: Random and Indirect74187
+Node: Accepting Input75896
+Node: Data Structures77899
+Node: Directives and Constants78428
+Node: Global Variables82599
+Node: Arrays83315
+Node: Example 787315
+Node: Special Data Structures89837
+Node: Objects94108
+Node: About Objects95436
+Node: Object Tree99211
+Node: Creating Objects101566
+Node: Using the Tree103592
+Node: Objects with Properties106758
+Node: Private Properties112112
+Node: Using Attributes113350
+Node: Classes and Inheritance115003
+Node: Messages118964
+Node: Access to Superclass Values123156
+Node: Philosophy125525
+Node: Sending Messages132327
+Node: Dynamic Objects134381
+Node: Common vs Individual139015
+Node: Using the Compiler140750
+Node: The Language of Inform141290
+Node: ICL141641
+Node: Controlling Compilation146809
+Node: Linking150834
+Node: Compiler Options154862
+Node: Error Messages164219
+Node: Fatal Errors164854
+Node: Errors167297
+Node: Warnings178815
+Node: Fundamentals183338
+Node: Getting Started183685
+Node: Messages and Classes195574
+Node: Actions and Reactions205015
+Node: The Model World220914
+Node: Places222125
+Node: Containers233601
+Node: Doors239879
+Node: Switchable Objects244618
+Node: Things to Enter248157
+Node: Reading Matter254175
+Node: Living Creatures259235
+Node: Light and Dark277869
+Node: Daemons282073
+Node: Player291139
+Node: Constants and Scoring300633
+Node: Extending the Library306389
+Node: Describing and Parsing315162
+Node: Describing Objects316003
+Node: Listing Objects329509
+Node: Parsing Nouns336327
+Node: Plural Names345107
+Node: Parsing Verbs350810
+Node: Grammar Tokens364165
+Node: Scope376793
+Node: Helping the Parser390887
+Node: Testing and Hacking396388
+Node: Debugging396792
+Node: Run-Time Limitations404634
+Node: Boxes410612
+Node: Assembly Language418065
+Node: Appendix429809
+Node: Operators430756
+Node: Statements433845
+Node: Directives435509
+Node: Grammar436718
+Node: Attributes441214
+Node: Properties450508
+Node: Objects and Routines470245
+Node: Actions and Fake Actions479200
+Node: Library Messages481874
+Node: Entry Points494894
+Node: Program Order501041
+Node: Lexicon503075
+Node: Answers534517
+Node: Answer 1540042
+Node: Answer 2540902
+Node: Answer 3541649
+Node: Answer 4542210
+Node: Answer 5542685
+Node: Answer 6543208
+Node: Answer 7543966
+Node: Answer 8544355
+Node: Answer 9545194
+Node: Answer 10545858
+Node: Answer 11546730
+Node: Answer 12547181
+Node: Answer 13548436
+Node: Answer 14549891
+Node: Answer 15550481
+Node: Answer 16550988
+Node: Answer 17551387
+Node: Answer 18552651
+Node: Answer 19553728
+Node: Answer 20554582
+Node: Answer 21555227
+Node: Answer 22556247
+Node: Answer 23557380
+Node: Answer 24558509
+Node: Answer 25559286
+Node: Answer 26561329
+Node: Answer 27562027
+Node: Answer 28563167
+Node: Answer 29564375
+Node: Answer 30566239
+Node: Answer 31566856
+Node: Answer 32568775
+Node: Answer 33569037
+Node: Answer 34569613
+Node: Answer 35571393
+Node: Answer 36574644
+Node: Answer 37574864
+Node: Answer 38576515
+Node: Answer 39576815
+Node: Answer 40577989
+Node: Answer 41578509
+Node: Answer 42578920
+Node: Answer 43579714
+Node: Answer 44580119
+Node: Answer 45580960
+Node: Answer 46581519
+Node: Answer 47581970
+Node: Answer 48582537
+Node: Answer 49582999
+Node: Answer 50583675
+Node: Answer 51584315
+Node: Answer 52584750
+Node: Answer 53585534
+Node: Answer 54586487
+Node: Answer 55587417
+Node: Answer 56592017
+Node: Answer 57592459
+Node: Answer 58593830
+Node: Answer 59596595
+Node: Answer 60597265
+Node: Answer 61597600
+Node: Answer 62597923
+Node: Answer 63598351
+Node: Answer 64598847
+Node: Answer 65599719
+Node: Answer 66600095
+Node: Answer 67602071
+Node: Answer 68603079
+Node: Answer 69604214
+Node: Answer 70604696
+Node: Answer 71606005
+Node: Answer 72607077
+Node: Answer 73609734
+Node: Answer 74611307
+Node: Answer 75611753
+Node: Answer 76612917
+Node: Answer 77613166
+Node: Answer 78613492
+Node: Answer 79614130
+Node: Answer 80614556
+Node: Answer 81614923
+Node: Answer 82615711
+Node: Answer 83618235
+Node: Answer 84620029
+Node: Answer 85621298
+Node: Answer 86622743
+Node: Answer 87624837
+Node: Answer 88625755
+Node: Answer 89626391
+Node: Answer 90627164
+Node: Answer 91627654
+Node: Answer 92628581
+Node: Answer 93629506
+Node: Answer 94630217
+Node: Answer 95632104
+Node: Answer 96633207
+Node: Index634443
+Node: Concept Index641916
+Node: Secondary Index724718
 
 End Tag Table

@@ -1,10 +1,11 @@
 This is Info file inform.info, produced by Makeinfo-1.64 from the input
 file inform.texi.
 
-This is the Inform Designer's Manual, third edition, 4 September 1996.
-It was converted to Info by Christopher J. Madsen <ac608@yfn.ysu.edu>.
+This is the Inform Designer's Manual, third edition, 4 September 1996,
+as updated 16 May 1997.  It was converted to Info by Christopher J.
+Madsen <ac608@yfn.ysu.edu>.
 
-Copyright 1996 Graham Nelson and Christopher J. Madsen
+Copyright 1996,1997 Graham Nelson and Christopher J. Madsen
 
 Permission is granted to make and distribute copies of this manual
 provided that:
@@ -89,8 +90,8 @@ Object.  For example,
     Object -> -> "pearl" ...
     Object -> "sand" ...
 
-(where the bulk of the definitions are here abbreviated to ...), sets up
-the tree structure
+(where the bulk of the definitions are here abbreviated to "..."), sets
+up the tree structure
 
            "bucket"
               !
@@ -109,16 +110,16 @@ tree picture turned on its side.)
 which is itself divided into "segments" (though there the similarity
 with caterpillars ends).  The head takes the form:
 
-         Object <name> <arrows> "textual name" <parent>
+         Object <arrows> <name> "textual name" <parent>
 
 but all of these four entries are optional.
 
-  1. The <name> is what the object can be called inside the program;
-     it's analogous to a variable name.
-
-  2. The <arrows> are as described above.  Note that if one or more
+  1. The <arrows> are as described above.  Note that if one or more
      arrows are given, that automatically specifies what object this is
      the child of, so a <parent> cannot be given as well.
+
+  2. The <name> is what the object can be called inside the program;
+     it's analogous to a variable name.
 
   3. The "textual name" can be given if the object's name ever needs to
      be printed by the program when it is running.
@@ -600,7 +601,7 @@ the program is run, along the lines of
     *** The object "lamp" does not provide the property "addoil" ***
 
 Not only does lamp.addoil have to exist, but it has to hold one of the
-four kinds of an object, or else nothing.  What happens next depends on
+four kinds of object, or else nothing.  What happens next depends on
 the metaclass of lamp.addoil:
 
         metaclass What happens:                The reply is:
@@ -626,7 +627,9 @@ For example,
 will print out 15, by calling the flying_strength routine provided by
 the kestrel (the same one it inherited from Bird), which adds its
 wingspan of 15 to the number of worms it has so far eaten (none), and
-then returns 15.
+then returns 15.  (You can see all the messages being sent in a game as
+it runs with the debugging verb "messages": see *Note Debugging:: for
+details.)
 
 !! For examples of all the other kinds of receiving property, here is
 roughly what happens when the Inform library tries to move the player
@@ -1081,29 +1084,39 @@ destroy).  For example:
 
 File: inform,  Node: Common vs Individual,  Prev: Dynamic Objects,  Up: Objects
 
-Footnote on common vs. individual objects
------------------------------------------
+Footnote on common vs. individual properties
+--------------------------------------------
 
-!!!!  The properties used in the chapter above are all examples of
-"individual" properties.  These are properties which any given object
-might provide, or might not.
+!!!!  The properties used in the sections above are all examples of
+"individual properties", which some objects provide and others do not.
+There are also "common properties" which, because they are inherited
+from the class Object, are held by every member of Object.  An example
+is capacity.  The capacity can be read for an ordinary game object
+(say, a crate) even if it doesn't specify a capacity for itself, and
+the resulting "default" value will be 100.  However, this is only a
+very weak form of inheritance -- you can't change the crate's capacity
+value and the condition crate provides capacity evaluates to false.
 
-   A small number of properties can be declared as "common" properties,
-using the directive
+   The properties defined by the Inform library, such as capacity, are
+all common: mainly because common properties are marginally faster to
+access and marginally cheaper on memory.  Only 62 are available, of
+which the library uses up 48.  Individual properties, on the other
+hand, are practically unlimited. It is therefore worth declaring a
+common property only in those cases where it will be used very often in
+your program.  You can declare common properties with the directive:
 
      Property <name>;
 
-which declares that this name will always be a common property.  Under
-Inform 5.5 and earlier, these were the only properties available, so
-that the Property directive is seen fairly frequently in older example
-source code.
+which should be made after the inclusion of "Parser" but before first
+use of the new name.  The class Object will now pass on this property,
+with value 0, to all its members.  This so-called "default value" can
+optionally be specified.  For example, the library itself makes the
+declaration
 
-   The only point in making such a declaration now is that common
-properties are slightly faster in use and marginally cheaper in memory
-terms than individual ones.  So the library's properties are still
-declared as common properties.  There are about 30 common properties
-left free for the use of programmers after the library has taken its
-share.
+     Property capacity 100;
+
+which is why all containers in a game which don't specify any particular
+capacity can hold up to 100 items.
 
 
 File: inform,  Node: Using the Compiler,  Next: Fundamentals,  Prev: Programming Language,  Up: Top
@@ -1209,7 +1222,8 @@ the machine Inform is running on: on a PC, for instance, advent may be
 understood as asking to compile advent.inf to advent.z5.  This is called
 "filename translation".  No detailed information on filenaming rules is
 given here, because it varies so much from machine to machine: see the
--h1 on-line documentation.
+-h1 on-line documentation.  Note however that a filename can contain
+spaces if it is written in double-quotes.
 
 One possible ICL command is to give a filename in brackets: e.g.,
 
@@ -1232,7 +1246,8 @@ semicolons), and the possibilities are as follows:
 
 -<switches>
 
-set these switches
+set these switches; or unset any switch preceded by a tilde ~.  (For
+example, -a~bc sets a, unsets b and sets c.)
 
 $list
 
@@ -1262,7 +1277,7 @@ alter the named memory setting to the given level
 +<name>=<filename>
 
 set the named pathname variable to the given filename, which should be
-the filename for a directory
+one or more filenames of directories, separated by commas
 
 compile <filename> <filename>
 

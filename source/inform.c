@@ -2,8 +2,8 @@
 /*   "inform" :  The top level of Inform: switches, pathnames, filenaming    */
 /*               conventions, ICL (Inform Command Line) files, main          */
 /*                                                                           */
-/*   Part of Inform 6.1                                                      */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   Part of Inform 6.21                                                     */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
@@ -86,14 +86,15 @@ int bothpasses_switch,              /* -b */
     define_DEBUG_switch,            /* -D */
     temporary_files_switch,         /* -F */
     module_switch,                  /* -M */
-    define_USE_MODULES_switch;      /* -U */
+    runtime_error_checking_switch,  /* -S */
+    define_USE_MODULES_switch,      /* -U */
+    define_INFIX_switch;            /* -X */
 #ifdef ARC_THROWBACK
 int throwback_switch;               /* -T */
 #endif
 #ifdef ARCHIMEDES
 int riscos_file_type_format;        /* set by -R */
 #endif
-
 int character_set_setting,          /* set by -C */
     error_format,                   /* set by -E */
     asm_trace_setting,              /* set by -a and -t: value of
@@ -103,6 +104,7 @@ int character_set_setting,          /* set by -C */
     linker_trace_setting,           /* set by -y: ditto for linker_... */
     store_the_text;                 /* when set, record game text to a chunk
                                        of memory (used by both -r & -k) */
+static int r_e_c_s_set;             /* has -S been explicitly set? */
 
 static void reset_switch_settings(void)
 {   asm_trace_setting=0;
@@ -144,6 +146,9 @@ static void reset_switch_settings(void)
 #ifdef ARC_THROWBACK
     throwback_switch = FALSE;
 #endif
+    runtime_error_checking_switch = TRUE;
+    r_e_c_s_set = FALSE;
+    define_INFIX_switch = FALSE;
 #ifdef ARCHIMEDES
     riscos_file_type_format = 0;
 #endif
@@ -809,6 +814,8 @@ static void run_pass(void)
     construct_storyfile();
 }
 
+int output_has_occurred;
+
 static void rennab(int32 time_taken)
 {   /*  rennab = reverse of banner  */
 
@@ -831,7 +838,7 @@ static void rennab(int32 time_taken)
             printf("%d suppressed warning%s", no_suppressed_warnings,
                 (no_suppressed_warnings==1)?"":"s");
         }
-        if (no_errors>0) printf(" (no output)");
+        if (output_has_occurred == FALSE) printf(" (no output)");
         printf("\n");
     }
 
@@ -847,6 +854,17 @@ static void rennab(int32 time_taken)
 
 static int compile(int number_of_files_specified, char *file1, char *file2)
 {   int32 time_start;
+
+    if (define_INFIX_switch && module_switch)
+    {   printf("Infix (-X) facilities are not available when compiling \
+modules: disabling -X switch\n");
+        define_INFIX_switch = FALSE;
+    }
+    if (runtime_error_checking_switch && module_switch)
+    {   printf("Strict checking (-S) facilities are not available when \
+compiling modules: disabling -S switch\n");
+        runtime_error_checking_switch = FALSE;
+    }
 
     time_start=time(0); no_compilations++;
 
@@ -869,7 +887,8 @@ static int compile(int number_of_files_specified, char *file1, char *file2)
         close_transcript_file();
     }
 
-    if (no_errors==0) output_file();
+    if (no_errors==0) { output_file(); output_has_occurred = TRUE; }
+    else { output_has_occurred = FALSE; }
 
     if (debugfile_switch) close_debug_file();
 
@@ -893,8 +912,9 @@ static int compile(int number_of_files_specified, char *file1, char *file2)
 static void cli_print_help(int help_level)
 {
     printf(
-"\nThis program is a compiler to Infocom format adventure games\n\
-and is copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997.\n\n");
+"\nThis program is a compiler of Infocom format (also called \"Z-machine\")\n\
+story files: copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998.\
+\n\n");
 
    /* For people typing just "inform", a summary only: */
 
@@ -1014,15 +1034,20 @@ printf("\
   R0  use filetype 060 + version number for games (default)\n\
   R1  use official Acorn filetype 11A for all games\n");
 #endif
+printf("  S   compile strict error-checking at run-time (on by default)\n");
 #ifdef ARC_THROWBACK
 printf("  T   enable throwback of errors in the DDE\n");
 #endif
 printf("  U   insert \"Constant USE_MODULES;\" automatically\n");
+printf("  X   compile with INFIX debugging facilities present\n");
   printf("\n");
 }
 
 extern void switches(char *p, int cmode)
 {   int i, s=1, state;
+    /* Here cmode is 0 if switches list is from a "Switches" directive
+       and 1 if from a "-switches" command-line or ICL list */
+
     if (cmode==1)
     {   if (p[0]!='-')
         {   printf(
@@ -1064,8 +1089,12 @@ extern void switches(char *p, int cmode)
                   break;
         case 'i': ignore_switches_switch = state; break;
         case 'j': listobjects_switch = state; break;
-        case 'k': debugfile_switch = state;
-                  if (state) define_DEBUG_switch = TRUE;
+        case 'k': if (cmode == 0)
+                      error("The switch ~-k~ can't be set with ~Switches~");
+                  else
+                  {   debugfile_switch = state;
+                      if (state) define_DEBUG_switch = TRUE;
+                  }
                   break;
         case 'l': listing_switch = state; break;
         case 'm': memout_switch = state; break;
@@ -1073,7 +1102,10 @@ extern void switches(char *p, int cmode)
         case 'o': offsets_switch = state; break;
         case 'p': percentages_switch = state; break;
         case 'q': obsolete_switch = state; break;
-        case 'r': transcript_switch = state; break;
+        case 'r': if (cmode == 0)
+                      error("The switch ~-r~ can't be set with ~Switches~");
+                  else
+                      transcript_switch = state; break;
         case 's': statistics_switch = state; break;
         case 't': asm_trace_setting=2; break;
         case 'u': optimise_switch = state; break;
@@ -1118,7 +1150,10 @@ extern void switches(char *p, int cmode)
                       default:  temporary_files_switch = state; break;
                   }
                   break;
-        case 'M': module_switch = state; break;
+        case 'M': module_switch = state;
+                  if (state && (r_e_c_s_set == FALSE))
+                      runtime_error_checking_switch = FALSE;
+                  break;
 #ifdef ARCHIMEDES
         case 'R': switch(p[i+1])
                   {   case '0': s=2; riscos_file_type_format=0; break;
@@ -1130,7 +1165,10 @@ extern void switches(char *p, int cmode)
 #ifdef ARC_THROWBACK
         case 'T': throwback_switch = state; break;
 #endif
+        case 'S': runtime_error_checking_switch = state;
+                  r_e_c_s_set = TRUE; break;
         case 'U': define_USE_MODULES_switch = state; break;
+        case 'X': define_INFIX_switch = state; break;
         default:
           printf("Switch \"-%c\" unknown (try \"inform -h2\" for the list)\n",
               p[i]);
@@ -1264,12 +1302,12 @@ static void execute_icl_command(char *p)
                       } while ((command_file == NULL) && (x != 0));
                   }
                   if (command_file == NULL)
-                  {   sprintf(cli_buff, "Couldn't open command file '%s'",
+                      printf("Error in ICL: Couldn't open command file '%s'\n",
                           filename);
-                      fatalerror(cli_buff);
+                  else
+                  {   run_icl_file(filename, command_file);
+                      fclose(command_file);
                   }
-                  run_icl_file(filename, command_file);
-                  fclose(command_file);
                   break;
     }
 }

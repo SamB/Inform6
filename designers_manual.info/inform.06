@@ -1,10 +1,11 @@
 This is Info file inform.info, produced by Makeinfo-1.64 from the input
 file inform.texi.
 
-This is the Inform Designer's Manual, third edition, 4 September 1996.
-It was converted to Info by Christopher J. Madsen <ac608@yfn.ysu.edu>.
+This is the Inform Designer's Manual, third edition, 4 September 1996,
+as updated 16 May 1997.  It was converted to Info by Christopher J.
+Madsen <ac608@yfn.ysu.edu>.
 
-Copyright 1996 Graham Nelson and Christopher J. Madsen
+Copyright 1996,1997 Graham Nelson and Christopher J. Madsen
 
 Permission is granted to make and distribute copies of this manual
 provided that:
@@ -109,11 +110,11 @@ Things to enter, travel in and push around
      -- P. David Lebling, Marc Blank and Timothy Anderson
 
 Some objects in a game are enterable, which means that a player can get
-inside or onto them.  The idea of "inside" here is that the player is
-only half-in, as with a car or a psychiatrist's couch.  (If it's more
-like a prison cell, then it should be a separate place.)  In practice
-one often wants to make an enterable thing also a container, or, as in
-the altar from `Ruins', a supporter:
+inside or onto them.  Usually, "inside" means that the player is only
+half-in, as with a car or a psychiatrist's couch.  (If it's more like a
+prison cell, then it should be a separate place.)  In practice one often
+wants to make an enterable thing also a container, or, as in the altar
+from `Ruins', a supporter:
 
 Object -> stone_table "slab altar"
  with name "stone" "table" "slab" "altar" "great",
@@ -121,6 +122,35 @@ Object -> stone_table "slab altar"
  has  enterable supporter;
 
 A chair to sit on, or a bed to lie down on, should also be a supporter.
+
+   If the player gets into a container and then closes it, the effect
+is like being in a different location.  (Unless the container has the
+transparent attribute and is therefore see-through.) The interior may
+be dark, but if there's light to see by, the player will want to see
+some kind of room description.  In any case, many enterable objects
+ought to look different from inside or on top.  Inside a vehicle, a
+player might be able to see a steering wheel and a dashboard, for
+instance.  On top of a cupboard, it might be possible to see through a
+skylight window.
+
+   For this purpose, any enterable object can provide an
+inside_description, which can be a string or a routine to print one, as
+usual.  If the exterior location is still visible, then the "inside
+description" is added to the normal room description, and otherwise it
+becomes that description.  As an extreme example, suppose that the
+player gets into a huge cupboard, closes the door behind her and then
+gets into a plastic cabinet inside that.  The resulting room
+description might read like so:
+
+     *The huge cupboard* (in the plastic cabinet)
+     It's a snug little cupboard in here, almost a room in itself.
+     
+     In the huge cupboard you can see a pile of clothes.
+     
+     The plastic walls of the cabinet distort the view.
+
+The second line is the inside_description for the huge cupboard, and
+the fourth is that for the plastic cabinet.
 
 Exercise 14
 -----------
@@ -817,9 +847,6 @@ References
 
    * See the Inform home page for a way round the Yes awkwardness.
 
-   * orders and grammar are newly introduced into Inform, and so are
-     not much seen in existing games.
-
    * For parsing topics of conversation in advanced ways, see the
      example game `Encyclopaedia Frobozzica' by Gareth Rees.
 
@@ -874,13 +901,13 @@ room.
 
      it itself has the light attribute set, *or*
      any of its immediate possessions `have light', *or*
-     it is see-through and its parent offers light, *or*
-     it is enterable and its parent offers light;
+     it is see-through and its parent offers light;
 
 while an object `has light' if:
 
      it currently has the light attribute set, *or*
-     it is see-through and one of its immediate possessions has light.
+     it is see-through and one of its immediate possessions has light, *or*
+     any of the things it ``adds to scope'' (see Chapter V) have light.
 
 The process of checking this stops as soon as light is discovered.  The
 routines
@@ -1008,10 +1035,8 @@ to be lighter than lawn-mowers.
 
    *Note Answer 35::
 
-A `timer' (these are traditionally called `fuses') can alternatively be
-attached to an object.  "Alternatively" because an object can't have
-both a timer and a daemon going at the same time.  A timer is started
-with
+A `timer' (these are traditionally called `fuses') can also be attached
+to an object.  A timer is started with
 
      StartTimer(object, time);
 
@@ -1042,13 +1067,11 @@ out music whenever it is nearby; a sword might glow whenever monsters
 are nearby; or a stream running through several forest locations might
 occasionally float objects by.
 
-   `Each turn' is entirely separate from daemons and timers.  Although
-an object can't have both a timer and a daemon at the same time, it can
-have an each_turn at the same time, and this is quite useful,
-especially to run creatures.  An ogre with limited patience can
-therefore have an each_turn routine which worries the player ("The ogre
-stamps his feet angrily!", etc.) while also having a timer set to go
-off when his patience runs out.
+   'Each turn' is especially useful to run creatures which stay in one
+room and are only active when the player is nearby.  An ogre with
+limited patience can therefore have an each_turn routine which worries
+the player ("The ogre stamps his feet angrily!", etc.) while also
+having a timer set to go off when his patience runs out.
 
 !! `Nearby' actually means `in scope', a term which will be properly
 explained later.  The idea is based on line of sight, which works well

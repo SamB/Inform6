@@ -1,10 +1,11 @@
 This is Info file inform.info, produced by Makeinfo-1.64 from the input
 file inform.texi.
 
-This is the Inform Designer's Manual, third edition, 4 September 1996.
-It was converted to Info by Christopher J. Madsen <ac608@yfn.ysu.edu>.
+This is the Inform Designer's Manual, third edition, 4 September 1996,
+as updated 16 May 1997.  It was converted to Info by Christopher J.
+Madsen <ac608@yfn.ysu.edu>.
 
-Copyright 1996 Graham Nelson and Christopher J. Madsen
+Copyright 1996,1997 Graham Nelson and Christopher J. Madsen
 
 Permission is granted to make and distribute copies of this manual
 provided that:
@@ -12,6 +13,82 @@ provided that:
      archived by the author,
  (b) this and other copyright messages are always retained in full, and
  (c) no profit is involved.
+
+
+File: inform,  Node: Answer 58,  Next: Answer 59,  Prev: Answer 57,  Up: Answers
+
+Answer to Exercise 58: drinks machine
+=====================================
+
+   Something to note here is that the button can't be called just
+"coffee" when the player's holding a cup of coffee: this means the game
+responds sensibly to the sequence "press coffee" and "drink coffee".
+Also note the way itobj is set to the delivered drink, so that "drink
+it" works nicely.
+
+Object -> drinksmat "drinks machine",
+  with name "drinks" "machine",
+       initial
+          "A drinks machine here has buttons for Cola, Coffee and Tea.",
+  has  static;
+Object -> thebutton "drinks machine button"
+  has  scenery
+ with  parse_name
+       [ i flag type;
+            for (: flag == 0: i++)
+            {   flag = 1;
+                switch(NextWord())
+                {   'button', 'for': flag = 0;
+                    'coffee': if (type == 0) { flag = 0; type = 1; }
+                    'tea':    if (type == 0) { flag = 0; type = 2; }
+                    'cola':   if (type == 0) { flag = 0; type = 3; }
+                }
+            }
+            if (type==drink.number && i==2 && type~=0 && drink in player)
+                return 0;
+            self.number=type; return i-1;
+        ],
+        number 0,
+        before
+        [; Push, SwitchOn:
+             if (self.number == 0)
+                "You'll have to say which button to press.";
+             if (parent(drink) ~= 0) "The machine's broken down.";
+             drink.number = self.number; move drink to player; itobj = drink;
+             print_ret "Whirr!  The machine puts ", (a) drink, " into your \
+                 glad hands.";
+           Attack: "The machine shudders and squirts cola at you.";
+           Drink:  "You can't drink until you've worked the machine.";
+        ];
+Object  drink "drink"
+  with  parse_name
+        [ i flag type;
+            for (: flag == 0: i++)
+            {   flag = 1;
+                switch(NextWord())
+                {   'drink', 'cup', 'of': flag = 0;
+                    'coffee': if (type == 0) { flag = 0; type = 1; }
+                    'tea':    if (type == 0) { flag = 0; type = 2; }
+                    'cola':   if (type == 0) { flag = 0; type = 3; }
+                }
+            }
+            if (type ~= 0 && type ~= self.number) return 0;
+            return i-1;
+        ],
+        short_name
+        [;  print "cup of ";
+            switch (self.number)
+            { 1: print "coffee"; 2: print "tea"; 3: print "cola"; }
+            rtrue;
+        ],
+        number 0,
+        before
+        [; Drink: remove self;
+            "Ugh, that was awful.  You crumple the cup and responsibly \
+             dispose of it.";
+        ];
+
+   *Note Exercise 58: Parsing Nouns.
 
 
 File: inform,  Node: Answer 59,  Next: Answer 60,  Prev: Answer 58,  Up: Answers
@@ -55,7 +132,7 @@ Answer to Exercise 61: wild-card for a single object
 ====================================================
 
 [ ParseNoun;
-  if (WordLength(wn)==1 && WordAddress(wn)-->0 == '#') return 1;
+  if (WordLength(wn)==1 && WordAddress(wn)->0 == '#') return 1;
   return -1;
 ];
 
@@ -68,8 +145,8 @@ Answer to Exercise 62: wild-card for multiple objects
 =====================================================
 
 [ ParseNoun;
-  if (WordLength(wn)==1 && WordAddress(wn)-->0 == '#') return 1;
-  if (WordLength(wn)==1 && WordAddress(wn)-->0 == '*')
+  if (WordLength(wn)==1 && WordAddress(wn)->0 == '#') return 1;
+  if (WordLength(wn)==1 && WordAddress(wn)->0 == '*')
   {   parser_action = ##PluralFound; return 1; }
   return -1;
 ];
@@ -132,7 +209,7 @@ Answer to Exercise 65
 =====================
 
    Because the parser might go on to reject the line it's working on:
-for instance, if the player typed "inventory splurge" then the message
+for instance, if the player typed "shazam splurge" then the message
 "Shazam!" followed by a parser complaint will be somewhat unedifying.
 
    *Note Exercise 65: Parsing Verbs.
@@ -143,22 +220,20 @@ File: inform,  Node: Answer 66,  Next: Answer 67,  Prev: Answer 65,  Up: Answers
 Answer to Exercise 66: moving to a room by typing its name
 ==========================================================
 
-   Define two properties:
-
-Property place_name;
-Property to_places;
-
-The scheme will work like this: a named room should have the place_name
-property set to a single dictionary word; say, the Bedquilt cave could
-be called 'bedquilt'.  Then in any room, a list of those other rooms
-which can be moved to in this way should appear in the to_places entry.
-For instance,
+   The scheme will work like this: any room that ought to have a name
+should have a place_name property set to a dictionary word; say, the
+Bedquilt cave could be called 'bedquilt'.  Clearly you should only be
+allowed to type this from adjacent rooms.  So we'll implement the
+following: you can only move by name to those rooms listed in the
+current room's to_places property.  For instance, the Soft Room might
+have to_places set to
 
 to_places Bedquilt Slab_Room Twopit_Room;
 
-Now the code: see if a not-understood verb is a place name of a nearby
-room, and if so store that room's object number in goto_room, converting
-the verb to a dummy.
+Now the code: if the player's verb is not otherwise understood, we'll
+check it to see if it's a place name of a nearby room, and if so store
+that room's object number in goto_room, converting the verb to
+'go#room' (which we'll deal with below).
 
 Global goto_room;
 [ UnknownVerb word p i;
@@ -171,7 +246,7 @@ Global goto_room;
 ];
 [ PrintVerb word;
     if (word=='go#room')
-    { print "go to "; PrintShortName(goto_room); rtrue; }
+    {   print "go to ", (name) goto_room; rtrue; }
     rfalse;
 ];
 
@@ -204,10 +279,10 @@ Object -> genies_lamp "brass lamp"
        before
        [; Rub: if (self hasnt general) give self general;
                else give self ~general;
-               print_ret "A genie appears from the lamp, declaring:^^
-                          ~Mischief is my sole delight:^
-                          If white means black, black means white!~^^
-                          She vanishes away with a vulgar wink.";
+              "A genie appears from the lamp, declaring:^^
+               ~Mischief is my sole delight:^
+               If white means black, black means white!~^^
+               She vanishes away with a vulgar wink.";
        ];
 Object -> white_stone "white stone" with name "white" "stone";
 Object -> black_stone "black stone" with name "black" "stone";
@@ -243,7 +318,7 @@ Global footnote_count;
 ];
 [ FootnoteSub n;
     if (noun>footnote_count)
-    {   print "No footnote [",noun,"] has been mentioned.^"; rtrue; }
+        "No footnote [", noun, "] has been mentioned.";
     if (noun==0) "Footnotes count upward from 1.";
     n=footnotes_seen->(noun-1);
     print "[",noun,"]  ";
@@ -253,7 +328,6 @@ Global footnote_count;
         2: "~Jackdaws love my big sphinx of quartz~, for example.";
     }
 ];
-
 Verb "footnote" "note" * number              -> Footnote;
 
 And then you can code, for instance,
@@ -339,7 +413,7 @@ Answer to Exercise 71: phone numbers
    Again, the first question is how to store the number dialled: in
 this case, into a string array.  The token is:
 
-Constant MAX_PHONE_LENGTH 30;
+Constant MAX_PHONE_LENGTH = 30;
 Array dialled_number string MAX_PHONE_LENGTH;
 [ PhoneNumber f a l ch pp i;
   pp=1; if (NextWordStopped()==-1) return 0;
@@ -347,15 +421,14 @@ Array dialled_number string MAX_PHONE_LENGTH;
   {   a=WordAddress(wn-1); l=WordLength(wn-1);
       for (i=0:i<l:i++)
       {   ch=a->i;
-          if (ch>='0' && ch<='9')
-          {   if (pp<MAX_PHONE_LENGTH) dialled_number->(pp++)=ch-'0';
-          }
+          if (ch<'0' || ch>'9')
+          {   if (ch~='-') { f=1; if (i~=0) return -1; } }
           else
-          {   if (ch~='-') f=1; if (i~=0) return -1;   }
+          {   if (pp<MAX_PHONE_LENGTH)
+                  dialled_number->(pp++)=ch-'0';
+          }
       }
-      if (f==1)
-      {   if (pp==1) return -1; dialled_number->0 = pp-1; return 0; }
-  } until (NextWordStopped()==-1);
+  } until (f==1 || NextWordStopped()==-1);
   if (pp==1) return -1;
   dialled_number->0 = pp-1;
   return 0;
@@ -382,7 +455,7 @@ Answer to Exercise 72: parsing times of day
 time format: as hours times 60 plus minutes (on the 24-hour clock, so
 that the `hour' part is between 0 and 23).
 
-Constant TWELVE_HOURS 720;
+Constant TWELVE_HOURS = 720;
 [ NumericTime hr mn word x;
   if (hr>=24) return -1;
   if (mn>=60) return -1;
@@ -607,7 +680,7 @@ Answer to Exercise 79: "scope" verb
 
 Global scope_count;
 [ PrintIt obj; print_ret ++scope_count, ": ", (a) obj, " (", obj, ")"; ];
-[ ScopeSub; LoopOverScope(#r$PrintIt);
+[ ScopeSub; LoopOverScope(PrintIt);
   if (scope_count==0) "Nothing is in scope.";
 ];
 Verb meta "scope" *                              -> Scope;
@@ -621,7 +694,7 @@ Answer to Exercise 80: "megalook" verb
 ======================================
 
 [ MegaExam obj; print "^", (a) obj, ": "; <Examine obj>; ];
-[ MegaLookSub; <Look>; LoopOverScope(#r$MegaExam); ];
+[ MegaLookSub; <Look>; LoopOverScope(MegaExam); ];
 Verb meta "megalook" *                           -> MegaLook;
 
    *Note Exercise 80: Scope.
@@ -639,7 +712,7 @@ But here's how it could be done:
 [ Anything i;
   if (scope_stage==1) rfalse;
   if (scope_stage==2)
-  {   for (i=1:i<=top_object:i++) PlaceInScope(i); rtrue; }
+  {   objectloop (i ofclass Object) PlaceInScope(i); rtrue; }
   "No such in game.";
 ];
 
@@ -1221,6 +1294,7 @@ Index of Attributes, Properties, Objects, and Routines
 * Amusing:                              Entry Points.
 * animate:                              Attributes.
 * article:                              Properties.
+* articles:                             Properties.
 * autosearch:                           Attributes.
 * before:                               Properties.
 * BeforeParsing:                        Entry Points.
@@ -1259,6 +1333,7 @@ Index of Attributes, Properties, Objects, and Routines
 * initial:                              Properties.
 * Initialise:                           Entry Points.
 * InScope:                              Entry Points.
+* inside_description:                   Properties.
 * invent:                               Properties.
 * life:                                 Properties.
 * light:                                Attributes.
@@ -1268,13 +1343,16 @@ Index of Attributes, Properties, Objects, and Routines
 * locked:                               Attributes.
 * LookRoutine:                          Entry Points.
 * LoopOverScope:                        Objects and Routines.
+* male:                                 Attributes.
 * moved:                                Attributes.
 * name:                                 Properties.
+* neuter:                               Attributes.
 * NewRoom:                              Entry Points.
 * NextWord:                             Objects and Routines.
 * NextWordStopped:                      Objects and Routines.
 * NounDomain:                           Objects and Routines.
 * number:                               Properties.
+* ObjectIsUntouchable:                  Objects and Routines.
 * OffersLight:                          Objects and Routines.
 * on:                                   Attributes.
 * open:                                 Attributes.
@@ -1287,10 +1365,13 @@ Index of Attributes, Properties, Objects, and Routines
 * PlaceInScope:                         Objects and Routines.
 * PlayerTo:                             Objects and Routines.
 * plural:                               Properties.
+* pluralname:                           Attributes.
 * PrintRank:                            Entry Points.
 * PrintShortName:                       Objects and Routines.
 * PrintTaskName:                        Entry Points.
 * PrintVerb:                            Entry Points.
+* PronounNotice:                        Objects and Routines.
+* PronounValue:                         Objects and Routines.
 * proper:                               Attributes.
 * react_after:                          Properties.
 * react_before:                         Properties.
@@ -1299,8 +1380,10 @@ Index of Attributes, Properties, Objects, and Routines
 * ScopeWithin:                          Objects and Routines.
 * scored:                               Attributes.
 * selfobj:                              Objects and Routines.
+* SetPronoun:                           Objects and Routines.
 * SetTime:                              Objects and Routines.
 * short_name:                           Properties.
+* short_name_indef:                     Properties.
 * StartDaemon:                          Objects and Routines.
 * StartTimer:                           Objects and Routines.
 * static:                               Attributes.

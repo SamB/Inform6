@@ -1,10 +1,11 @@
 This is Info file inform.info, produced by Makeinfo-1.64 from the input
 file inform.texi.
 
-This is the Inform Designer's Manual, third edition, 4 September 1996.
-It was converted to Info by Christopher J. Madsen <ac608@yfn.ysu.edu>.
+This is the Inform Designer's Manual, third edition, 4 September 1996,
+as updated 16 May 1997.  It was converted to Info by Christopher J.
+Madsen <ac608@yfn.ysu.edu>.
 
-Copyright 1996 Graham Nelson and Christopher J. Madsen
+Copyright 1996,1997 Graham Nelson and Christopher J. Madsen
 
 Permission is granted to make and distribute copies of this manual
 provided that:
@@ -517,8 +518,8 @@ nothing is printed, as it's assumed that this has already happened.
 the spot."), but more elaborate actions such as SwitchOn have several
 (the extreme case is Take, with 13).  lm_n holds the message number,
 which counts upwards from 1.  The messages and numbers are given in
-*Note Actions and Fake Actions::.  New message numbers may possibly be
-added in future, but old ones will not be renumbered.
+*Note Library Messages::.  New message numbers may possibly be added in
+future, but old ones will not be renumbered.
 
    An especially useful library message to change is the prompt,
 normally set to "^>" (new-line followed by >).  This is printed under
@@ -678,10 +679,11 @@ names, but `do not use it without good reason': it doesn't understand
 some of the features below and is not protected against crashing if you
 mistakenly try to print the name for an out of range object number.
 
-The indefinite article for an object is held in the property article
-and is assumed to be `a' if none is declared.  That means that if the
-short name starts with a vowel, you need to set it to `an'.  But article
-offers much more amusement:
+Inform tries to work out the right indefinite article for any object
+automatically.  In English-language games, it uses `an' when the short
+name starts with a vowel and `a' when it does not (unless the name is
+plural, when `some' is used in either case).  You can override this by
+setting article yourself.  Here are some possibilities:
 
      a / platinum bar, an / orange balloon, your / Aunt Jemima,
      some bundles of / reeds, far too many / marbles, The / London Planetarium
@@ -690,8 +692,7 @@ If the object is given the attribute proper then its name is treated as
 a proper noun with no indefinite article, so the value of article is
 ignored.
 
-!! The article property can also hold a routine to print one, in case
-(let us say) "a pregnant mouse" has to change to "some mice".
+!! The article property can also hold a routine to print one.
 
 Definite articles are always "the" (except for proper nouns).  Thus
 
@@ -701,6 +702,16 @@ are all printed by print (the) ...; the latter two objects being proper.
 
 !! There's usually no need to worry about definite and indefinite
 articles for room objects, as Inform never has cause to print them.
+
+   A single object whose name is plural, such as "grapes" or "marble
+pillars", should be given the attribute pluralname.  As a result the
+library might say, e.g., "You can't open those" instead of "You can't
+open that".  It also affects the pronoun "them" and makes the usual
+indefinite article "some".
+
+!! You can give animate objects the attributes male, female or neuter
+to help the parser understand pronouns properly.  animate objects are
+assumed to be male if you set neither alternative.
 
 The short name of an object is normally the text given in double-quotes
 at the head of its definition.  This is very inconvenient to change
@@ -975,11 +986,6 @@ References
      see the bear and the bottle, for instance.
 
    * The scroll class of `Balances' uses invent.
-
-   * The library extension "pluralobj.h" by Andrew Clover makes
-     large-scale use of LibraryMessages to ensure that the library
-     always uses words like "those" instead of "that" when talking
-     about objects with names like "a heap of magazines".
 
    * See the ScottRoom class of `Adventureland' for a radically
      different way to describe rooms (in pidgin English, like

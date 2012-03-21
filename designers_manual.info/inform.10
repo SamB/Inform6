@@ -1,0 +1,808 @@
+This is Info file inform.info, produced by Makeinfo-1.64 from the input
+file inform.texi.
+
+This is the Inform Designer's Manual, third edition, 4 September 1996,
+as updated 16 May 1997.  It was converted to Info by Christopher J.
+Madsen <ac608@yfn.ysu.edu>.
+
+Copyright 1996,1997 Graham Nelson and Christopher J. Madsen
+
+Permission is granted to make and distribute copies of this manual
+provided that:
+ (a) distributed copies are not substantially different from those
+     archived by the author,
+ (b) this and other copyright messages are always retained in full, and
+ (c) no profit is involved.
+
+
+File: inform,  Node: Assembly Language,  Prev: Boxes,  Up: Testing and Hacking
+
+Descending into assembly language
+=================================
+
+!!!!!! Some dirty tricks require bypassing all of Inform's higher levels
+to program the Z-machine directly with assembly language.  There is an
+element of danger in this, in that some combinations of unusual opcodes
+might look ugly on some incomplete or wrongly-written interpreters: so
+if you're doing anything complicated, test it as widely as possible.
+
+The best-researched and most reliable interpreters available by far are
+Mark Howell's Zip and Stefan Jokisch's Frotz: they are also faster than
+their only serious rival, the InfoTaskForce, a historically important
+work which is fairly thorough (and should give little trouble in
+practice) but which was written when the format was a little less well
+understood.  In some ports, ITF gets rarer screen effects wrong, and it
+lacks an "undo" feature, so the Inform "undo" verb won't work under ITF.
+(The other two publically-available interpreters are pinfocom and zterp,
+but these are unable to run Advanced games.  In the last resort,
+sometimes it's possible to use one of Infocom's own supplied
+interpreters with a different game from that it came with; but only
+sometimes, as they may have inconvenient filenames `wired into them'.)
+
+   Interpreters conforming to the Z-Machine Standard, usually but not
+always derived from Frotz or Zip, are reliable and widely available.
+But remember that one source of unportability is inevitable.  Your game
+may be running on a screen which is anything from a 64 characters by 9
+pocket organiser LCD display, up to a 132 by 48 window on a 21-inch
+monitor.
+
+   Anyone wanting to really push the outer limits (say, by implementing
+Space Invaders or NetHack) will need to refer to The Z-Machine
+Standards Document.  This is much more detailed (the definition of
+aread alone runs for two pages) and covers the whole range of assembly
+language.  However, this section does document all those features which
+can't be better obtained with higher-level code.
+
+Lines of assembly language must begin with an @ character and then the
+name of the "opcode" (i.e., assembly language statement).  A number of
+arguments, or "operands" follow (how many depends on the opcode): these
+may be any Inform constants, local or global variables or the stack
+pointer sp, but may not be compound expressions.  sp does not behave
+like a variable: writing a value to it pushes that value onto the
+stack, whereas reading the value of it (for instance, by giving it as
+an operand) pulls the top value off the stack.  Don't use sp unless you
+have to.  After the operands, some opcodes require a variable (or sp)
+to write a result into.  The opcodes documented in this section are as
+follows:
+
+@split_window    lines
+@set_window      window
+@set_cursor      line column
+@buffer_mode     flag
+@erase_window    window
+@set_colour      foreground background
+@aread           text parse time function <result>
+@read_char       1 time function <result>
+@tokenise        text parse dictionary
+@encode_text     ascii-text length from coded-text
+@output_stream   number table
+@input_stream    number
+@catch           <result>
+@throw           value stack-frame
+@save            buffer length filename <result>
+@restore         buffer length filename <result>
+
+@split_window    lines
+
+Splits off an upper-level window of the given number of lines in height
+from the main screen.  This upper window usually holds the status line
+and can be resized at any time: nothing visible happens until the
+window is printed to.  Warning: make the upper window tall enough to
+include all the lines you want to write to it, as it should not be
+allowed to scroll.
+
+@set_window      window
+
+The text part of the screen (the lower window) is "window 0", the
+status line (the upper one) is window 1; this opcode selects which one
+text is to be printed into.  Each window has a "cursor position" at
+which text is being printed, though it can only be set for the upper
+window.  Printing on the upper window overlies printing on the lower,
+is always done in a fixed-pitch font and does not appear in a printed
+transcript of the game.  Note that before printing to the upper window,
+it is wise to use @buffer_mode to turn off word-breaking.
+
+@set_cursor      line column
+
+Places the cursor inside the upper window, where (1,1) is the top left
+character.
+
+@buffer_mode     flag
+
+This turns on (flag=1) or off (flag=0) word-breaking for the current
+window (that is, the practice of printing new-lines only at the ends of
+words, so that text is neatly formatted).  It is wise to turn off
+word-breaking while printing to the upper window.
+
+@erase_window    window
+
+This opcode is unfortunately incorrectly implemented on some
+interpreters and so it can't safely be used to erase individual
+windows.  However, it can be used with window=-1, and then clears the
+entire screen.  Don't do this in reverse video mode, as a bad
+interpreter may (incorrectly) wipe the entire screen in reversed
+colours.
+
+@set_colour      foreground background
+
+If coloured text is available, set text to be
+foreground-against-background.  The colour numbers are borrowed from
+the IBM PC:
+
+2 = black,  3 = red,      4 = green,  5 = yellow,
+6 = blue,   7 = magenta,  8 = cyan,   9 = white
+0 = the current setting,  1 = the default.
+
+On many machines coloured text is not available: the opcode will then
+do nothing.
+
+@aread           text parse time function <result>
+
+The keyboard can be read in remarkably flexible ways.  This opcode
+reads a line of text from the keyboard, writing it into the text string
+array and `tokenising' it into a word stream, with details stored in
+the parse string array (unless this is zero, in which case no
+tokenisation happens).  (See the end of *Note Grammar Tokens:: for the
+format of text and parse.) While it is doing this, it calls
+function(time) every time tenths of a second while the user is thinking:
+the process ends if ever this function returns true.  <result> is to be
+a variable, but the value written in it is only meaningful if you're
+using a "terminating characters table".  Thus (by Replaceing the
+Keyboard routine in the library files) you could, say, move around all
+the characters every ten seconds of real time.  Warning: not every
+interpreter supports this real-time feature, and most of those that do
+count in seconds instead of tenths of seconds.
+
+@read_char       1 time function <result>
+
+results in the ASCII value of a single keypress.  Once again, the
+function is called every time tenths of a second and may stop this
+process early.  Function keys return special values from 129 onwards,
+in the order: cursor up, down, left, right, function key f1, ..., f12,
+keypad digit 0, ..., 9.  The first operand must be 1 (used by Infocom
+as a device number to identify the keyboard).
+
+@tokenise        text parse dictionary
+
+This takes the text in the text buffer (in the format produced by aread)
+and tokenises it (i.e. breaks it up into words, finds their addresses
+in the dictionary) into the parse buffer in the usual way but using the
+given dictionary instead of the game's usual one.  (See the Z-Machine
+Standards Document for the dictionary format.)
+
+@encode_text     ascii-text length from coded-text
+
+Translates an ASCII word to the internal (Z-encoded) text format
+suitable for use in a @tokenise dictionary.  The text begins at from in
+the ascii-text and is length characters long, which should contain the
+right length value (though in fact the interpreter translates the word
+as far as a 0 terminator).  The result is 6 bytes long and usually
+represents between 1 and 9 letters.
+
+@output_stream   number table
+
+Text can be output to a variety of different `streams', possibly
+simultaneously.  If number is 0 this does nothing.  +n switches stream
+n on, -n switches it off.  The output streams are: 1 (the screen), 2
+(the game transcript), 3 (memory) and 4 (script of player's commands).
+The table can be omitted except for stream 3, when it's a table array
+holding the text printed; printing to this stream is never word-broken,
+whatever the state of @buffer_mode.
+
+@input_stream    number
+
+Switches the `input stream' (the source of the player's commands).  0
+is the keyboard, and 1 a command file (the idea is that a list of
+commands produced by output_stream 4 can be fed back in again).
+
+@catch           <result>
+
+The opposite of throw, catch preserves the "stack frame" of the current
+routine: meaning, roughly, the current position of which routine is
+being run and which ones have called it so far.
+
+@throw           value stack-frame
+
+This causes the program to execute a return with value, but as if it
+were returning from the routine which was running when the stack-frame
+was caught (see catch).  Any routines which were called in the mean
+time and haven't returned yet (because each one called the next) are
+forgotten about.  This is useful to get the program out of large
+recursive tangles in a hurry.
+
+@save            buffer length filename <result>
+
+Saves the byte array buffer (of size length) to a file, whose (default)
+name is given in the filename (a string array).  Afterwards, result
+holds 1 on success, 0 on failure.
+
+@restore          buffer length filename <result>
+
+Loads in the byte array buffer (of size length) from a file, whose
+(default) name is given in the filename (a string array).  Afterwards,
+result holds the number of bytes successfully read.
+
+   *Warning:* Some of these features may not work well on obsolete
+interpreters which do not adhere to the Z-Machine Standard.  Standard
+interpreters are widely available, but if seriously worried you can
+test whether your game is running on a good interpreter:
+
+    if (standard_interpreter == 0)
+    {   print "This game must be played on an interpreter obeying the
+               Z-Machine Standard.^";
+        @quit;
+    }
+
+Exercise 90
+-----------
+
+   In a role-playing game campaign, you might want several scenarios,
+each implemented as a separate Inform game.  How could the character
+from one be saved and loaded into another?
+
+   *Note Answer 90::
+
+!! Exercise 91
+--------------
+
+   Design a title page for `Ruins', displaying a more or less apposite
+quotation and waiting for a key to be pressed.
+
+   *Note Answer 91::
+
+!! Exercise 92
+--------------
+
+   Change the status line so that it has the usual score/moves
+appearance except when a variable invisible_status is set, when it's
+invisible.
+
+   *Note Answer 92::
+
+!! Exercise 93
+--------------
+
+   Alter the `Advent' example game to display the number of treasures
+found instead of the score and turns on the status line.
+
+   *Note Answer 93::
+
+!! Exercise 94
+--------------
+
+   (From code by Joachim Baumann.)  Put a compass rose on the status
+line, displaying the directions in which the room can be left.
+
+   *Note Answer 94::
+
+!!!! Exercise 95
+----------------
+
+   (Cf. `Trinity'.) Make the status line consist only of the name of
+the current location, centred in the top line of the screen.
+
+   *Note Answer 95::
+
+!!!! Exercise 96
+----------------
+
+   Implement an Inform version of the standard `C' routine printf,
+taking the form
+
+    printf(format, arg1, ...)
+
+to print out the format string but with escape sequences like %d
+replaced by the arguments (printed in various ways).  For example,
+
+    printf("The score is %e out of %e.", score, MAX_SCORE);
+
+should print something like "The score is five out of ten."
+
+   *Note Answer 96::
+
+References
+----------
+
+   * The assembly-language connoisseur will appreciate `Freefall' by
+     Andrew Plotkin and `Robots' by Torbjorn Andersson, although the
+     present lack of on-line hints make these difficult games to win.
+
+
+File: inform,  Node: Appendix,  Next: Answers,  Prev: Testing and Hacking,  Up: Top
+
+Tables and summaries
+********************
+
+* Menu:
+
+* Operators::                   Table of operators and their precedence
+* Statements::                  Table of all Inform statements
+* Directives::                  Table of all Inform directives
+* Grammar::                     Summary of the `Verb' and `Extend' directives
+* Attributes::                  The attributes defined by the library
+* Properties::                  The properties defined by the library
+* Objects and Routines::        Library-defined objects and routines
+* Actions and Fake Actions::    The actions and fakes
+* Library Messages::            All the library messages and their numbers
+* Entry Points::                Entry points and meaningful constants
+* Program Order::               What order the program should be in
+* Lexicon::                     A short Inform lexicon
+
+
+File: inform,  Node: Operators,  Next: Statements,  Prev: Appendix,  Up: Appendix
+
+Inform operators
+================
+
+   In the table, "Level" refers to precedence level: thus *, on level 6,
+has precedence over +, down on level 5, but both subordinate to unary -,
+up on level 8.  The "associativity" of an operator is the way it
+brackets up if the formula doesn't specify this: for instance, - is left
+associative because
+
+    a - b - c
+
+is understood as
+
+    (a - b) - c
+
+with brackets going on the left.  With some Inform operators, you're not
+allowed to be vague like this; these are the ones whose associative is
+listed as "none".  Thus
+
+    a == b == c
+
+will produce an error insisting that brackets be written into the
+program to make clear what the meaning is.  Given the table (and
+sufficient patience) all expressions can be broken down into order: for
+instance
+
+    a * b .& c --> d / - f
+
+is calculated as
+
+    ( a*((b.&c)-->d) ) / (-f)
+
+Level Operator   Usage   Assoc.     Purpose
+  0      ,       binary  left       separating values to work out
+  1      =       binary  right      set equal to
+  2      &&      binary  left       logical AND
+  2      ||      binary  left       logical OR
+  2      ~~      unary   (pre)      logical NOT
+  3      ==      binary  none       equal to?
+  3      ~=      binary  none       not equal to?
+  3      >       binary  none       greater than?
+  3      >=      binary  none       greater than or equal to?
+  3      <       binary  none       less than?
+  3      <=      binary  none       less than or equal to?
+  3   has        binary  none       object has this attribute?
+  3   hasnt      binary  none       object hasn't this attribute?
+  3   in         binary  none       first obj a child of second?
+  3   notin      binary  none       first obj not a child of second?
+  3   ofclass    binary  none       obj inherits from class?
+  3   provides   binary  none       obj provides this property?
+  4   or         binary  left       separating alternative values
+  5      +       binary  left       16-bit signed addition
+  5      -       binary  left       16-bit signed subtraction
+  6      *       binary  left       16-bit signed multiplication
+  6      /       binary  left       16-bit signed integer division
+  6      %       binary  left       16-bit signed remainder
+  6      &       binary  left       bitwise AND
+  6      |       binary  left       bitwise OR
+  6      ~       unary   (pre)      bitwise NOT
+  7      ->      binary  left       byte array entry
+  7     -->      binary  left       word array entry
+  8      -       unary   (pre)      16-bit (signed!) negation
+  9      ++      unary   (pre/post) increment
+  9      --      unary   (pre/post) decrement
+ 10      .&      binary  left       property address
+ 10      .#      binary  left       property length
+ 11     (...)    binary  left       function call on right hand side
+ 12      .       binary  left       property value
+ 13      ::      binary  left       "superclass" operator
+ 14     (...)    binary  left       function call on left hand side
+
+
+File: inform,  Node: Statements,  Next: Directives,  Prev: Operators,  Up: Appendix
+
+Inform statements
+=================
+
+     box <line-1> <line-2> ... <line-n>
+     break
+     continue
+     do <code block> until <condition>
+     font on `or' off
+     for (<initial code>:<condition to carry on>:<update code>) <code block>
+     give <object> <attribute-1> ... <attribute-n>
+     if <condition> <code block>
+     if <condition> <code block> else <code-block>
+     inversion
+     jump <label>
+     move <object> to <destination>
+     new_line
+     objectloop <condition choosing objects> <code block>
+     print <list of printing specifications>
+     print_ret <list of printing specifications>
+     quit
+     read <text-buffer> <parsing-buffer>
+     remove <object>
+     restore <label>
+     return <optional value>
+     rfalse
+     rtrue
+     save <label>
+     spaces <number of spaces to print>
+     string <number> <text>
+     style roman `or' bold `or' underline `or' reverse `or' fixed
+     switch (<value>) <block of cases>
+     while <condition> <code-block>
+
+Statements must be given in lower case.  Code blocks consist of either
+a single statement or a group of statements enclosed in braces { and }.
+Print specifications are given as a list of one or more items,
+separated by commas:
+
+     "<some literal text to print>"
+     <numerical quantity>
+     (char) <a character code>
+     (string) <a string address>
+     (address) <text held at this byte address>
+     (name) <object>
+     (a) <object>
+     (an) <object>
+     (the) <object>
+     (The) <object>
+     (property) <name of a property>
+     (object) <internal ``hardware'' object short name>
+
+
+File: inform,  Node: Directives,  Next: Grammar,  Prev: Statements,  Up: Appendix
+
+Inform directives
+=================
+
+     Abbreviate <word-1> ... <word-n>
+     Array <new-name> <type> <initial values>
+     Attribute <new-name>
+     Class <new-name> <body of definition>
+     Constant <new-name> = <value>
+     Default <possibly-new-name>
+     End
+     Endif
+     Extend <grammar extension>
+     Global <new-name> = <value>
+     Ifdef <symbol-name>
+     Ifndef <symbol-name>
+     Ifnot
+     Iftrue <condition>
+     Iffalse <condition>
+     Import <list of imported goods>
+     Include <source code filename>
+     Link <module filename>
+     Lowstring <text>
+     Message <message-type> <diagnostic-message>
+     Object <header> <body of definition>
+     Property <new-name>
+     Release <number>
+     Replace <routine-name>
+     Serial "<serial number>"
+     Switches <list of switches>
+     Statusline score `or' time
+     System_file
+     Verb <verb-definition>
+
+Nearby, much used in Inform 5 code, is still allowed but in modern code
+the notation Object -> is preferable.  A few other directives,
+Dictionary, Fake_action, Ifv3, Ifv5, Stub, Trace and Version, are
+obsolete or for compiler maintenance.
+
+
+File: inform,  Node: Grammar,  Next: Attributes,  Prev: Directives,  Up: Appendix
+
+Grammar
+=======
+
+   A `verb' is a set of possible initial words in keyboard command,
+which are treated synonymously (for example, "wear" and "don") together
+with a `grammar'.  A grammar is a list of `lines' which the parser
+tries to match, one at a time, and accepts the first one which matches.
+The directive
+
+     Verb [meta] <verb-word-1> ... <verb-word-n> <grammar>
+
+creates a new verb.  If it is said to be meta then it will count as `out
+of the game': for instance "score" or "save".  New synonyms can be added
+to an old verb with:
+
+     Verb <new-word-1> ... <new-word-n> = <existing-verb-word>
+
+An old verb can be modified with the directive
+
+  Extend [only] <existing-word-1> ... <existing-word-n> [<priority>] <grammar>
+
+If only is specified, the existing words given (which must all be from
+the same existing verb) are split off into a new independent copy of
+the verb.  If not, the directive extends the whole existing verb.  The
+priority can be first (insert this grammar at the head of the list),
+last (insert it at the end) or replace (throw away the old list and use
+this instead); the default is last.
+
+   A line is a list of `tokens' together with the action generated if
+each token matches so that the line is accepted.  The syntax of a line
+is
+
+     * <token-1> <token-2> ...<token-n> -> <action>
+
+where 0 <= n <= 31.  The action is named without initial ## signs and if
+an action which isn't in the standard library set is named then an
+action routine (named with the action name followed by Sub) must be
+defined somewhere in the game.
+
+   A grammar line can optionally be followed by the word reverse.  This
+signals that the action to be generated has two parameters, but which
+have been parsed in the wrong order and need to swapped over.  (Note
+that a topic is not a parameter, and nor is a preposition.)
+
+A token matches a single particle of what has been typed.  The possible
+tokens are:
+    "<word>"           that literal word only
+    noun               any object in scope
+    held               object held by the player
+    multi              one or more objects in scope
+    multiheld          one or more held objects
+    multiexcept        one or more in scope, except the other
+    multiinside        one or more in scope, inside the other
+    <attribute>        any object in scope which has the attribute
+    creature           an object in scope which is animate
+    noun = <routine>   any object in scope passing the given test
+    scope = <routine>  an object in this definition of scope
+    number             a number only
+    <routine>          any text accepted by the given routine
+    topic              any text at all
+    special            any single word or number
+
+Two or more literal words (only) can be written with slash signs /
+between them as alternatives.  E.g., "in"/"on" matches either the word
+"in" or the word "on".
+
+   For the `noun = <Routine>' token, the test routine must decide
+whether or not the object in the noun variable is acceptable and return
+true or false.
+
+   For the `scope = <Routine>' token, the routine must look at the
+variable scope_stage.  If this is 1, then it must decide whether or not
+to allow a multiple object (such as "all") here and return true or
+false.  If 2, then the routine may put objects into scope by calling
+either PlaceInScope(obj) to put just obj in, or ScopeWithin(obj) to put
+the contents of obj into scope.  It must then return either true (to
+prevent any other objects from entering scope) or false (to let the
+parser put in all the usual objects).  If scope_stage=3, it must print
+a suitable message to tell the player that this token was misunderstood.
+
+   A general parsing routine can match any text it likes.  It should
+use wn, the variable holding the number of the word currently being
+parsed (counting from the verb being word 1) and the routine NextWord()
+to read the next word and move wn on by 1.  The routine returns:
+
+     -1    if the user's input isn't understood,
+     0    if it's understood but doesn't refer to anything,
+     1    if there is a numerical value resulting, or
+     n    if object n is understood.
+
+In the case of a number, the actual value should be put into the
+variable parsed_number.  On an unsuccessful match (returning -1) it
+doesn't matter what the final value of wn is.  Otherwise it should be
+left pointing to the next thing `after' what the routine understood.
+
+
+File: inform,  Node: Attributes,  Next: Properties,  Prev: Grammar,  Up: Appendix
+
+Library attributes
+==================
+
+   Here is a concise account of all the normal rules concerning all the
+library's attributes, except that: rules about how the parser sorts out
+ambiguities are far too complicated to include here, but should not
+concern designers anyway; and the definitions of `scope' and `darkness'
+are given in *Note Scope:: and *Note Light and Dark:: respectively.
+These rules are the result of pragmatism and compromise, but are all
+easily modifiable.
+
+`absent'
+     A `floating object' (one with a found_in property, which can
+     appear in many different rooms) which is absent will in future no
+     longer appear in the game.  Note that you cannot make a floating
+     object disappear merely by giving it absent, but must explicitly
+     remove it as well.
+
+`animate'
+     "Is alive (human or animal)."  Can be spoken to in "richard,
+     hello" style; matches the creature token in grammar; picks up
+     "him" or "her" (according to gender) rather than "it", likewise
+     "his"; an object the player is changed into becomes animate; some
+     messages read "on whom", etc., instead of "on which"; can't be
+     taken; its subobjects "belong to" it rather than "are part of" it;
+     messages don't assume it can be "touched" or "squeezed" as an
+     ordinary object can; the actions Attack, ThrowAt are diverted to
+     life rather than rejected as being `futile violence'.
+
+`clothing'
+     "Can be worn."
+
+`concealed'
+     "Concealed from view but present." The player object has this; an
+     object which was the player until ChangePlayer happened loses this
+     property; a concealed door can't be entered; does not appear in
+     room descriptions.
+
+`container'
+     Affects scope and light; object lists recurse through it if open
+     (or transparent); may be described as closed, open, locked, empty;
+     a possession will give it a LetGo action if the player tries to
+     remove it, or a Receive if something is put in; things can be
+     taken or removed from it, or inserted into it, but only if it is
+     open; likewise for "transfer" and "empty"; room descriptions
+     describe using when_open or when_closed if given; if there is no
+     defined description, an Examine causes the contents to be searched
+     (i.e. written out) rather than a message "You see nothing special
+     about..."; Search only reveals the contents of containers,
+     otherwise saying "You find nothing".
+
+`door'
+     "Is a door or bridge."  Room descriptions describe using when_open
+     or when_closed if given; and an Enter action becomes a Go action.
+     If a Go has to go through this object, then: if concealed, the
+     player "can't go that way"; if not open, then the player is told
+     either that this cannot be ascended or descended (if the player
+     tried "up" or "down"), or that it is in the way (otherwise); but
+     if neither, then its door_to property is consulted to see where it
+     leads; finally, if this is zero, then it is said to "lead nowhere"
+     and otherwise the player actually moves to the location.
+
+`edible'
+     "Can be eaten" (and thus removed from game).
+
+`enterable'
+     Affects scope and light; only an enterable on the floor can be
+     entered.  If an enterable is also a container then it can only be
+     entered or exited if it is open.
+
+`female'
+     This object has a feminine name.  In games written in English,
+     this makes her a female person, though in other languages it might
+     be inanimate.  The parser uses this information when considering
+     pronouns like "her".  (In English, anything animate is assumed to
+     be male unless female or neuter is set.)
+
+`general'
+     A general-purpose attribute, defined by the library but never
+     looked at or altered by it.  This is left free to mean something
+     different for each object: often used by programmers for something
+     like "the puzzle for this object has been solved".
+
+`light'
+     "Is giving off light."  (See *Note Light and Dark::.)  Also: the
+     parser understands "lit", "lighted", "unlit" using this;
+     inventories will say "(providing light)" of it, and so will room
+     descriptions if the current location is ordinarily dark; it will
+     never be automatically put away into the player's SACK_OBJECT, as
+     it might plausibly be inflammable or the main light source.
+
+`lockable'
+     Can be locked or unlocked by a player holding its key object,
+     which is given by the property with_key; if a container and also
+     locked, may be called "locked" in inventories.
+
+`locked'
+     Can't be opened.   If a container and also lockable, may be called
+     "locked" in inventories.
+
+`male'
+     This object has a masculine name.  In games written in English,
+     this makes him a male person, though in other languages it might
+     be inanimate.  The parser uses this information when considering
+     pronouns like "him".  (In English, anything animate is assumed to
+     be male unless female or neuter is set.)
+
+`moved'
+     "Has been or is being held by the player."  Objects (immediately)
+     owned by the player after Initialise has run are given it; at the
+     end of each turn, if an item is newly held by the player and is
+     scored, it is given moved and OBJECT_SCORE points are awarded; an
+     object's initial message only appears in room descriptions if it
+     is unmoved.
+
+`neuter'
+     This object's name is neither masculine nor feminine.  (In English,
+     anything without animate is assumed neuter, because only people and
+     higher animals have gender.  Anything animate is assumed male
+     unless female or neuter is set.  A robot, for instance, might be
+     an animate object worth making neuter.)
+
+`on'
+     "Switched on."  A switchable object with this is described by
+     with_on in room descriptions; it will be called "switched on" by
+     Examine.
+
+`open'
+     "Open door or container."  Affects scope and light; lists (such as
+     inventories) recurse through an open container; if a container,
+     called "open" by some descriptions; things can be taken or removed
+     from an open container; similarly inserted, transferred or
+     emptied.  A container can only be entered or exited if it is both
+     enterable and open.  An open door can be entered.  Described by
+     when_open in room descriptions.
+
+`openable'
+     Can be opened or closed, unless locked.
+
+`pluralname'
+     This single object's name is in the plural.  For instance, an
+     object called "seedless grapes" should have pluralname set.  The
+     library will then use the pronoun "them" and the indefinite
+     article "some" automatically.
+
+`proper'
+     Its short name is a proper noun, and never preceded by "the" or
+     "The".  The player's object must have this (so something changed
+     into will be given it).
+
+`scenery'
+     Not listed by the library in room descriptions; "not portable" to
+     be taken; "you are unable to" pull, push, or turn it.
+
+`scored'
+     The player gets OBJECT_SCORE points for picking it up for the
+     first time; or, if a room, ROOM_SCORE points for visiting it for
+     the first time.
+
+`static'
+     "Fixed in place" if player tries to take, remove, pull, push or
+     turn.
+
+`supporter'
+     "Things can be put on top of it."  Affects scope and light; object
+     lists recurse through it; a possession will give it a LetGo action
+     if the player tries to remove it, or a Receive if something is put
+     in; things can be taken or removed from it, or put on it; likewise
+     for transfers; a player inside it is said to be "on" rather than
+     "in" it; room descriptions list its contents in separate
+     paragraphs if it is itself listed.
+
+`switchable'
+     Can be switched on or off; listed as such by Examine; described
+     using when_on or when_off in room descriptions.
+
+`talkable'
+     Player can talk to this object in "thing, do this" style.  This is
+     useful for microphones and the like, when animate is inappropriate.
+
+`transparent'
+     "Contents are visible."  Affects scope and light; a transparent
+     container is treated as if it were open for printing of contents.
+
+`visited'
+     "Has been or is being visited by the player." Given to a room
+     immediately after a Look first happens there: if this room is
+     scored then ROOM_SCORE points are awarded.  Affects whether room
+     descriptions are abbreviated or not.
+
+`workflag'
+     Temporary flag used by Inform internals, also available to outside
+     routines; can be used to select items for some lists printed by
+     WriteListFrom.
+
+`worn'
+     "Item of clothing being worn."  Should only be an object being
+     immediately carried by player.  Affects inventories; doesn't count
+     towards the limit of MAX_CARRIED; won't be automatically put away
+     into the SACK_OBJECT; a Drop action will cause a Disrobe action
+     first; so will PutOn or Insert.
+
+Note that very few attributes sensibly apply to rooms: only really
+light, scored and visited, together with general if you choose to use
+it.  Note also that an object cannot be both a container and a
+supporter; and that the old attribute autosearch, which was in earlier
+releases, has been withdrawn as obsolete.
+

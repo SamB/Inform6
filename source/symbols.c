@@ -1,8 +1,8 @@
 /* ------------------------------------------------------------------------- */
 /*   "symbols" :  The symbols table; creating stock of reserved words        */
 /*                                                                           */
-/*   Part of Inform 6.1                                                      */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   Part of Inform 6.21                                                     */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
@@ -10,10 +10,11 @@
 
 /* ------------------------------------------------------------------------- */
 /*   This section of Inform is a service detached from the rest.             */
-/*   Only one variable is accessible from the outside:                       */
+/*   Only two variables are accessible from the outside:                     */
 /* ------------------------------------------------------------------------- */
 
 int no_symbols;                        /* Total number of symbols defined    */
+int no_named_constants;                         /* Copied into story file    */
 
 /* ------------------------------------------------------------------------- */
 /*   Plus four arrays.  Each symbol has its own index n (an int32) and       */
@@ -247,7 +248,7 @@ static void describe_flags(int flags)
 
 extern void describe_symbol(int k)
 {   printf("%4d  %-16s  %2d:%04d  %04x  %s  ",
-        k, symbs[k], slines[k]/0x10000, slines[k]%0x10000,
+        k, (char *) (symbs[k]), slines[k]/0x10000, slines[k]%0x10000,
         svals[k], typename(stypes[k]));
     describe_flags(sflags[k]);
 }
@@ -274,7 +275,7 @@ extern void issue_unused_warnings(void)
     {   if (((sflags[i]
              & (SYSTEM_SFLAG + UNKNOWN_SFLAG + EXPORT_SFLAG
                 + INSF_SFLAG + USED_SFLAG + REPLACE_SFLAG)) == 0)
-            && (stypes[i] != OBJECT_T))
+             && (stypes[i] != OBJECT_T))
             dbnu_warning(typename(stypes[i]), (char *) symbs[i], slines[i]);
     }
 }
@@ -289,6 +290,7 @@ extern void issue_unused_warnings(void)
                                           indexed by the property ID         */
        int32 *action_name_strings;     /* Ditto for actions                  */
        int32 *attribute_name_strings;  /* Ditto for attributes               */
+       int32 *array_name_strings;      /* Ditto for arrays                   */
 
 extern void write_the_identifier_names(void)
 {   int i, j, k, t, null_value; char idname_string[256];
@@ -397,13 +399,66 @@ extern void write_the_identifier_names(void)
             action_name_strings[svals[i]]
                 = compile_string(idname_string, FALSE, FALSE);
         }
-        if (debugfile_switch && (t == ARRAY_T))
+    }
+
+    for (i=0; i<no_symbols; i++)
+    {   if (stypes[i] == FAKE_ACTION_T)
+        {   sprintf(idname_string, "%s", (char *) symbs[i]);
+            idname_string[strlen(idname_string)-3] = 0;
+
+            if (debugfile_switch)
+            {   write_debug_byte(ACTION_DBR);
+                write_debug_byte(svals[i]/256);
+                write_debug_byte(svals[i]%256);
+                write_debug_string(idname_string);
+            }
+
+            action_name_strings[svals[i]
+                    - ((grammar_version_number==1)?256:4096) + no_actions]
+                = compile_string(idname_string, FALSE, FALSE);
+        }
+    }
+
+    for (j=0; j<no_arrays; j++)
+    {   i = array_symbols[j];
+        sprintf(idname_string, "%s", (char *) symbs[i]);
+
+        if (debugfile_switch)
         {   write_debug_byte(ARRAY_DBR);
             write_debug_byte(svals[i]/256);
             write_debug_byte(svals[i]%256);
-            write_debug_string((char *) symbs[i]);
+            write_debug_string(idname_string);
+        }
+
+        array_name_strings[j]
+            = compile_string(idname_string, FALSE, FALSE);
+    }
+  if (define_INFIX_switch)
+  { for (i=0; i<no_symbols; i++)
+    {   if (stypes[i] == GLOBAL_VARIABLE_T)
+        {   sprintf(idname_string, "%s", (char *) symbs[i]);
+            array_name_strings[no_arrays + svals[i] -16]
+                = compile_string(idname_string, FALSE, FALSE);
         }
     }
+
+    for (i=0; i<no_named_routines; i++)
+    {   sprintf(idname_string, "%s", (char *) symbs[named_routine_symbols[i]]);
+            array_name_strings[no_arrays + no_globals + i]
+                = compile_string(idname_string, FALSE, FALSE);
+    }
+
+    for (i=0, no_named_constants=0; i<no_symbols; i++)
+    {   if (((stypes[i] == OBJECT_T) || (stypes[i] == CLASS_T)
+            || (stypes[i] == CONSTANT_T))
+            && ((sflags[i] & (UNKNOWN_SFLAG+ACTION_SFLAG))==0))
+        {   sprintf(idname_string, "%s", (char *) symbs[i]);
+            array_name_strings[no_arrays + no_globals + no_named_routines
+                + no_named_constants++]
+                = compile_string(idname_string, FALSE, FALSE);
+        }
+    }
+  }
 
     veneer_mode = FALSE;
 }
@@ -450,11 +505,19 @@ static void stockup_symbols(void)
     if (module_switch)
         create_rsymbol("MODULE_MODE",0, CONSTANT_T);
 
+    if (runtime_error_checking_switch)
+        create_rsymbol("STRICT_MODE",0, CONSTANT_T);
+
     if (define_DEBUG_switch)
         create_rsymbol("DEBUG",      0, CONSTANT_T);
 
     if (define_USE_MODULES_switch)
         create_rsymbol("USE_MODULES",0, CONSTANT_T);
+
+    if (define_INFIX_switch)
+    {   create_rsymbol("INFIX",      0, CONSTANT_T);
+        create_symbol("infix__watching", 0, ATTRIBUTE_T);
+    }
 
     create_symbol("temp_global",  255, GLOBAL_VARIABLE_T);
     create_symbol("temp__global2", 254, GLOBAL_VARIABLE_T);
@@ -525,6 +588,7 @@ extern void symbols_allocate_arrays(void)
     individual_name_strings = NULL;
     attribute_name_strings = NULL;
     action_name_strings = NULL;
+    array_name_strings = NULL;
 }
 
 extern void symbols_free_arrays(void)
@@ -550,6 +614,8 @@ extern void symbols_free_arrays(void)
         my_free(&action_name_strings,     "action name strings");
     if (attribute_name_strings != NULL)
         my_free(&attribute_name_strings,  "attribute name strings");
+    if (array_name_strings != NULL)
+        my_free(&array_name_strings,      "array name strings");
 }
 
 /* ========================================================================= */

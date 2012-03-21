@@ -1,10 +1,11 @@
 This is Info file inform.info, produced by Makeinfo-1.64 from the input
 file inform.texi.
 
-This is the Inform Designer's Manual, third edition, 4 September 1996.
-It was converted to Info by Christopher J. Madsen <ac608@yfn.ysu.edu>.
+This is the Inform Designer's Manual, third edition, 4 September 1996,
+as updated 16 May 1997.  It was converted to Info by Christopher J.
+Madsen <ac608@yfn.ysu.edu>.
 
-Copyright 1996 Graham Nelson and Christopher J. Madsen
+Copyright 1996,1997 Graham Nelson and Christopher J. Madsen
 
 Permission is granted to make and distribute copies of this manual
 provided that:
@@ -78,10 +79,12 @@ something like if (w=='grye') ... somewhere in the program makes Inform
 put "grye" into the dictionary automatically.
 
 !! Remember that the game's dictionary only has 9-character resolution.
-Thus the values of 'polyunsaturate' and 'polyunsaturated' are equal.
-Also, upper case and lower case letters are considered the same.  Words
-are permitted to contain numerals or symbols (but not at present to
-contain accented characters).
+(And only 6 if Inform has been told to compile an early-model story
+file: see *Note Run-Time Limitations::.) Thus the values of
+'polyunsaturate' and 'polyunsaturated' are equal.  Also, upper case and
+lower case letters are considered the same.  Words are permitted to
+contain numerals or symbols (but not at present to contain accented
+characters).
 
 !!!! A dictionary word can even contain spaces, full stops or commas.
 If so it is `untypeable'.  For instance, 'in,out' is an untypeable word
@@ -235,11 +238,11 @@ objects"?
 !!!! Exercise 63
 ----------------
 
-   There is no problem with a calling a container "hole in wall",
-because the parser will understand "put apple in hole in wall" as "put
-(apple) in (hole in wall)".  But create a fly in amber, so that "put
-fly in amber in hole in wall" works properly and isn't misinterpreted as
-"put (fly) in (amber in hole in wall)".  (Warning: you may need to know
+   There is no problem with calling a container "hole in wall", because
+the parser will understand "put apple in hole in wall" as "put (apple)
+in (hole in wall)".  But create a fly in amber, so that "put fly in
+amber in hole in wall" works properly and isn't misinterpreted as "put
+(fly) in (amber in hole in wall)".  (Warning: you may need to know
 about the BeforeParsing entry point (*note Parsing Verbs::.) and the
 format of the parse buffer (see *note Grammar Tokens::.).)
 
@@ -349,17 +352,30 @@ different colours. Then you'd want the parser to recognise things like:
 > drop all of the crowns except green
 > drop the three other crowns
 
-even though the crowns are not identical.  The simple way to do this is
-just to put "crowns" in their name lists, and this works perfectly well
-most of the time.
+Putting the word "crowns" in their name lists is not quite right,
+because the parser will still think that "crowns" might refer to a
+specific item.  Instead, put in the word "crowns//p".  The //p marks
+out the dictionary word "crowns" as one that can refer to more than one
+game object at once.  (So that you shouldn't set this for the word
+"grapes" if a bunch of grapes was a single game object; you should give
+that object the pluralname attribute instead.)  For example the GoldCoin
+class would read:
 
-!!!! But it isn't ideal, because then the parser will think "take
-crowns" refers to a single object, and won't realise that the player
-wants to pick up all the sensibly available crowns.  So the complicated
-(but better) way is to make the parse_name routine tell the parser that
-yes, there was a match, but that it was a plural.  The way to do this
-is to set parser_action to ##PluralFound, another fake action.  So, for
-example:
+Class  GoldCoin
+  with name "gold" "coin" "coins//p",
+       short_name "gold coin",
+       plural "gold coins";
+
+and now when the player types "take coins", the parser interprets this
+as "take all the coins within reach".
+
+!!!! The only snag is that now the word "coins" is marked as //p
+everywhere in the game, in all circumstances.  Here is a more
+complicated way to achieve the same result, but strictly in context of
+these objects alone.  We need to make the parse_name routine tell the
+parser that yes, there was a match, but that it was a plural.  The way
+to do this is to set parser_action to ##PluralFound, another fake
+action.  So, for example:
 
 Class  Crown
   with parse_name
@@ -417,7 +433,7 @@ player himself (thus, typing "myself, go north" is equivalent to typing
 An Inform verb usually has several English verb words attached, which
 are called synonyms of each other: for instance, the library is set up
 with
-                   `take' = `get' = `carry' = `hold'
+                   `take' = `carry' = `hold'
    all referring to the same Inform verb.
 
 !! The parser sets up global variables actor and verb_word while
@@ -486,10 +502,11 @@ Verb "take" "get" "carry" "hold"
                 * "off" held                     -> Disrobe
                 * "inventory"                    -> Inv;
 
-Each line of grammar begins with a *, gives a list of tokens as far as
--> and then the action which the line produces.  The first line can
-only be matched by something like "get out", the second might be
-matched by
+(You can look at the grammar being used in a game with the debugging
+verb "showverb": see *Note Debugging:: for details.) Each line of
+grammar begins with a *, gives a list of tokens as far as -> and then
+the action which the line produces.  The first line can only be matched
+by something like "get out", the second might be matched by
 
      take the banana
      get all the fruit except the apple
@@ -501,8 +518,10 @@ inside the second noun.  In this book, grammar tokens are written in
 the style `noun' to prevent confusion (as there is also a variable
 called noun).
 
-!!!! As mentioned above, the parser thinks "take" and "get" are exactly
-the same.  Sometimes this has odd results: "get in bed" is correctly
+!!!! Since this book was first written, the library has been improved
+so that "take" and "get" each have their own independent grammars.  But
+for the sake of example, suppose they share the grammar written out
+above.  Sometimes this has odd results: "get in bed" is correctly
 understood as a request to enter the bed, "take in washing" is
 misunderstood as a request to enter the washing.  You might avoid this
 by using Extend only to separate them into different grammars, or you
@@ -536,6 +555,20 @@ as it might do in certain magic places.  Xyzzy is now an action just as
 good as all the standard ones: ##Xyzzy gives its action number, and you
 can write before and after rules for it in Xyzzy: fields just as you
 would for, say, Take.
+
+!!  Finally, the line can end with the word reverse.  This is only
+useful if there are objects and numbers in the line which occur in the
+wrong order.  An example from the library's grammar:
+
+Verb "show" "present" "display"
+                * creature held                  -> Show reverse
+                * held "to" creature             -> Show;
+
+The point is that the Show action expects the first parameter to be an
+item, and the second to be a person.  When the text "show him the
+shield" is typed in, the parser must reverse the two parameters "him"
+and "the shield" before causing a Show action.  On the other hand, in
+"show the shield to him" the parameters are in the right order already.
 
 The library defines grammars for the 100 or so English verbs most often
 used by adventure games.  However, in practice you very often need to
@@ -709,6 +742,7 @@ The complete list of grammar tokens is as follows:
     scope = <routine>  an object in this definition of scope
     number             a number only
     <routine>          any text accepted by the given routine
+    topic              any text at all
     special            any single word or number
 
 These tokens are all described in this section except for `scope =
@@ -719,6 +753,16 @@ preposition such as "into".  Whereas most tokens produce a "parameter"
 (an object or group of objects, or a number), this token doesn't.
 There can therefore be as many or as few of them on a grammar line as
 desired.
+
+   It often happens that several prepositions really mean the same
+thing for a given verb: "in", "into" and "inside" are often equally
+sensible.  As a convenient shorthand you can write a series of
+prepositions with slash marks / in between, to mean "one of these
+words".  For example:
+
+     * noun "in"/"into"/"inside" noun      -> Insert|
+
+prepositions (Note that / can only be used with prepositions.)
 
 !! Prepositions like this are unfortunately sometimes called
 `adjectives' inside the parser source code, and in Infocom hackers'
@@ -874,6 +918,16 @@ accepts the entire rest of the line (ignoring it).  NextWordStopped is
 a form of NextWord which returns -1 once the original word stream has
 run out.
 
+`topic' This token matches as much text as possible.  It should either
+be at the end of its grammar line, or be followed by a preposition.
+(The only way it can fail to match is if it finds no text at all.)  The
+library's grammar uses this token for topics of conversation and topics
+looked up in books (see *Note Reading Matter:: and *note Living
+Creatures::.), hence the name.  The parser ignores the text for now
+(your own code will have to think about it later), and simply sets the
+variables consult_from to the number of the first word of the matched
+text and consult_words to the number of words.
+
 `special'        Obsolete and best avoided.
 
 Exercise 69
@@ -997,326 +1051,4 @@ easier than it looks: see the specification of the NounDomain library
 routine in *Note Objects and Routines::.)
 
    *Note Answer 78::
-
-
-File: inform,  Node: Scope,  Next: Helping the Parser,  Prev: Grammar Tokens,  Up: Describing and Parsing
-
-Scope and what you can see
-==========================
-
-     He cannot see beyond his own nose.  Even the fingers he
-     outstretches from it to the world are (as I shall suggest) often
-     invisible to him.
-
-     -- Max Beerbohm (1872-1956), of George Bernard Shaw
-
-     Wherefore are these things hid?
-     
-     -- William Shakespeare (1564-1616), Twelfth Night
-
-Time to say what "in scope" means.  This definition is one of the most
-important rules of play, because it decides what the player is allowed
-to refer to.  You can investigate this in practice by compiling any game
-with the debugging suite of verbs included and typing "scope" in
-different places: but here are the rules in full.  The following are in
-scope:
-
-     the player's immediate possessions;
-     the 12 compass directions;
-     if there is light (*note Light and Dark::.), the objects in the same room as the player;
-     if not, any objects in the thedark object.
-
-In addition, if an object is in scope then its immediate possessions
-are in scope, *if* it is `see-through', which means that:
-
-     the object has supporter, *or*
-     the object has transparent, *or*
-     the object is an open container.
-
-In addition, if an object is in scope then anything which it "adds to
-scope" is also in scope.
-
-!! The player's possessions are in scope in a dark room -- so the
-player can still turn his lamp on.  On the other hand, a player who
-puts the lamp on the ground and turns it off then loses the ability to
-turn it back on again, because it is out of scope.  This can be changed;
-see below.
-
-!! Compass directions make sense as things.  The player can always type
-something like "attack the south wall" and the before rule for the room
-could trap the action Attack s_obj to make something unusual happen, if
-this is desired.
-
-!! The parser applies scope rules to all actors, not just the player.
-Thus "dwarf, drop sword" will be accepted if the dwarf can see it, even
-if the player can't.
-
-!! The concealed attribute only hides objects from room descriptions,
-and doesn't remove them from scope.  If you want things to be both
-concealed and unreferrable-to, put them somewhere else!  Or give them
-an uncooperative parse_name routine.
-
-!!!! Actually, the above definition is not quite right, because the
-compass directions are not in scope when the player asks for a plural
-number of things, like "take all the knives"; this makes some of the
-parser's plural algorithms run faster.  Also, for a `multiexcept'
-token, the other object is not in scope; and for a `multiinside' token,
-only objects in the other object are in scope.  This makes "take
-everything from the cupboard" work in the natural way.
-
-Two library routines are provided to enable you to see what's in scope
-and what isn't.  The first, TestScope(obj, actor), simply returns true
-or false according to whether or not obj is in scope.  The second is
-LoopOverScope(routine, actor) and calls the given routine for each
-object in scope.  In each case the actor given is optional; if it's
-omitted, scope is worked out for the player as usual.
-
-Exercise 79
------------
-
-   Implement the debugging suite's "scope" verb, which lists all the
-objects currently in scope.
-
-   *Note Answer 79::
-
-Exercise 80
------------
-
-   Write a "megalook" verb, which looks around and examines everything
-nearby.
-
-   *Note Answer 80::
-
-The rest of this section is about how to change the scope rules.  As
-usual with Inform, you can change them globally, but it's more
-efficient and safer to work locally.  To take a typical example: how do
-we allow the player to ask questions like the traditional "what is a
-grue"?  The "grue" part ought to be parsed as if it were a noun, so that
-we could distinguish between, say, a "garden grue" and a "wild grue".
-So it isn't good enough to look only at a single word.  Here is one
-solution:
-
-Object questions "qs";
-[ QuerySub; print_ret (string) noun.description;
-];
-[ Topic i;
-  switch(scope_stage)
-  {   1: rfalse;
-      2: objectloop (i in questions) PlaceInScope(i); rtrue;
-      3: "At the moment, even the simplest questions confuse you.";
-  }
-];
-
-where the actual questions at any time are the current children of the
-questions object, like so:
-
-Object q1 "long count" questions
-  with name "long" "count",
-       description "The Long Count is the great Mayan cycle of time,
-           which began in 3114 BC and will finish with the world's end
-           in 2012 AD.";
-
-and we also have a grammar line:
-
-Verb "what"
-                * "is"  scope=Topic              -> Query
-                * "was" scope=Topic              -> Query;
-
-Note that the questions and q1 objects are out of the game for every
-other purpose.  The name "qs" doesn't matter, as it will never appear;
-the individual questions are named so that the parser might be able to
-say "Which do you mean, the long count or the short count?" if the
-player asked "what is the count".
-
-   When the parser reaches `scope=Topic', it calls the Topic routine
-with the variable scope_stage set to 1.  The routine should return 1
-(true) if it is prepared to allow multiple objects to be accepted here,
-and 0 (false) otherwise: as we don't want "what is everything" to list
-all the questions and answers in the game, we return false.
-
-   A little later on in its machinations, the parser again calls Topic
-with scope_stage now set to 2.  Topic is now obliged to tell the parser
-which objects are to be in scope.  It can call two parser routines to
-do this.
-
-ScopeWithin(object)
-
-puts everything inside the object into scope, though not the object
-itself;
-
-PlaceInScope(object)
-
-puts just a single object into scope.  It is perfectly legal to declare
-something in scope that "would have been in scope anyway": or even
-something which is in a different room altogether from the actor
-concerned, say at the other end of a telephone line.  Our scope routine
-Topic should then return
-
-  0. (false) to carry on with the usual scope rules, so that everything
-     that would usually be in scope still is, or
-
-  1. (true) to tell the parser not to put any more objects into scope.
-
-So at scope_stage 2 it is quite permissible to do nothing but return
-false, whereupon the usual rules apply.  Topic returns true because it
-wants only question topics to be in scope, not question topics together
-with the usual miscellany near the player.
-
-   This is enough to deal with "what is the long count".  If on the
-other hand the player typed "what is the lgon cnout", the error message
-which the parser would usually produce ("You can't see any such thing")
-would be unsatisfactory.  So if parsing failed at this token, then
-Topic is called at scope_stage 3 to print out a suitable error message.
-It must provide one.
-
-!! Note that ScopeWithin(object) extends the scope down through its
-possessions according to the usual rules, i.e., depending on their
-transparency, whether they're containers and so on.  The definition of
-Topic above shows how to put just the direct possessions into scope.
-
-Exercise 81
------------
-
-   Write a token which puts everything in scope, so that you could have
-a debugging "purloin" verb which could take anything, regardless of
-where it was and the rules applying to it.
-
-   *Note Answer 81::
-
-Changing the global definition of scope should be done cautiously
-(there may be unanticipated side effects); bear in mind that scope
-decisions need to be taken often -- every time an object token is
-parsed, so perhaps five to ten times in every game turn -- and hence
-moderately quickly.  The global definition can be tampered with by
-providing the entry point
-
-InScope(actor)
-
-where the actor is usually the player, but not always.  If the routine
-decides that a particular object should be in scope for the actor, it
-should execute InScope and ScopeWithin just as above, and return true
-or false, as if it were at scope_stage 2.  Thus, it is vital to return
-false in circumstances when you don't want to intervene.
-
-!! The token `scope=<Routine>' takes precedence over InScope, which
-will only be reached if the routine returns false to signify `carry on'.
-
-!!!! There are seven reasons why InScope might be being called; the
-scope_reason variable is set to the current one:
-
-PARSING_REASON
-     The usual one.  Note that action_to_be holds NULL in the early
-     stages (before the verb has been decided) and later on the action
-     which would result from a successful match.
-
-TALKING_REASON
-     Working out which objects are in scope for being spoken to (see
-     the end of *Note Living Creatures:: for exercises using this).
-
-EACHTURN_REASON
-     When running each_turn routines for anything nearby, at the end of
-     each turn.
-
-REACT_BEFORE_REASON
-     When running react_before.
-
-REACT_AFTER_REASON
-     When running react_after.
-
-TESTSCOPE_REASON
-     When performing a TestScope.
-
-LOOPOVERSCOPE_REASON
-     When performing a LoopOverScope.
-
-Here are some examples.  Firstly, as promised, how to change the rule
-that "things you've just dropped disappear in the dark":
-
-[ InScope person i;
-  if (person==player && location==thedark)
-      objectloop (i near player)
-          if (i has moved)
-              PlaceInScope(i);
-  rfalse;
-];
-
-With this routine added, the objects in the dark room the player is in
-are in scope only if they have moved (that is, have been held by the
-player in the past); and even then, are in scope only to the player.
-
-!!!! Exercise 82
-----------------
-
-   Construct a long room divided by a glass window.  Room descriptions
-on either side should describe what's in view on the other; the window
-should be lookable-through; objects on the far side should be in scope,
-but not manipulable; and everything should cope well if one side is in
-darkness.
-
-   *Note Answer 82::
-
-!!!! Exercise 83
-----------------
-
-   Code the following puzzle.  In an initially dark room there is a
-light switch.  Provided you've seen the switch at some time in the
-past, you can turn it on and off -- but before you've ever seen it, you
-can't.  Inside the room is nothing you can see, but you can hear a
-dwarf breathing.  If you tell the dwarf to turn the light on, he will.
-
-   *Note Answer 83::
-
-As mentioned in the definition above, each object has the ability to
-drag other objects into scope whenever it is in scope.  This is
-especially useful for giving objects component parts: e.g., giving a
-washing-machine a temperature dial.  (The dial can't be a child object
-because that would throw it in with the clothes: and it ought to be
-attached to the machine in case the machine is moved from place to
-place.) For this purpose, the property add_to_scope may contain a list
-of objects to add.
-
-!! Alternatively, it may contain a routine.  This routine can then call
-AddToScope(x) to put any object x into scope.  It may not, however,
-call ScopeWithin or any other scoping routines.
-
-!!!! Scope addition does `not' occur for an object moved into scope by
-an explicit call to PlaceInScope, since this must allow complete
-freedom in scope selections.  But it does happen when objects are moved
-in scope by calls to ScopeWithin(domain).
-
-Exercise 84
------------
-
-   (From the tiny example game `A Nasal Twinge'.)  Give the player a
-nose, which is always in scope and can be held, reducing the player's
-carrying capacity.
-
-   *Note Answer 84::
-
-Exercise 85
------------
-
-   (Likewise.)  Create a portable sterilising machine, with a "go"
-button, a top which things can be put on and an inside to hold objects
-for sterilisation.  (Thus it is a container, a supporter and a
-possessor of sub-objects all at once.)
-
-   *Note Answer 85::
-
-!!!! Exercise 86
-----------------
-
-   Create a red sticky label which the player can affix to any object
-in the game.  (Hint: use InScope, not add_to_scope.)
-
-   *Note Answer 86::
-
-References
-----------
-
-   * `Balances' uses `scope = <routine>' tokens for legible spells and
-     memorised spells.
-
-   * See also the exercises at the end of *Note Living Creatures:: for
-     further scope trickery.
 

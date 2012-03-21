@@ -1,10 +1,11 @@
 This is Info file inform.info, produced by Makeinfo-1.64 from the input
 file inform.texi.
 
-This is the Inform Designer's Manual, third edition, 4 September 1996.
-It was converted to Info by Christopher J. Madsen <ac608@yfn.ysu.edu>.
+This is the Inform Designer's Manual, third edition, 4 September 1996,
+as updated 16 May 1997.  It was converted to Info by Christopher J.
+Madsen <ac608@yfn.ysu.edu>.
 
-Copyright 1996 Graham Nelson and Christopher J. Madsen
+Copyright 1996,1997 Graham Nelson and Christopher J. Madsen
 
 Permission is granted to make and distribute copies of this manual
 provided that:
@@ -161,7 +162,7 @@ Note that self is a variable, which always means "whatever object I
 am".  If we used it in the definition of the mushroom it would mean the
 mushroom: used here, it means whatever treasure happens to be being
 dealt with.  (Explanations about Insert and Remove will come later, but
-hopefully the idea is clear enought.)  An object of the class Treasure
+hopefully the idea is clear enough.)  An object of the class Treasure
 inherits the properties and attributes it defines: in this case, an
 object of class Treasure picks up the given score and rules
 automatically.  So
@@ -373,7 +374,7 @@ printing "You hear nothing unexpected."  Only if your program
 interferes (using a before rule) can anything happen.  Group 3 contains,
 in rough order of usefulness:
 
-Pull, Push, PushDir [push object in direction], Turn, ThrowAt,
+Pull, Push, PushDir [push object in direction], Turn,
 Consult, LookUnder [look underneath something], Search,
 Listen, Taste, Drink, Touch, Smell,
 Wait, Sing, Jump [jump on the spot], JumpOver, Attack,
@@ -681,6 +682,7 @@ Object -> sunlight "shaft of sunlight"
            air, making it seem almost solid."
   has  scenery;
 
+(The ^ symbol in "sun^s" means an apostrophe, so the word is "sun's".)
 Being scenery makes the object not only static but also not described
 by the game unless actually examined by the player.  A true
 perfectionist might add a before rule:
@@ -822,6 +824,12 @@ Exercise 5
 which can't be seen through or walked out of.
 
    *Note Answer 5::
+
+Directions (such as "north") are objects called n_obj, s_obj and so on:
+in this case, in_obj.  (They are not to be confused with the property
+names n_to and so on.)  Moreover, you can change these directions: as
+far as Inform is concerned, a direction is any object in the special
+object compass.
 
 !! Exercise 6
 -------------

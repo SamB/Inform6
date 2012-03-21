@@ -6,8 +6,8 @@
 /*                    checks syntax and translates such directives into      */
 /*                    specifications for the object-maker.                   */
 /*                                                                           */
-/*   Part of Inform 6.1                                                      */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   Part of Inform 6.21                                                     */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
@@ -400,7 +400,12 @@ static void property_inheritance(void)
 
                         for (i=full_object.pp[k].l;
                              i<full_object.pp[k].l+prop_length/2; i++)
-                        {   full_object.pp[k].ao[i].value = mark + j;
+                        {   if (i >= 32)
+                            {   error("An additive property has inherited \
+so many values that the list has overflowed the maximum 32 entries");
+                                break;
+                            }
+                            full_object.pp[k].ao[i].value = mark + j;
                             j += 2;
                             full_object.pp[k].ao[i].marker = INHERIT_MV;
                             full_object.pp[k].ao[i].type = LONG_CONSTANT_OT;
@@ -434,17 +439,26 @@ static void property_inheritance(void)
                         p = individuals_table + class_block_offset;
                         z = class_block_offset;
                         while ((p[0]!=0)||(p[1]!=0))
-                        {   if (module_switch)
-                                backpatch_zmachine(IDENT_MV,
-                                    INDIVIDUAL_PROP_ZA, i_m);
-                            individuals_table[i_m++] = p[0];
-                            individuals_table[i_m++] = p[1];
-                            individuals_table[i_m++] = p[2];
-                            for (y=0;y < p[2]/2;y++)
-                            {   individuals_table[i_m++] = (z+3+y*2)/256;
-                                individuals_table[i_m++] = (z+3+y*2)%256;
-                                backpatch_zmachine(INHERIT_INDIV_MV,
-                                    INDIVIDUAL_PROP_ZA, i_m-2);
+                        {   int already_present = FALSE, l;
+                            for (l = full_object.pp[k].ao[0].value; l < i_m;
+                                 l = l + 3 + individuals_table[l + 2])
+                                if (individuals_table[l] == p[0]
+                                    && individuals_table[l + 1] == p[1])
+                                {   already_present = TRUE; break;
+                                }
+                            if (already_present == FALSE)
+                            {   if (module_switch)
+                                    backpatch_zmachine(IDENT_MV,
+                                        INDIVIDUAL_PROP_ZA, i_m);
+                                individuals_table[i_m++] = p[0];
+                                individuals_table[i_m++] = p[1];
+                                individuals_table[i_m++] = p[2];
+                                for (y=0;y < p[2]/2;y++)
+                                {   individuals_table[i_m++] = (z+3+y*2)/256;
+                                    individuals_table[i_m++] = (z+3+y*2)%256;
+                                    backpatch_zmachine(INHERIT_INDIV_MV,
+                                        INDIVIDUAL_PROP_ZA, i_m-2);
+                                }
                             }
                             z += p[2] + 3;
                             p += p[2] + 3;
@@ -786,7 +800,7 @@ the names '%s' and '%s' actually refer to the same property",
                         "%s.%s", objectname_text,
                         (char *) symbs[property_name_symbol]);
                 }
-                AO.value = parse_routine(NULL, TRUE, embedded_name, FALSE);
+                AO.value = parse_routine(NULL, TRUE, embedded_name, FALSE, -1);
                 AO.type = LONG_CONSTANT_OT;
                 AO.marker = IROUTINE_MV;
 
@@ -850,7 +864,8 @@ the names '%s' and '%s' actually refer to the same property",
                 individuals_table[i_m+3+length++] = AO.value%256;
             }
             else
-            {   full_object.pp[next_prop].ao[length++] = AO;
+            {   full_object.pp[next_prop].ao[length/2] = AO;
+                length = length + 2;
             }
 
         } while (TRUE);
@@ -869,17 +884,18 @@ the names '%s' and '%s' actually refer to the same property",
                 individuals_table[i_m+3+length++] = 0;
             }
             else
-            {   full_object.pp[next_prop].ao[length].value = 0;
-                full_object.pp[next_prop].ao[length].type  = LONG_CONSTANT_OT;
-                full_object.pp[next_prop].ao[length++].marker = 0;
+            {   full_object.pp[next_prop].ao[0].value = 0;
+                full_object.pp[next_prop].ao[0].type  = LONG_CONSTANT_OT;
+                full_object.pp[next_prop].ao[0].marker = 0;
+                length = 2;
             }
         }
 
         if ((version_number==3) && (!individual_property))
-        {   if (length > 4)
+        {   if (length > 8)
             {
-       warning_named("Standard-game limit of 4 values per property exceeded \
-(use Advanced to get 32), so truncating property",
+       warning_named("Version 3 limit of 4 values per property exceeded \
+(use -v5 to get 32), so truncating property",
                     (char *) symbs[property_name_symbol]);
                 full_object.pp[next_prop].l=4;
             }
@@ -894,7 +910,7 @@ the names '%s' and '%s' actually refer to the same property",
                     MAX_INDIV_PROP_TABLE_SIZE);
         }
         else
-            full_object.pp[next_prop].l = length;
+            full_object.pp[next_prop].l = length/2;
 
         if ((token_type == EOF_TT)
             || ((token_type == SEP_TT) && (token_value == SEMICOLON_SEP)))
@@ -1033,8 +1049,10 @@ static void parse_body_of_definition(void)
         }
 
         if (token_type != SEGMENT_MARKER_TT)
-            error_named("Expected 'with', 'has' or 'class' in \
+        {   error_named("Expected 'with', 'has' or 'class' in \
 object/class definition but found", token_text);
+            break;
+        }
         else
         switch(token_value)
         {   case WITH_SEGMENT:
@@ -1148,8 +1166,8 @@ inconvenience, please contact the author.");
             }
             else
                 n = AO.value;
-            if ((n<=0) || (n>10000))
-            {   error("The number of duplicates must be 1 to 10000");
+            if ((n<0) || (n>10000))
+            {   error("The number of duplicates must be 0 to 10000");
                 n=0;
             }
 
@@ -1420,7 +1438,8 @@ extern void objects_begin_pass(void)
                                          /* instance variables table address */
     no_properties = 4;
 
-    no_attributes = 0;
+    if (define_INFIX_switch) no_attributes = 1;
+    else no_attributes = 0;
 
     no_objects = 0;
     objects[0].parent = 0; objects[0].child = 0; objects[0].next = 0;

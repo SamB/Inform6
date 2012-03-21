@@ -1,15 +1,18 @@
 /* ------------------------------------------------------------------------- */
 /*   "directs" : Directives (# commands)                                     */
 /*                                                                           */
-/*   Part of Inform 6.1                                                      */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   Part of Inform 6.21                                                     */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
 #include "header.h"
 
 int no_routines,                   /* Number of routines compiled so far     */
-    no_locals;                     /* Number of locals in current routine    */
+    no_named_routines,             /* Number not embedded in objects         */
+    no_locals,                     /* Number of locals in current routine    */
+    no_termcs;                     /* Number of terminating characters       */
+int terminating_characters[32];
 
 int32 routine_starts_line;         /* Source code line on which the current
                                       routine starts.  (Useful for reporting
@@ -166,8 +169,14 @@ Fake_Action directives to a point after the inclusion of \"Parser\".)");
 
         {   assembly_operand AO;
             AO = parse_expression(CONSTANT_CONTEXT);
-            j = AO.value;
-            if (i != -1) assign_symbol(i, j, CONSTANT_T);
+            if (i != -1)
+            {   if (AO.marker != 0)
+                {   assign_symbol(i, AO.marker*0x10000 + (AO.value % 0x10000),
+                        CONSTANT_T);
+                    sflags[i] |= CHANGE_SFLAG;
+                }
+                else assign_symbol(i, AO.value, CONSTANT_T);
+            }
         }
 
         break;
@@ -647,7 +656,7 @@ Fake_Action directives to a point after the inclusion of \"Parser\".)");
 
             assign_symbol(i,
                 assemble_routine_header(k, FALSE, (char *) symbs[i],
-                    &token_line_ref),
+                    &token_line_ref, FALSE, i),
                 ROUTINE_T);
 
             /*  Ensure the return value of a stubbed routine is false,
@@ -658,6 +667,7 @@ Fake_Action directives to a point after the inclusion of \"Parser\".)");
             /*  Inhibit "local variable unused" warnings  */
 
             for (i=1; i<=k; i++) variable_usage[i] = 1;
+            sequence_point_follows = FALSE;
             assemble_routine_end(FALSE, &token_line_ref);
         }
         break;
@@ -834,40 +844,60 @@ the first constant definition");
             break;
 
             case DIR_KEYWORD_TT:
-            if (token_value != TABLE_DK)
-                ebf_error("'table', a string or a constant", token_text);
-            {   int plus_flag = FALSE;
-                get_next_token();
-                if ((token_type == SEP_TT) && (token_value == PLUS_SEP))
-                {   plus_flag = TRUE;
+            switch(token_value)
+            {   case TABLE_DK:
+                {   int plus_flag = FALSE;
                     get_next_token();
-                }
-                while ((token_type!=SEP_TT) || (token_value!=SEMICOLON_SEP))
-                {   switch(token_type)
-                    {   case NUMBER_TT:
-                            new_zscii_character(token_value, plus_flag);
-                            plus_flag = TRUE; break;
-                        case SQ_TT:
-                            new_zscii_character(text_to_unicode(token_text),
-                                plus_flag);
-                            if (token_text[textual_form_length] != 0)
-                                ebf_error("single character value",token_text);
-                            plus_flag = TRUE;
-                            break;
-                        default:
-                            ebf_error("character or Unicode number",
-                                token_text); break;
+                    if ((token_type == SEP_TT) && (token_value == PLUS_SEP))
+                    {   plus_flag = TRUE;
+                        get_next_token();
                     }
-                    get_next_token();
+                    while ((token_type!=SEP_TT) || (token_value!=SEMICOLON_SEP))
+                    {   switch(token_type)
+                        {   case NUMBER_TT:
+                                new_zscii_character(token_value, plus_flag);
+                                plus_flag = TRUE; break;
+                            case SQ_TT:
+                                new_zscii_character(text_to_unicode(token_text),
+                                    plus_flag);
+                                if (token_text[textual_form_length] != 0)
+                                    ebf_error("single character value",
+                                        token_text);
+                                plus_flag = TRUE;
+                                break;
+                            default:
+                                ebf_error("character or Unicode number",
+                                    token_text); break;
+                        }
+                        get_next_token();
+                    }
+                    if (plus_flag) new_zscii_finished();
+                    put_token_back();
                 }
-                if (plus_flag) new_zscii_finished();
-                put_token_back();
-            }    
-            break;
-
+                    break;
+                case TERMINATING_DK:
+                    get_next_token();
+                    while ((token_type!=SEP_TT) || (token_value!=SEMICOLON_SEP))
+                    {   switch(token_type)
+                        {   case NUMBER_TT:
+                                terminating_characters[no_termcs++]
+                                    = token_value;
+                                break;
+                            default:
+                                ebf_error("ZSCII number", token_text); break;
+                        }
+                        get_next_token();
+                    }
+                    put_token_back();
+                    break;
+                default:
+                    ebf_error("'table', 'terminating', a string or a constant",
+                        token_text);
+            }
+                break;
             default:
-                ebf_error("three alphabet strings, a 'table' command or a \
-single character", token_text);
+                ebf_error("three alphabet strings, a 'table' or 'terminating' \
+command or a single character", token_text);
             break;
         }
         break;
@@ -893,7 +923,9 @@ extern void init_directs_vars(void)
 
 extern void directs_begin_pass(void)
 {   no_routines = 0;
+    no_named_routines = 0;
     no_locals = 0;
+    no_termcs = 0;
     constant_made_yet = FALSE;
     ifdef_sp = 0;
 }

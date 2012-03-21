@@ -1,8 +1,8 @@
 /* ------------------------------------------------------------------------- */
 /*   "states" :  Statement translator                                        */
 /*                                                                           */
-/*   Part of Inform 6.1                                                      */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   Part of Inform 6.21                                                     */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
@@ -56,7 +56,7 @@ static void parse_action(void)
 
     if ((token_type==SEP_TT) && (token_value==OPENB_SEP))
     {   put_token_back();
-        AO2 = parse_expression(QUANTITY_CONTEXT);
+        AO2 = parse_expression(ACTION_Q_CONTEXT);
         codegen_action = TRUE;
     }
     else
@@ -68,7 +68,7 @@ static void parse_action(void)
     if (!((token_type == SEP_TT) && (token_value == GREATER_SEP)))
     {   put_token_back();
         args = 1;
-        AO3 = parse_expression(QUANTITY_CONTEXT);
+        AO3 = parse_expression(ACTION_Q_CONTEXT);
 
         get_next_token();
         if (!((token_type == SEP_TT) && (token_value == GREATER_SEP)))
@@ -212,7 +212,9 @@ static void parse_print(int finally_return)
                   get_next_token();
                   get_next_token();
                   if ((token_type == SEP_TT) && (token_value == CLOSEB_SEP))
-                  {   put_token_back(); put_token_back();
+                  {   assembly_operand AO1;
+
+                      put_token_back(); put_token_back();
                       local_variables.enabled = FALSE;
                       get_next_token();
                       misc_keywords.enabled = FALSE;
@@ -229,28 +231,48 @@ static void parse_print(int finally_return)
                         case MISC_KEYWORD_TT:
                           switch(token_value)
                           {   case CHAR_MK:
+                                  if (runtime_error_checking_switch)
+                                  {   AO = veneer_routine(RT__ChPrintC_VR);
+                                      goto PrintByRoutine;
+                                  }
                                   get_next_token();
-                                  assemble_1(print_char_zc,
-                              code_generate(parse_expression(QUANTITY_CONTEXT),
-                                  QUANTITY_CONTEXT, -1));
+                                  AO1 = code_generate(
+                                      parse_expression(QUANTITY_CONTEXT),
+                                      QUANTITY_CONTEXT, -1);
+                                  assemble_1(print_char_zc, AO1);
                                   goto PrintTermDone;
                               case ADDRESS_MK:
+                                  if (runtime_error_checking_switch)
+                                  {   AO = veneer_routine(RT__ChPrintA_VR);
+                                      goto PrintByRoutine;
+                                  }
                                   get_next_token();
-                                  assemble_1(print_addr_zc,
-                              code_generate(parse_expression(QUANTITY_CONTEXT),
-                                  QUANTITY_CONTEXT, -1));
+                                  AO1 = code_generate(
+                                      parse_expression(QUANTITY_CONTEXT),
+                                      QUANTITY_CONTEXT, -1);
+                                  assemble_1(print_addr_zc, AO1);
                                   goto PrintTermDone;
                               case STRING_MK:
+                                  if (runtime_error_checking_switch)
+                                  {   AO = veneer_routine(RT__ChPrintS_VR);
+                                      goto PrintByRoutine;
+                                  }
                                   get_next_token();
-                                  assemble_1(print_paddr_zc,
-                              code_generate(parse_expression(QUANTITY_CONTEXT),
-                                  QUANTITY_CONTEXT, -1));
+                                  AO1 = code_generate(
+                                      parse_expression(QUANTITY_CONTEXT),
+                                      QUANTITY_CONTEXT, -1);
+                                  assemble_1(print_paddr_zc, AO1);
                                   goto PrintTermDone;
                               case OBJECT_MK:
+                                  if (runtime_error_checking_switch)
+                                  {   AO = veneer_routine(RT__ChPrintO_VR);
+                                      goto PrintByRoutine;
+                                  }
                                   get_next_token();
-                                  assemble_1(print_obj_zc,
-                              code_generate(parse_expression(QUANTITY_CONTEXT),
-                                  QUANTITY_CONTEXT, -1));
+                                  AO1 = code_generate(
+                                      parse_expression(QUANTITY_CONTEXT),
+                                      QUANTITY_CONTEXT, -1);
+                                  assemble_1(print_obj_zc, AO1);
                                   goto PrintTermDone;
                               case THE_MK:
                                   AO = veneer_routine(DefArt_VR);
@@ -355,7 +377,7 @@ static void parse_print(int finally_return)
 }
 
 extern void parse_statement(int break_label, int continue_label)
-{   int ln, ln2, ln3, flag;
+{   int ln, ln2, ln3, ln4, flag;
     assembly_operand AO, AO2, AO3, AO4;
     dbgl spare_dbgl1, spare_dbgl2;
 
@@ -758,7 +780,26 @@ extern void parse_statement(int break_label, int continue_label)
                      }
                      AO2 = code_generate(parse_expression(QUANTITY_CONTEXT),
                                QUANTITY_CONTEXT, -1);
-                     assemble_2(ln, AO, AO2);
+                     if (runtime_error_checking_switch)
+                     {   /* ln2 = next_label++;
+                         check_nonzero_at_runtime(AO, ln2, GIVE_RTE);
+                         assemble_2(ln, AO, AO2);
+                         assemble_label_no(ln2); */
+                         ln2 = (ln==set_attr_zc)?RT__ChG_VR:RT__ChGt_VR;
+                         if (version_number >= 5)
+                             assemble_3(call_vn_zc, veneer_routine(ln2),
+                             AO, AO2);
+                         else
+                         {   assembly_operand temp_var;
+                             temp_var.type = VARIABLE_OT;
+                             temp_var.value = 255;
+                             temp_var.marker = 0;
+                             assemble_3_to(call_zc, veneer_routine(ln2),
+                                 AO, AO2, temp_var);
+                         }
+                     }
+                     else
+                         assemble_2(ln, AO, AO2);
                  } while(TRUE);
 
     /*  -------------------------------------------------------------------- */
@@ -877,7 +918,21 @@ extern void parse_statement(int break_label, int continue_label)
                  AO2 = code_generate(parse_expression(QUANTITY_CONTEXT),
                      QUANTITY_CONTEXT, -1);
                  AO = code_generate(AO, QUANTITY_CONTEXT, -1);
-                 assemble_2(insert_obj_zc, AO, AO2);
+                 if ((runtime_error_checking_switch) && (veneer_mode == FALSE))
+                 {   if (version_number >= 5)
+                         assemble_3(call_vn_zc, veneer_routine(RT__ChT_VR),
+                             AO, AO2);
+                     else
+                     {   assembly_operand temp_var;
+                         temp_var.type = VARIABLE_OT;
+                         temp_var.value = 255;
+                         temp_var.marker = 0;
+                         assemble_3_to(call_zc, veneer_routine(RT__ChT_VR),
+                             AO, AO2, temp_var);
+                     }
+                 }
+                 else
+                     assemble_2(insert_obj_zc, AO, AO2);
                  break;
 
     /*  -------------------------------------------------------------------- */
@@ -935,6 +990,7 @@ extern void parse_statement(int break_label, int continue_label)
                          this runs through objects in a different order from
                          the new way, and there may be existing Inform code
                          relying on this.                                    */
+                     assembly_operand AO4;
 
                      sequence_point_follows = TRUE;
                      AO2 = code_generate(parse_expression(QUANTITY_CONTEXT),
@@ -942,22 +998,50 @@ extern void parse_statement(int break_label, int continue_label)
                      match_close_bracket();
                      if (ln == 1)
                      {   AO3.type = VARIABLE_OT; AO3.value = 0; AO3.marker = 0;
+                         if (runtime_error_checking_switch)
+                                 AO2 = check_nonzero_at_runtime(AO2, -1,
+                                     OBJECTLOOP_RTE);
                          assemble_1_to(get_parent_zc, AO2, AO3);
                          assemble_objcode(get_child_zc, AO3, AO3, -2, TRUE);
                          AO2 = AO3;
                      }
                      if (ln == 3)
                      {   AO3.type = VARIABLE_OT; AO3.value = 0; AO3.marker = 0;
+                         if (runtime_error_checking_switch)
+                         {   AO4 = AO2;
+                             AO2 = check_nonzero_at_runtime(AO2, -1,
+                                 CHILD_RTE);
+                         }
                          assemble_objcode(get_child_zc, AO2, AO3, -2, TRUE);
                          AO2 = AO3;
                      }
                      assemble_store(AO, AO2);
                      assemble_1_branch(jz_zc, AO, ln2 = next_label++, TRUE);
-                     assemble_label_no(ln = next_label++);
+                     assemble_label_no(ln4 = next_label++);
                      parse_code_block(ln2, ln3 = next_label++, 0);
                      sequence_point_follows = FALSE;
                      assemble_label_no(ln3);
-                     assemble_objcode(get_sibling_zc, AO, AO, ln, TRUE);
+                     if (runtime_error_checking_switch)
+                     {   AO2 = check_nonzero_at_runtime(AO, ln2,
+                              OBJECTLOOP2_RTE);
+                         if ((ln == 3)
+                             && ((AO4.type != VARIABLE_OT)||(AO4.value != 0))
+                             && ((AO4.type != VARIABLE_OT)
+                                 ||(AO4.value != AO.value)))
+                         {   assembly_operand en_ao;
+                             en_ao.value = OBJECTLOOP_BROKEN_RTE;
+                             en_ao.marker = 0;
+                             en_ao.type = SHORT_CONSTANT_OT;
+                             assemble_2_branch(jin_zc, AO, AO4,
+                                 next_label, TRUE);
+                             assemble_3(call_vn_zc, veneer_routine(RT__Err_VR),
+                                 en_ao, AO);
+                             assemble_jump(ln2);
+                             assemble_label_no(next_label++);
+                         }
+                     }
+                     else AO2 = AO;
+                     assemble_objcode(get_sibling_zc, AO2, AO, ln4, TRUE);
                      assemble_label_no(ln2);
                      return;
                  }
@@ -1057,9 +1141,23 @@ extern void parse_statement(int break_label, int continue_label)
     /*  -------------------------------------------------------------------- */
 
         case REMOVE_CODE:
-                 assemble_1(remove_obj_zc,
-                     code_generate(parse_expression(QUANTITY_CONTEXT),
-                         QUANTITY_CONTEXT, -1));
+                 AO = code_generate(parse_expression(QUANTITY_CONTEXT),
+                     QUANTITY_CONTEXT, -1);
+                 if ((runtime_error_checking_switch) && (veneer_mode == FALSE))
+                 {   if (version_number >= 5)
+                         assemble_2(call_2n_zc, veneer_routine(RT__ChR_VR),
+                             AO);
+                     else
+                     {   assembly_operand temp_var;
+                         temp_var.type = VARIABLE_OT;
+                         temp_var.value = 255;
+                         temp_var.marker = 0;
+                         assemble_2_to(call_zc, veneer_routine(RT__ChR_VR),
+                             AO, temp_var);
+                     }
+                 }
+                 else
+                     assemble_1(remove_obj_zc, AO);
                  break;
 
     /*  -------------------------------------------------------------------- */

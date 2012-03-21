@@ -1,7 +1,7 @@
 ! ===========================================================================
-!   Inform Language Definition File: English 970405
+!   Inform Language Definition File: English 981213
 !
-!   (c) Graham Nelson 1997
+!   (c) Graham Nelson 1997, 1998
 !
 !   Define the constant DIALECT_US before including "Parser" to
 !   obtain American English
@@ -204,6 +204,8 @@ Array LanguageGNAsToArticles --> 0 0 0 1 1 1 0 0 0 1 1 1;
   if (n==0) rfalse;
   #ifndef DIALECT_US;
   if (f==1) print " and ";
+  #ifnot;
+  if (f==1) print " ";
   #endif;
   switch(n)
   {   1:  print "one";
@@ -241,8 +243,9 @@ Array LanguageGNAsToArticles --> 0 0 0 1 1 1 0 0 0 1 1 1;
 ];
 
 [ LanguageTimeOfDay hours mins i;
-   i=hours%12; if (i<10) print " ";
+   i=hours%12;
    if (i==0) i=12;
+   if (i<10) print " ";
    print i, ":", mins/10, mins%10;
    if ((hours/12) > 0) print " pm"; else print " am";
 ];
@@ -289,16 +292,44 @@ Constant AND__TX      = " and ";
 Constant WHOM__TX     = "whom ";
 Constant WHICH__TX    = "which ";
 
-[ ThatorThose obj; if (obj has pluralname) print "those"; else print "that";
+[ ThatorThose obj;   ! Used in the accusative
+  if (obj == player) { print "you"; return; }
+  if (obj has pluralname) { print "those"; return; }
+  if (obj has animate)
+  {   if (obj has female) { print "her"; return; }
+      else if (obj hasnt neuter) { print "him"; return; }
+  }
+  print "that";
 ];
-[ ItorThem obj; if (obj has pluralname) print "them"; else print "it";
+[ ItorThem obj;
+  if (obj == player) { print "yourself"; return; }
+  if (obj has pluralname) { print "them"; return; }
+  if (obj has animate)
+  {   if (obj has female) { print "her"; return; }
+      else if (obj hasnt neuter) { print "him"; return; }
+  }
+  print "it";
 ];
-[ IsorAre obj; if (obj has pluralname) print "are"; else print "is";
+[ IsorAre obj;
+  if (obj has pluralname || obj == player) print "are"; else print "is";
 ];
-[ CThatorThose obj; if (obj has pluralname) print "Those"; else print "That";
+[ CThatorThose obj;   ! Used in the nominative
+  if (obj == player) { print "You"; return; }
+  if (obj has pluralname) { print "Those"; return; }
+  if (obj has animate)
+  {   if (obj has female) { print "She"; return; }
+      else if (obj hasnt neuter) { print "He"; return; }
+  }
+  print "That";
 ];
-[ CTheyreorThats obj; if (obj has pluralname) print "They're";
-  else print "That's";
+[ CTheyreorThats obj;
+  if (obj == player) { print "You're"; return; }
+  if (obj has pluralname) { print "They're"; return; }
+  if (obj has animate)
+  {   if (obj has female) { print "She's"; return; }
+      else if (obj hasnt neuter) { print "He's"; return; }
+  }
+  print "That's";
 ];
 
 [ LanguageLM n x1;
@@ -310,6 +341,9 @@ Constant WHICH__TX    = "which ";
                3: print " You have died ";
                4: print " You have won ";
                5: print "^Would you like to RESTART, RESTORE a saved game";
+                  #IFDEF DEATH_MENTION_UNDO;
+                  print ", UNDO your last move";
+                  #ENDIF;
                   if (TASKS_PROVIDED==0)
                       print ", give the FULL score for that game";
                   if (deadflag==2 && AMUSING_PROVIDED==0)
@@ -439,17 +473,18 @@ Constant WHICH__TX    = "which ";
            }
   Verify:  switch(n)
            {   1: "The game file has verified as intact.";
-               2: "The game file did not verify as intact, and may be corrupted
-                   (unless you are playing it with a very primitive interpreter
-                   which is unable properly to perform the test).";
+               2: "The game file did not verify as intact,
+                   and may be corrupt.";
            }
   ScriptOn: switch(n)
            {   1: "Transcripting is already on.";
                2: "Start of a transcript of";
+               3: "Attempt to begin transcript failed.";
            }
   ScriptOff: switch(n)
            {   1: "Transcripting is already off.";
                2: "^End of transcript.";
+               3: "Attempt to end transcript failed.";
            }
   NotifyOn:       "Score notification on.";
   NotifyOff:      "Score notification off.";
@@ -470,7 +505,7 @@ Constant WHICH__TX    = "which ";
                   else print "You have so far scored ";
                   print score, " out of a possible ", MAX_SCORE,
                   ", in ", turns, " turn";
-                  if (turns>1) print "s"; return;
+                  if (turns~=1) print "s"; return;
   FullScore: switch(n)
            {   1: if (deadflag) print "The score was ";
                   else          print "The score is ";
@@ -519,7 +554,7 @@ Constant WHICH__TX    = "which ";
                4: "Dropped.";
            }
   Remove:  switch(n)
-           {   1: if (x1 has pluralname) print "They are"; else print "It is ";
+           {   1: if (x1 has pluralname) print "They are"; else print "It is";
                   " unfortunately closed.";
                2: if (x1 has pluralname)
                       print "But they aren't";
@@ -556,6 +591,7 @@ Constant WHICH__TX    = "which ";
            {   1: print_ret (The) x1, " can't contain things.";
                2: print_ret (The) x1, " ", (isorare) x1, " closed.";
                3: print_ret (The) x1, " ", (isorare) x1, " empty already.";
+               4: "That would scarcely empty anything.";
            }
   Give:    switch(n)
            {   1: "You aren't holding ", (the) x1, ".";

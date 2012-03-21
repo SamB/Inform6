@@ -1,8 +1,8 @@
 /* ------------------------------------------------------------------------- */
 /*   "text" : Text translation, the abbreviations optimiser, the dictionary  */
 /*                                                                           */
-/*   Part of Inform 6.1                                                      */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   Part of Inform 6.21                                                     */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
@@ -393,7 +393,7 @@ extern uchar *translate_text(uchar *p, char *s_text)
                 }
             }
             else
-            {   
+            {
                 /*   A string escape specifying an unusual character   */
 
                 unicode = text_to_unicode((char *) (text_in+i));
@@ -492,7 +492,7 @@ static void optimise_pass(void)
     int32 j, j2, k, nl, matches, noflags, score, min, minat, x, scrabble, c;
     for (i=0; i<256; i++) bestyet[i].length=0;
     for (i=0; i<no_occs; i++)
-    {   if ((i!=(int) '\n')&&(tlbtab[i].occurrences!=0))
+    {   if ((*(tlbtab[i].text)!=(int) '\n')&&(tlbtab[i].occurrences!=0))
         {
 #ifdef MAC_FACE
             if (i%((**g_pm_hndl).linespercheck) == 0)
@@ -606,8 +606,7 @@ extern void optimise_abbreviations(void)
 
             bestyet2[0].text[0]='.';
             bestyet2[0].text[1]=' ';
-            bestyet2[0].text[2]=' ';
-            bestyet2[0].text[3]=0;
+            bestyet2[0].text[2]=0;
 
             bestyet2[1].text[0]=',';
             bestyet2[1].text[1]=' ';
@@ -838,7 +837,7 @@ extern dict_word dictionary_prepare(char *dword)     /* Also used by verbs.c */
                 {   case 'p': number_and_case |= 4;  break;
                     default:
                         error_named("Expected 'p' after '//' \
-to give gender or number of dictionary word", dword);
+to give number of dictionary word", dword);
                         break;
                 }
             }
@@ -862,7 +861,7 @@ apostrophe in", dword);
             k2 = zscii_to_alphabet_grid[k];
         }
         else k2 = iso_to_alphabet_grid[k];
- 
+
         if (k2 < 0)
         {   if ((k2 == -5) || (k2 <= -0x100))
                 char_error("Character can be printed but not input:", k);
@@ -998,9 +997,7 @@ static int dictionary_find(char *dword)
 
 /* ------------------------------------------------------------------------- */
 /*  Add "dword" to the dictionary with (x,y,z) as its data bytes; unless     */
-/*  it already exists, in which case OR the data with (x,y,z).  (E.g. if an  */
-/*  existing noun is entered as a verb-word, the verb bit is added to x,     */
-/*  y is left alone and z becomes the verb number.)                          */
+/*  it already exists, in which case OR the data with (x,y,z)                */
 /*                                                                           */
 /*  Returns: the accession number.                                           */
 /* ------------------------------------------------------------------------- */

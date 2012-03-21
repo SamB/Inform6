@@ -1,10 +1,11 @@
 This is Info file inform.info, produced by Makeinfo-1.64 from the input
 file inform.texi.
 
-This is the Inform Designer's Manual, third edition, 4 September 1996.
-It was converted to Info by Christopher J. Madsen <ac608@yfn.ysu.edu>.
+This is the Inform Designer's Manual, third edition, 4 September 1996,
+as updated 16 May 1997.  It was converted to Info by Christopher J.
+Madsen <ac608@yfn.ysu.edu>.
 
-Copyright 1996 Graham Nelson and Christopher J. Madsen
+Copyright 1996,1997 Graham Nelson and Christopher J. Madsen
 
 Permission is granted to make and distribute copies of this manual
 provided that:
@@ -231,8 +232,8 @@ can be" rules.
   4. Global variables must be declared earlier in the program than the
      first reference to them.
 
-  5. Properties, attributes and classes must be declared earlier than
-     their first usage in an object definition.
+  5. Attributes and classes must be declared earlier than their first
+     usage in an object definition.
 
   6. General parsing and scope routines must be defined before being
      quoted in grammar tokens.
@@ -369,15 +370,15 @@ code block
      statements, what is to be done inside a for loop, etc.
 
 common property
-     Any /property/ specifically declared, before use, by the Property
-     directive is called a "common property": others are /individual
-     properties/.  They behave similarly except that: (a) values of
-     common properties can be read even from an /object/ not providing
-     them, the result being a special default value, which can be
-     altered using ChangeDefault; (b) they are faster and slightly more
-     economical of memory to use; (c) there are a limited number of
-     them.  (The library's properties are common properties for reason
-     (b).)
+     Any /property/ set by the /class/ Object is passed on to every
+     /object/ and is called a "common property": for example,
+     description.  All others are /individual properties/.  New
+     properties can be declared as common with the Property directive.
+     They behave similarly except that: (a) values of common properties
+     can be read even from an /object/ not providing them, the result
+     being a special default value, which can be altered using
+     ChangeDefault; (b) they are faster and slightly more economical of
+     memory to use; (c) there are a limited number of them.
 
 compass
      The compass /object/, created by the /library/ but never tangible
@@ -1178,7 +1179,7 @@ unheld objects:
 
 [ GamePreRoutine;
   if (action==Drop && noun notin player)
-     print_ret "You aren't holding ", (the) noun, ".";
+      "You aren't holding ", (the) noun, ".";
   rfalse;
 ];
 
@@ -1198,12 +1199,6 @@ Object orange_cloud "orange cloud"
            Smell: if (noun==0) "Cinnamon?  No, nutmeg.";
        ],
   has  scenery;
-
-Directions (such as "north") are objects called n_obj, s_obj and so on:
-in this case, in_obj.  (They are not to be confused with the property
-names n_to and so on.)  Moreover, you can change these directions: as
-far as Inform is concerned, a direction is any object in the special
-object compass.
 
    *Note Exercise 5: Places.
 

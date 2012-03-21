@@ -2,8 +2,8 @@
 /*   "errors" : Warnings, errors and fatal errors                            */
 /*              (with error throwback code for RISC OS machines)             */
 /*                                                                           */
-/*   Part of Inform 6.1                                                      */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   Part of Inform 6.21                                                     */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
@@ -58,6 +58,19 @@ static void print_preamble(void)
     }
 }
 
+static char trimmed_text[128];
+
+static void trim_text(char *s)
+{   int i;
+    if (strlen(s) < 128) { strcpy(trimmed_text, s); return; }
+    for (i=0; i<120; i++) trimmed_text[i] = s[i];
+    trimmed_text[i++] = '.';
+    trimmed_text[i++] = '.';
+    trimmed_text[i++] = '.';
+    trimmed_text[i++] = 0;
+    return;
+}
+
 /* ------------------------------------------------------------------------- */
 /*   Fatal errors (which have style 0)                                       */
 /* ------------------------------------------------------------------------- */
@@ -85,8 +98,8 @@ extern void fatalerror(char *s)
 }
 
 extern void fatalerror_named(char *m, char *fn)
-{
-    sprintf(error_message_buff, "%s \"%s\"", m, fn);
+{   trim_text(fn);
+    sprintf(error_message_buff, "%s \"%s\"", m, trimmed_text);
     fatalerror(error_message_buff);
 }
 
@@ -175,24 +188,24 @@ extern void error(char *s)
 }
 
 extern void error_named(char *s1, char *s2)
-{   int i;
-    i=strlen(s1)+strlen(s2)+3;
-    if (i>250) s2[247-strlen(s1)]=0;
-    sprintf(error_message_buff,"%s \"%s\"",s1,s2);
+{   trim_text(s2);
+    sprintf(error_message_buff,"%s \"%s\"",s1,trimmed_text);
     error(error_message_buff);
 }
 
 extern void error_named_at(char *s1, char *s2, int32 report_line)
 {   int i;
+
     ErrorPosition E = ErrorReport;
     if (report_line != -1)
     {   ErrorReport.file_number = report_line/0x10000;
         ErrorReport.line_number = report_line%0x10000;
         ErrorReport.main_flag = (ErrorReport.file_number == 1);
     }
-    i=strlen(s1)+strlen(s2)+3;
-    if (i>250) s2[247-strlen(s1)]=0;
-    sprintf(error_message_buff,"%s \"%s\"",s1,s2);
+
+    trim_text(s2);
+    sprintf(error_message_buff,"%s \"%s\"",s1,trimmed_text);
+
     i = concise_switch; concise_switch = TRUE;
     error(error_message_buff);
     ErrorReport = E; concise_switch = i;
@@ -203,7 +216,8 @@ extern void no_such_label(char *lname)
 }
 
 extern void ebf_error(char *s1, char *s2)
-{   sprintf(error_message_buff, "Expected %s but found %s", s1, s2);
+{   trim_text(s2);
+    sprintf(error_message_buff, "Expected %s but found %s", s1, trimmed_text);
     error(error_message_buff);
 }
 
@@ -253,11 +267,10 @@ extern void warning(char *s1)
 }
 
 extern void warning_named(char *s1, char *s2)
-{   int i;
+{
+    trim_text(s2);
     if (nowarnings_switch) { no_suppressed_warnings++; return; }
-    i=strlen(s1)+strlen(s2)+3;
-    if (i>250) s2[247-strlen(s1)]=0;
-    sprintf(error_message_buff,"%s \"%s\"",s1,s2);
+    sprintf(error_message_buff,"%s \"%s\"", s1, trimmed_text);
     message(2,error_message_buff);
 }
 
@@ -296,10 +309,8 @@ extern void link_error(char *s)
 }
 
 extern void link_error_named(char *s1, char *s2)
-{   int i;
-    i=strlen(s1)+strlen(s2)+3;
-    if (i>250) s2[247-strlen(s1)]=0;
-    sprintf(error_message_buff,"%s \"%s\"",s1,s2);
+{   trim_text(s2);
+    sprintf(error_message_buff,"%s \"%s\"",s1,trimmed_text);
     link_error(error_message_buff);
 }
 
@@ -311,30 +322,32 @@ extern void print_sorry_message(void)
 {   printf(
 "***********************************************************************\n\
 * 'Compiler errors' should never occur if Inform is working properly. *\n\
-* This is version %04d of Inform, dated %20s: so      *\n\
+* This is version %d.%02d of Inform, dated %20s: so      *\n\
 * if that was more than six months ago, there may be a more recent    *\n\
 * version available, from which the problem may have been removed.    *\n\
 * If not, please report this fault to:   graham@gnelson.demon.co.uk   *\n\
 * and if at all possible, please include your source code, as faults  *\n\
 * such as these are rare and often difficult to reproduce.  Sorry.    *\n\
 ***********************************************************************\n",
-    RELEASE_NUMBER, RELEASE_DATE);
+    (RELEASE_NUMBER/100)%10, RELEASE_NUMBER%100, RELEASE_DATE);
 }
 
-extern void compiler_error(char *s)
-{   if (no_link_errors > 0) return;
+extern int compiler_error(char *s)
+{   if (no_link_errors > 0) return FALSE;
+    if (no_errors > 0) return FALSE;
     if (no_compiler_errors==MAX_ERRORS)
         fatalerror("Too many compiler errors: giving up");
     message(4,s);
+    return TRUE;
 }
 
-extern void compiler_error_named(char *s1, char *s2)
-{   int i;
-    if (no_link_errors > 0) return;
-    i=strlen(s1)+strlen(s2)+3;
-    if (i>250) s2[247-strlen(s1)]=0;
-    sprintf(error_message_buff,"%s \"%s\"",s1,s2);
+extern int compiler_error_named(char *s1, char *s2)
+{   if (no_link_errors > 0) return FALSE;
+    if (no_errors > 0) return FALSE;
+    trim_text(s2);
+    sprintf(error_message_buff,"%s \"%s\"",s1,trimmed_text);
     compiler_error(error_message_buff);
+    return TRUE;
 }
 
 /* ------------------------------------------------------------------------- */

@@ -1,10 +1,10 @@
 /* ------------------------------------------------------------------------- */
 /*   Header file for Inform:  Z-machine ("Infocom" format) compiler          */
 /*                                                                           */
-/*                               Inform 6.1                                  */
+/*                               Inform 6.2                                  */
 /*                                                                           */
 /*   This header file and the others making up the Inform source code are    */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
 /*                                                                           */
 /*   Manuals for this language are available from the if-archive at          */
 /*   ftp.gmd.de.                                                             */
@@ -30,8 +30,8 @@
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
-#define RELEASE_DATE "8th September 1997"
-#define RELEASE_NUMBER 1614
+#define RELEASE_DATE "30th April 1999"
+#define RELEASE_NUMBER 1621
 #define MODULE_VERSION_NUMBER 1
 #define VNUMBER RELEASE_NUMBER
 
@@ -47,7 +47,6 @@
 /*     #define BEOS        -  for the BeBox                                  */
 /*     #define LINUX       -  for Linux under gcc (essentially as Unix)      */
 /*     #define MACINTOSH   -  for the Apple Mac under Think C or Codewarrior */
-/*     #define MAC_68K     -  for 68K Macs, under Think C or Codewarrior     */
 /*     #define MAC_MPW     -  for MPW under Codewarrior (and maybe Think C)  */
 /*     #define OS2         -  for OS/2 32-bit mode under IBM's C Set++       */
 /*     #define PC          -  for 386+ IBM PCs, eg. Microsoft Visual C/C++   */
@@ -66,7 +65,7 @@
 /*   out a block of definitions like those below.)                           */
 /* ------------------------------------------------------------------------- */
 
-#define UNIX
+#define ARCHIMEDES
 
 /* ------------------------------------------------------------------------- */
 /*   The first task is to include the ANSI header files, and typedef         */
@@ -669,7 +668,7 @@ typedef struct token_data_s
 } token_data;
 
 typedef struct FileId_s                 /*  Source code file identifier:     */
-{   char  filename[128];                /*  The filename (after translation) */
+{   char *filename;                     /*  The filename (after translation) */
     FILE *handle;                       /*  Handle of file (when open), or
                                             NULL when closed                 */
 } FileId;
@@ -776,7 +775,7 @@ typedef struct operator_s
 #define  MAX_ERRORS            100
 #define  MAX_IDENTIFIER_LENGTH  32
 #define  MAX_ABBREV_LENGTH      64
-#define  MAX_SOURCE_FILES       64
+#define  MAX_SOURCE_FILES      256
 #define  MAX_INCLUSION_DEPTH     5
 
 #define  VENEER_CONSTRAINT_ON_CLASSES       256
@@ -952,9 +951,10 @@ typedef struct operator_s
 #define CONDITION_CONTEXT  2
 #define CONSTANT_CONTEXT   3
 #define QUANTITY_CONTEXT   4
-#define ASSEMBLY_CONTEXT   5
-#define ARRAY_CONTEXT      6
-#define FORINIT_CONTEXT    7
+#define ACTION_Q_CONTEXT   5
+#define ASSEMBLY_CONTEXT   6
+#define ARRAY_CONTEXT      7
+#define FORINIT_CONTEXT    8
 
 #define LOWEST_SYSTEM_VAR_NUMBER 249        /* globals 249 to 255 are used
                                                in compiled code */
@@ -978,6 +978,7 @@ typedef struct operator_s
 #define UERROR_SFLAG   2048
 #define ACTION_SFLAG   4096
 #define REDEFINABLE_SFLAG  8192
+#define STAR_SFLAG    16384
 
 /* ------------------------------------------------------------------------- */
 /*   Symbol type definitions                                                 */
@@ -1164,6 +1165,7 @@ typedef struct operator_s
 #define ERROR_DK        31
 #define FATALERROR_DK   32
 #define WARNING_DK      33
+#define TERMINATING_DK  34
 
 /*  Index numbers into the keyword group "trace_keywords" (see "lexer.c")  */
 
@@ -1181,6 +1183,8 @@ typedef struct operator_s
 
 /*  Index numbers into the keyword group "system_constants" (see "lexer.c")  */
 
+#define NO_SYSTEM_CONSTANTS   58
+
 #define adjectives_table_SC   0
 #define actions_table_SC      1
 #define classes_table_SC      2
@@ -1193,6 +1197,62 @@ typedef struct operator_s
 #define dict_par1_SC          9
 #define dict_par2_SC         10
 #define dict_par3_SC         11
+#define actual_largest_object_SC 12
+#define static_memory_offset_SC 13
+#define array_names_offset_SC 14
+#define readable_memory_offset_SC 15
+#define cpv__start_SC        16
+#define cpv__end_SC          17
+#define ipv__start_SC        18
+#define ipv__end_SC          19
+#define array__start_SC      20
+#define array__end_SC        21
+
+#define lowest_attribute_number_SC    22
+#define highest_attribute_number_SC   23
+#define attribute_names_array_SC      24
+
+#define lowest_property_number_SC     25
+#define highest_property_number_SC    26
+#define property_names_array_SC       27
+
+#define lowest_action_number_SC       28
+#define highest_action_number_SC      29
+#define action_names_array_SC         30
+
+#define lowest_fake_action_number_SC  31
+#define highest_fake_action_number_SC 32
+#define fake_action_names_array_SC    33
+
+#define lowest_routine_number_SC      34
+#define highest_routine_number_SC     35
+#define routines_array_SC             36
+#define routine_names_array_SC        37
+#define routine_flags_array_SC        38
+
+#define lowest_global_number_SC       39
+#define highest_global_number_SC      40
+#define globals_array_SC              41
+#define global_names_array_SC         42
+#define global_flags_array_SC         43
+
+#define lowest_array_number_SC        44
+#define highest_array_number_SC       45
+#define arrays_array_SC               46
+#define array_names_array_SC          47
+#define array_flags_array_SC          48
+
+#define lowest_constant_number_SC     49
+#define highest_constant_number_SC    50
+#define constants_array_SC            51
+#define constant_names_array_SC       52
+
+#define lowest_class_number_SC        53
+#define highest_class_number_SC       54
+#define class_objects_array_SC        55
+
+#define lowest_object_number_SC       56
+#define highest_object_number_SC      57
 
 /*  Index numbers into the keyword group "system_functions" (see "lexer.c")  */
 
@@ -1356,11 +1416,20 @@ typedef struct operator_s
 #define MESSAGE_CALL_OP 66
 
 /* ------------------------------------------------------------------------- */
+/*   The four types of compiled array                                        */
+/* ------------------------------------------------------------------------- */
+
+#define BYTE_ARRAY      0
+#define WORD_ARRAY      1
+#define STRING_ARRAY    2
+#define TABLE_ARRAY     3
+
+/* ------------------------------------------------------------------------- */
 /*   Internal numbers used to refer to veneer routines                       */
 /*   (must correspond to entries in the table in "veneer.c")                 */
 /* ------------------------------------------------------------------------- */
 
-#define VENEER_ROUTINES 27
+#define VENEER_ROUTINES 41
 
 #define Box__Routine_VR    0
 
@@ -1392,6 +1461,58 @@ typedef struct operator_s
 #define Metaclass_VR      24
 #define CP__Tab_VR        25
 #define Cl__Ms_VR         26
+#define RT__ChT_VR        27
+#define RT__ChR_VR        28
+#define RT__ChG_VR        29
+#define RT__ChGt_VR       30
+#define RT__ChPS_VR       31
+#define RT__TrPS_VR       32
+#define RT__ChLDB_VR      33
+#define RT__ChLDW_VR      34
+#define RT__ChSTB_VR      35
+#define RT__ChSTW_VR      36
+#define RT__ChPrintC_VR   37
+#define RT__ChPrintA_VR   38
+#define RT__ChPrintS_VR   39
+#define RT__ChPrintO_VR   40
+
+/* ------------------------------------------------------------------------- */
+/*   Run-time-error numbers (must correspond with RT__Err code in veneer)    */
+/* ------------------------------------------------------------------------- */
+
+#define IN_RTE             2
+#define HAS_RTE            3
+#define PARENT_RTE         4
+#define ELDEST_RTE         5
+#define CHILD_RTE          6
+#define YOUNGER_RTE        7
+#define SIBLING_RTE        8
+#define CHILDREN_RTE       9
+#define YOUNGEST_RTE      10
+#define ELDER_RTE         11
+#define OBJECTLOOP_RTE    12
+#define OBJECTLOOP2_RTE   13
+#define GIVE_RTE          14
+#define REMOVE_RTE        15
+#define MOVE1_RTE         16
+#define MOVE2_RTE         17
+/* 18 = creating a loop in object tree */
+/* 19 = giving a non-existent attribute */
+#define DBYZERO_RTE       20
+#define PROP_ADD_RTE      21
+#define PROP_NUM_RTE      22
+#define PROPERTY_RTE      23
+/* 24 = reading with -> out of range */
+/* 25 = reading with --> out of range */
+/* 26 = writing with -> out of range */
+/* 27 = writing with --> out of range */
+#define ABOUNDS_RTE       28
+/* similarly 29, 30, 31 */
+#define OBJECTLOOP_BROKEN_RTE 32
+/* 33 = print (char) out of range */
+/* 34 = print (address) out of range */
+/* 35 = print (string) out of range */
+/* 36 = print (object) out of range */
 
 /* ------------------------------------------------------------------------- */
 /*   Debugging information file record types                                 */
@@ -1608,10 +1729,12 @@ extern void verbs_free_arrays(void);
 /*   Extern definitions for "arrays"                                         */
 /* ------------------------------------------------------------------------- */
 
-extern int no_globals;
+extern int no_globals, no_arrays;
 extern int dynamic_array_area_size;
 extern int *dynamic_array_area;
 extern int32 *global_initial_value;
+extern int32 *array_symbols;
+extern int  *array_sizes, *array_types;
 
 extern void make_global(int array_flag, int name_only);
 extern void set_variable_value(int i, int32 v);
@@ -1636,6 +1759,7 @@ extern int   variable_usage[];
 extern int   next_label, no_sequence_points;
 extern int32 variable_tokens[];
 extern assembly_instruction AI;
+extern int32 *named_routine_symbols;
 
 extern void print_operand(assembly_operand o);
 extern char *variable_name(int32 i);
@@ -1644,7 +1768,7 @@ extern void assemble_instruction(assembly_instruction *a);
 extern void assemble_label_no(int n);
 extern void define_symbol_label(int symbol);
 extern int32 assemble_routine_header(int no_locals, int debug_flag,
-    char *name, dbgl *line_ref);
+    char *name, dbgl *line_ref, int embedded_flag, int the_symbol);
 extern void assemble_routine_end(int embedded_flag, dbgl *line_ref);
 
 extern void assemble_0(int internal_number);
@@ -1678,6 +1802,14 @@ extern void assemble_3_to(int internal_number,
 extern void assemble_4(int internal_number,
                        assembly_operand o1, assembly_operand o2,
                        assembly_operand o3, assembly_operand o4);
+extern void assemble_5(int internal_number,
+                       assembly_operand o1, assembly_operand o2,
+                       assembly_operand o3, assembly_operand o4,
+                       assembly_operand o5);
+extern void assemble_6(int internal_number,
+                       assembly_operand o1, assembly_operand o2,
+                       assembly_operand o3, assembly_operand o4,
+                       assembly_operand o5, assembly_operand o6);
 extern void assemble_4_branch(int internal_number,
                        assembly_operand o1, assembly_operand o2,
                        assembly_operand o3, assembly_operand o4,
@@ -1740,9 +1872,10 @@ extern void  make_upper_case(char *str);
 
 extern int32 routine_starts_line;
 
-extern int  no_routines, no_locals;
+extern int  no_routines, no_named_routines, no_locals, no_termcs;
+extern int  terminating_characters[];
 
-extern int parse_given_directive(void);
+extern int  parse_given_directive(void);
 
 /* ------------------------------------------------------------------------- */
 /*   Extern definitions for "errors"                                         */
@@ -1772,8 +1905,8 @@ extern void dbnu_warning(char *type, char *name, int32 report_line);
 extern void obsolete_warning(char *s1);
 extern void link_error(char *s);
 extern void link_error_named(char *s1, char *s2);
-extern void compiler_error(char *s);
-extern void compiler_error_named(char *s1, char *s2);
+extern int  compiler_error(char *s);
+extern int  compiler_error_named(char *s1, char *s2);
 extern void print_sorry_message(void);
 
 #ifdef ARC_THROWBACK
@@ -1792,6 +1925,8 @@ extern int vivc_flag;
 extern operator operators[];
 
 assembly_operand code_generate(assembly_operand AO, int context, int label);
+assembly_operand check_nonzero_at_runtime(assembly_operand AO1, int label,
+       int rte_number);
 
 /* ------------------------------------------------------------------------- */
 /*   Extern definitions for "expressp"                                       */
@@ -1863,7 +1998,8 @@ extern int
     transcript_switch,      statistics_switch,    optimise_switch,
     version_set_switch,     nowarnings_switch,    hash_switch,
     memory_map_switch,      module_switch,        temporary_files_switch,
-    define_DEBUG_switch,    define_USE_MODULES_switch;
+    define_DEBUG_switch,    define_USE_MODULES_switch, define_INFIX_switch,
+    runtime_error_checking_switch;
 
 extern int error_format,    store_the_text,       asm_trace_setting,
     double_space_setting,   trace_fns_setting,    character_set_setting;
@@ -1955,7 +2091,7 @@ extern int MAX_QTEXT_SIZE,  MAX_SYMBOLS,    HASH_TAB_SIZE,   MAX_DICT_ENTRIES,
            MAX_STATIC_DATA,      MAX_PROP_TABLE_SIZE,   SYMBOLS_CHUNK_SIZE,
            MAX_EXPRESSION_NODES, MAX_LABELS,            MAX_LINESPACE,
            MAX_LOW_STRINGS,      MAX_CLASSES,           MAX_CLASS_TABLE_SIZE,
-           MAX_VERBS,            MAX_VERBSPACE;
+           MAX_VERBS,            MAX_VERBSPACE,         MAX_ARRAYS;
 
 extern int32 MAX_STATIC_STRINGS, MAX_ZCODE_SIZE, MAX_LINK_DATA_SIZE,
            MAX_TRANSCRIPT_SIZE,  MAX_INDIV_PROP_TABLE_SIZE;
@@ -2007,6 +2143,7 @@ extern void write_the_identifier_names(void);
 /*   Extern definitions for "symbols"                                        */
 /* ------------------------------------------------------------------------- */
 
+extern int no_named_constants;
 extern int no_symbols;
 extern int32 **symbs;
 extern int32 *svals;
@@ -2020,6 +2157,7 @@ extern int  *sflags;
 extern int32 *individual_name_strings;
 extern int32 *attribute_name_strings;
 extern int32 *action_name_strings;
+extern int32 *array_name_strings;
 
 extern char *typename(int type);
 extern int hash_code_from_string(char *p);
@@ -2040,7 +2178,7 @@ extern void  panic_mode_error_recovery(void);
 extern int   parse_directive(int internal_flag);
 extern void  parse_program(char *source);
 extern int32 parse_routine(char *source, int embedded_flag, char *name,
-                 int veneer_flag);
+                 int veneer_flag, int r_symbol);
 extern void  parse_code_block(int break_label, int continue_label,
                  int switch_rule);
 
@@ -2061,7 +2199,12 @@ extern int32
     code_offset,            actions_offset,       preactions_offset,
     dictionary_offset,      strings_offset,       adjectives_offset,
     variables_offset,       class_numbers_offset, individuals_offset,
-   identifier_names_offset, prop_defaults_offset, prop_values_offset;
+   identifier_names_offset, prop_defaults_offset, prop_values_offset,
+    static_memory_offset,   array_names_offset,   attribute_names_offset,
+    action_names_offset,    fake_action_names_offset,
+    routine_names_offset,   routines_array_offset, routine_flags_array_offset,
+    global_names_offset,    global_flags_array_offset,
+    array_flags_array_offset, constant_names_offset, constants_array_offset;
 
 extern int32 Out_Size,      Write_Code_At,        Write_Strings_At;
 

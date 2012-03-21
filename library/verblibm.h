@@ -1,9 +1,9 @@
 ! ----------------------------------------------------------------------------
 !  VERBLIBM:  Core of standard verbs library.
 !
-!  Supplied for use with Inform 6                         Serial number 970405
-!                                                                  Release 6/5
-!  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997
+!  Supplied for use with Inform 6                         Serial number 990428
+!                                                                  Release 6/9
+!  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
 
@@ -15,6 +15,76 @@ Include "linklv";
 #ENDIF;
 
 System_file;
+
+! ----------------------------------------------------------------------------
+
+[ Banner i;
+   if (Story ~= 0)
+   {
+#IFV5; style bold; #ENDIF;
+   print (string) Story;
+#IFV5; style roman; #ENDIF;
+   }
+   if (Headline ~= 0)
+       print (string) Headline;
+   print "Release ", (0-->1) & $03ff, " / Serial number ";
+   for (i=18:i<24:i++) print (char) 0->i;
+   print " / Inform v"; inversion;
+   print " Library ", (string) LibRelease, " ";
+#ifdef STRICT_MODE;
+   print "S";
+#endif;
+#ifdef INFIX;
+   print "X";
+#ifnot;
+#ifdef DEBUG;
+   print "D";
+#endif;
+#endif;
+   new_line;
+];
+
+[ VersionSub;
+  Banner();
+  if (standard_interpreter > 0)
+      print "Standard interpreter ",
+          standard_interpreter/256, ".", standard_interpreter%256,
+          " (", 0->$1e, (char) 0->$1f, ") / ";
+  else print "Interpreter ", 0->$1e, " Version ", (char) 0->$1f, " / ";
+  print "Library serial number ", (string) LibSerial, "^";
+#IFDEF LanguageVersion;
+  print (string) LanguageVersion, "^";
+#ENDIF;
+];
+
+[ RunTimeError n p1 p2;
+#IFDEF DEBUG;
+  print "** Library error ", n, " (", p1, ",", p2, ") **^** ";
+  switch(n)
+  {   1: print "preposition not found (this should not occur)";
+      2: print "Property value not routine or string: ~",
+               (property) p2, "~ of ~", (name) p1, "~ (", p1, ")";
+      3: print "Entry in property list not routine or string: ~",
+               (property) p2, "~ list of ~", (name) p1, "~ (", p1, ")";
+      4: print "Too many timers/daemons are active simultaneously.  The
+                limit is the library constant MAX_TIMERS (currently ",
+                MAX_TIMERS, ") and should be increased";
+      5: print "Object ~", (name) p1, "~ has no ~time_left~ property";
+      7: print "The object ~", (name) p1, "~ can only be used as a player
+                object if it has the ~number~ property";
+      8: print "Attempt to take random entry from an empty table array";
+      9: print p1, " is not a valid direction property number";
+      10: print "The player-object is outside the object tree";
+      11: print "The room ~", (name) p1, "~ has no ~description~ property";
+      12: print "Tried to set a non-existent pronoun using SetPronoun";
+      13: print "A 'topic' token can only be followed by a preposition";
+      default: print "(unexplained)";
+  }
+  " **";
+#IFNOT;
+  "** Library error ", n, " (", p1, ",", p2, ") **";
+#ENDIF;
+];
 
 ! ----------------------------------------------------------------------------
 !  The WriteListFrom routine, a flexible object-lister taking care of
@@ -166,7 +236,6 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   stack_pointer = stack_pointer+j+1;
 
   if (k<2) jump EconomyVersion;   ! It takes two to plural
-
   n=1;
   for (i=o,k=0:k<j:i=NextEntry(i,depth),k++)
       if (classes_p->k==0)
@@ -187,12 +256,16 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   {   while (((classes_p->k) ~= i)
              && ((classes_p->k) ~= -i)) { k++; j=NextEntry(j,depth); }
       m=sizes_p->i;
-      if (j.list_together~=0 or lt_value
-          && ZRegion(j.list_together)==2 or 3
-          && j.list_together==mr) senc--;
-      mr=j.list_together;
+      if (j==0) mr = 0;
+      else
+      {   if (j.list_together~=0 or lt_value
+              && ZRegion(j.list_together)==2 or 3
+              && j.list_together==mr) senc--;
+          mr=j.list_together;
+      }
   }
   senc--;
+
   for (i=1, j=o, k=0, mr=0: senc>=0: i++, senc--)
   {   while (((classes_p->k) ~= i)
              && ((classes_p->k) ~= -i)) { k++; j=NextEntry(j,depth); }
@@ -227,9 +300,12 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
                   parser_one=j; parser_two=depth+wlf_indent;
                   if (RunRoutines(j,list_together)==1) jump Omit__Sublist2;
               }
+
+              @push lt_value; @push listing_together; @push listing_size;
               lt_value=j.list_together; listing_together=j; wlf_indent++;
               WriteListR(j,depth,stack_pointer); wlf_indent--;
-              lt_value=0; listing_together=0;
+              @pull listing_size; @pull listing_together; @pull lt_value;
+
               if (k2==3)
               {   if (q & ENGLISH_BIT ~= 0) print ")";
               }
@@ -248,7 +324,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
       }
 
      .Omit_WL2;
-      if (WriteBeforeEntry(j,depth)==1) jump Omit_FL2;
+      if (WriteBeforeEntry(j,depth,-senc)==1) jump Omit_FL2;
       if (sizes_p->i == 1)
       {   if (c_style & NOARTICLE_BIT ~= 0) print (name) j;
           else
@@ -296,7 +372,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
               {   q=j; l=0;
                   do
                   {   q=NextEntry(q,depth); l++;
-                  } until (q.list_together~=j.list_together);
+                  } until (q==0 || q.list_together~=j.list_together);
                   EnglishNumber(l); print " ";
                   print (string) j.list_together;
                   if (c_style & ENGLISH_BIT ~= 0) print " (";
@@ -308,9 +384,12 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
                   parser_one=j; parser_two=depth+wlf_indent;
                   if (RunRoutines(j,list_together)==1) jump Omit__Sublist;
               }
+
+              @push lt_value; @push listing_together; @push listing_size;
               lt_value=j.list_together; listing_together=j; wlf_indent++;
               WriteListR(j,depth,stack_pointer); wlf_indent--;
-              lt_value=0; listing_together=0;
+              @pull listing_size; @pull listing_together; @pull lt_value;
+
               if (k==3)
               {   if (q & ENGLISH_BIT ~= 0) print ")";
               }
@@ -327,7 +406,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
           }
       }
      .Omit_WL;
-      if (WriteBeforeEntry(j,depth)==1) jump Omit_FL;
+      if (WriteBeforeEntry(j,depth,i-senc)==1) jump Omit_FL;
       if (c_style & NOARTICLE_BIT ~= 0) print (name) j;
       else
       {   if (c_style & DEFART_BIT ~= 0) print (the) j; else print (a) j;
@@ -343,14 +422,20 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   }
 ];
 
-[ WriteBeforeEntry o depth  flag;
+[ WriteBeforeEntry o depth sentencepos  flag;
   if (c_style & INDENT_BIT ~= 0) Print__Spaces(2*(depth+wlf_indent));
 
   if (c_style & FULLINV_BIT ~= 0)
   {   if (o.invent~=0)
       {   inventory_stage=1;
           flag=PrintOrRun(o,invent,1);
-          if (flag==1 && c_style & NEWLINE_BIT ~= 0) new_line;
+          if (flag==1)
+          {   if (c_style & ENGLISH_BIT ~= 0)
+              {   if (sentencepos == -1) print (string) AND__TX;
+                  if (sentencepos < -1) print ", ";
+              }
+              if (c_style & NEWLINE_BIT ~= 0) new_line;
+          }
       }
   }
   return flag;
@@ -459,10 +544,147 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 
   if (flag==1)
   {   o = child(o);
+      @push lt_value; @push listing_together; @push listing_size;
+      lt_value = 0; listing_together = 0; listing_size = 0;
       WriteListR(o, depth+1, stack_p);
+      @pull listing_size; @pull listing_together; @pull lt_value;
       if (c_style & TERSE_BIT ~= 0) print ")";
   }
 ];
+
+! ----------------------------------------------------------------------------
+!  Much better menus can be created using the optional library extension
+!  "menus.h".  These are provided for compatibility with previous practice:
+! ----------------------------------------------------------------------------
+
+[ LowKey_Menu menu_choices EntryR ChoiceR lines main_title i j;
+  menu_nesting++;
+ .LKRD;
+  menu_item=0;
+  lines=indirect(EntryR);
+  main_title=item_name;
+
+  print "--- "; print (string) main_title; print " ---^^";
+
+  if (menu_choices ofclass Routine) menu_choices.call();
+  else print (string) menu_choices;
+
+  for (::)
+  {   L__M(##Miscellany, 52, lines);
+      print "> ";
+
+      #IFV3; read buffer parse;
+      #IFNOT; read buffer parse DrawStatusLine;
+      #ENDIF;
+
+      i=parse-->1;
+      if (i==QUIT1__WD or QUIT2__WD || parse->1==0)
+      {   menu_nesting--; if (menu_nesting>0) rfalse;
+          if (deadflag==0) <<Look>>;
+          rfalse;
+      }
+      i=TryNumber(1);
+      if (i==0) jump LKRD;
+      if (i<1 || i>lines) continue;
+      menu_item=i;
+      j=indirect(ChoiceR);
+      if (j==2) jump LKRD;
+      if (j==3) rfalse;
+  }
+];
+
+#IFV3;
+[ DoMenu menu_choices EntryR ChoiceR;
+  LowKey_Menu(menu_choices,EntryR,ChoiceR);
+];
+#ENDIF;
+
+#IFV5;
+[ DoMenu menu_choices EntryR ChoiceR
+         lines main_title main_wid cl i j oldcl pkey;
+
+  if (pretty_flag==0)
+      return LowKey_Menu(menu_choices,EntryR,ChoiceR);
+
+  menu_nesting++;
+  menu_item=0;
+  lines=indirect(EntryR);
+  main_title=item_name; main_wid=item_width;
+  cl=7;
+
+  .ReDisplay;
+      oldcl=0;
+      @erase_window $ffff;
+      i=lines+7;
+      @split_window i;
+      i = 0->33;
+      if (i==0) i=80;
+      @set_window 1;
+      @set_cursor 1 1;
+      style reverse;
+      spaces(i); j=i/2-main_wid;
+      @set_cursor 1 j;
+      print (string) main_title;
+      @set_cursor 2 1; spaces(i);
+      @set_cursor 2 2; print (string) NKEY__TX;
+      j=i-12; @set_cursor 2 j; print (string) PKEY__TX;
+      @set_cursor 3 1; spaces(i);
+      @set_cursor 3 2; print (string) RKEY__TX;
+      j=i-17; @set_cursor 3 j;
+      if (menu_nesting==1) print (string) QKEY1__TX;
+                      else print (string) QKEY2__TX;
+      style roman;
+      @set_cursor 5 2; font off;
+
+      if (menu_choices ofclass String) print (string) menu_choices;
+      else menu_choices.call();
+
+      for (::)
+      {   if (cl ~= oldcl)
+          {   if (oldcl>0) { @set_cursor oldcl 4; print " "; }
+              @set_cursor cl 4; print ">";
+          }
+          oldcl=cl;
+          @read_char 1 -> pkey;
+          if (pkey==NKEY1__KY or NKEY2__KY or 130)
+          {   cl++; if (cl==7+lines) cl=7; continue;
+          }
+          if (pkey==PKEY1__KY or PKEY2__KY or 129)
+          {   cl--; if (cl==6)  cl=6+lines; continue;
+          }
+          if (pkey==QKEY1__KY or QKEY2__KY or 27 or 131) break;
+          if (pkey==10 or 13 or 132)
+          {   @set_window 0; font on;
+              new_line; new_line; new_line;
+    
+              menu_item=cl-6;
+              EntryR.call();
+    
+              @erase_window $ffff;
+              @split_window 1;
+              i = 0->33; if (i==0) { i=80; }
+              @set_window 1; @set_cursor 1 1; style reverse; spaces(i);
+              j=i/2-item_width;
+              @set_cursor 1 j;
+              print (string) item_name;
+              style roman; @set_window 0; new_line;
+    
+              i = ChoiceR.call();
+              if (i==2) jump ReDisplay;
+              if (i==3) break;
+    
+              L__M(##Miscellany, 53);
+              @read_char 1 -> pkey; jump ReDisplay;
+          }
+      }
+
+      menu_nesting--; if (menu_nesting>0) rfalse;
+      font on; @set_cursor 1 1;
+      @erase_window $ffff; @set_window 0;
+      new_line; new_line; new_line;
+      if (deadflag==0) <<Look>>;
+];  
+#ENDIF;
 
 ! ----------------------------------------------------------------------------
 !   A cunning routine (which could have been a daemon, but isn't, for the
@@ -470,19 +692,23 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 !   so that the player never catches one not in place
 ! ----------------------------------------------------------------------------
 
-[ MoveFloatingObjects i k l m address;
+[ MoveFloatingObjects i k l m address flag;
   objectloop (i)
   {   address=i.&found_in;
       if (address~=0 && i hasnt absent)
       {   if (ZRegion(address-->0)==2)
-          {   if (indirect(address-->0) ~= 0) move i to location;
+          {   if (i.found_in() ~= 0) move i to location; else remove i;
           }
           else
           {   k=i.#found_in;
               for (l=0: l<k/2: l++)
               {   m=address-->l;
-                  if (m==location || m in location) move i to location;
+                  if (m==location || m in location)
+                  {   if (i notin location) move i to location;
+                      flag = true;
+                  }
               }
+              if (flag == false) { if (parent(i)) remove i; }
           }
       }
   }
@@ -496,7 +722,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   move player to newplace;
   while (parent(newplace)~=0) newplace=parent(newplace);
   location=newplace;
-  real_location=location;
+  real_location=location; MoveFloatingObjects();
   AdjustLight(1);
   if (flag==0) <Look>;
   if (flag==1) { NoteArrival(); ScoreArrival(); }
@@ -548,17 +774,21 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 ];
 
 [ ScriptOnSub;
-  if (transcript_mode==1) return L__M(##ScriptOn,1);
-  transcript_mode=1;
-  0-->8 = (0-->8)|1;
+  transcript_mode = ((0-->8) & 1);
+  if (transcript_mode) return L__M(##ScriptOn,1);
+  @output_stream 2;
+  if (((0-->8) & 1) == 0) return L__M(##ScriptOn,3);
   L__M(##ScriptOn,2); VersionSub();
+  transcript_mode = true;
 ];
-
+	
 [ ScriptOffSub;
-  if (transcript_mode==0) return L__M(##ScriptOff,1);
+  transcript_mode = ((0-->8) & 1);
+  if (transcript_mode == false) return L__M(##ScriptOff,1);
   L__M(##ScriptOff,2);
-  transcript_mode=0;
-  0-->8 = (0-->8)&$fffe;
+  @output_stream -2;
+  if ((0-->8) & 1) return L__M(##ScriptOff,3);
+  transcript_mode = false;
 ];
 
 [ NotifyOnSub; notify_mode=1; L__M(##NotifyOn); ];
@@ -578,17 +808,20 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   L__M(##Objects,1);
   objectloop(i has moved)
   {   f=1; print (the) i; j=parent(i);
-      if (j==player)
-      {   if (i has worn) L__M(##Objects, 3);
-          else L__M(##Objects, 4);
-          jump obj__ptd;
-      }
 
-      if (j has animate)   { L__M(##Objects, 5); jump obj__ptd; }
-      if (j has visited)   { L__M(##Objects, 6, j); jump obj__ptd; }
-      if (j has container) { L__M(##Objects, 8, j); jump obj__ptd; }
-      if (j has supporter) { L__M(##Objects, 9, j); jump obj__ptd; }
-      if (j has enterable) { L__M(##Objects, 7, j); jump obj__ptd; }
+      if (j)
+      {   if (j==player)
+          {   if (i has worn) L__M(##Objects, 3);
+              else L__M(##Objects, 4);
+              jump obj__ptd;
+          }
+
+          if (j has animate)   { L__M(##Objects, 5); jump obj__ptd; }
+          if (j has visited)   { L__M(##Objects, 6, j); jump obj__ptd; }
+          if (j has container) { L__M(##Objects, 8, j); jump obj__ptd; }
+          if (j has supporter) { L__M(##Objects, 9, j); jump obj__ptd; }
+          if (j has enterable) { L__M(##Objects, 7, j); jump obj__ptd; }
+      }
 
       L__M(##Objects, 10);
       .obj__ptd; new_line;
@@ -666,8 +899,10 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   WriteListFrom(child(player), inventory_style, 1);
   if (inventory_style & ENGLISH_BIT ~= 0) print ".^";
 
+#IFNDEF MANUAL_PRONOUNS;
   objectloop(x in player) PronounNotice(x);
-
+#ENDIF;
+  x = 0; ! To prevent a "not used" error
   AfterRoutines();
 ];
 
@@ -703,6 +938,20 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   rfalse;
 ];
 
+[ ObjectScopedBySomething item i j k l m;
+  i = item;
+  while (parent(i) ~= 0) i=parent(i);
+  objectloop (j .& add_to_scope)
+  {   l = j.&add_to_scope;
+      k = (j.#add_to_scope)/2;
+      if (l-->0 ofclass Routine) continue;
+      for (m=0:m<k:m++)
+          if (l-->m == i)
+              return j;
+  }
+  rfalse;
+];
+
 [ ObjectIsUntouchable item flag1 flag2 ancestor i;
 
   ! Determine if there's any barrier preventing the player from moving
@@ -710,6 +959,15 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   ! suitable message and return true.
   ! If flag1 is set, do not print any message.
   ! If flag2 is set, also apply Take/Remove restrictions.
+
+  ! If the item has been added to scope by something, it's first necessary
+  ! for that something to be touchable.
+
+  i = ObjectScopedBySomething(item);
+  if (i ~= 0)
+  {   if (ObjectIsUntouchable(i)) return;
+      ! An item immediately added to scope
+  }
 
   ancestor = CommonAncestor(player, item);
 
@@ -768,7 +1026,13 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 
   ancestor = CommonAncestor(player, item);
 
+  if (ancestor == 0)
+  {   i = ObjectScopedBySomething(item);
+      if (i ~= 0) ancestor = CommonAncestor(player, i);
+  }
+
   ! Are player and item in totally different places?
+
   if (ancestor == 0) return L__M(##Take,8,item);
 
   ! Is the player indirectly inside the item?
@@ -862,12 +1126,13 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 ];
 
 [ DropSub;
+  if (noun == player) return L__M(##PutOn, 4);
   if (noun in parent(player)) return L__M(##Drop,1,noun);
   if (noun notin player) return L__M(##Drop,2,noun);
   if (noun has worn)
   {   L__M(##Drop,3,noun);
       <Disrobe noun>;
-      if (noun has worn) rtrue;
+      if (noun has worn && noun in player) rtrue;
   }
   move noun to parent(player);
   if (AfterRoutines()==1) rtrue;
@@ -957,27 +1222,43 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 
 [ TransferSub;
   if (noun notin player && AttemptToTakeObject(noun)) return;
-  if (second has container) <<Insert noun second>>;
   if (second has supporter) <<PutOn noun second>>;
-  <<Drop noun>>;
+  if (second == d_obj) <<Drop noun>>;
+  <<Insert noun second>>;
 ];
 
 [ EmptySub;
   second=d_obj; EmptyTSub();
 ];
 
-[ EmptyTSub i j;
+[ EmptyTSub i j k flag;
+  if (noun == second) return L__M(##EmptyT,4);
   if (ObjectIsUntouchable(noun)) return;
   if (noun hasnt container) return L__M(##EmptyT,1,noun);
   if (noun hasnt open) return L__M(##EmptyT,2,noun);
   if (second~=d_obj)
-  {   if (second hasnt container) return L__M(##EmptyT,1,second);
-      if (second hasnt open) return L__M(##EmptyT,2,second);
+  {   if (second hasnt supporter)
+      {   if (second hasnt container) return L__M(##EmptyT,1,second);
+          if (second hasnt open) return L__M(##EmptyT,2,second);
+      }
   }
-  i=child(noun);
+  i=child(noun); k = children(noun);
   if (i==0) return L__M(##EmptyT,3,noun);
   while (i~=0)
-  {   j=sibling(i); print (name) i, ": ";
+  {   j=sibling(i);
+      flag = 0;
+      if (ObjectIsUntouchable(noun)) flag = 1;
+      if (noun hasnt container) flag = 1;
+      if (noun hasnt open) flag = 1;
+      if (second~=d_obj)
+      {   if (second hasnt supporter)
+          {   if (second hasnt container) flag = 1;
+              if (second hasnt open) flag = 1;
+          }
+      }
+      if (k-- == 0) flag = 1;
+      if (flag) break;
+      if (keep_silent == 0) print (name) i, ": ";
       <Transfer i second>;
       i=j;
   }
@@ -1021,10 +1302,11 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
       if (ancestor == player or 0) return L__M(##Enter,4,noun);
       while (player notin ancestor)
       {   j = parent(player);
+          k = keep_silent; 
           if (parent(j) ~= ancestor || noun ~= ancestor)
           {   L__M(##Enter,6,j);
-              k = keep_silent; keep_silent = 1;
-          }    
+              keep_silent = 1;
+          }
           <Exit>;
           keep_silent = k;
           if (player in j) return;
@@ -1077,8 +1359,12 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   <<Go in_obj>>;
 ];
 
-[ GoSub i j k df movewith thedir;
+[ GoSub i j k df movewith thedir old_loc;
 
+  if (second ~= 0 && second notin Compass
+      && ObjectIsUntouchable(second)) return;
+
+  old_loc = location;
   movewith=0;
   i=parent(player);
   if ((location~=thedark && i~=location)
@@ -1087,10 +1373,14 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
       if (location==thedark) location=real_location;
       k=RunRoutines(i,before); if (k~=3) location=j;
       if (k==1)
-      {   movewith=i; i=parent(i); jump gotroom; }
-      if (k==0) L__M(##Go,1,i); rtrue;
+      {   movewith=i; i=parent(i);
+      }
+      else
+      {   if (k==0) L__M(##Go,1,i);
+          rtrue;
+      }
   }
-  .gotroom;
+
   thedir=noun.door_dir;
   if (ZRegion(thedir)==2) thedir=RunRoutines(noun,door_dir);
   
@@ -1112,19 +1402,18 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
           if (noun==d_obj) return L__M(##Go,4,j);
           return L__M(##Go,5,j);
       }
-      if (ZRegion(j.door_to)==2) j=RunRoutines(j,door_to);
-      else
-      {   if (j.door_to == 0) return L__M(##Go,6,j);
-          j=j.door_to;
-      }
-      if (j==1) rtrue;
+      k=RunRoutines(j,door_to);
+      if (k==0) return L__M(##Go,6,j);
+      if (k==1) rtrue;
+      j = k;
   }
   if (movewith==0) move player to j; else move movewith to j;
 
+  location=j; MoveFloatingObjects();
   df=OffersLight(j);
   if (df~=0) { location=j; lightflag=1; }
   else
-  {   if (location==thedark)
+  {   if (old_loc == thedark)
       {   DarkToDark();
           if (deadflag~=0) rtrue;
       }
@@ -1152,14 +1441,26 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   L__M(##Look, 4, descon); rtrue;
 ];
 
-[ Locale descin text1 text2  o p k j flag f2;
+[ NotSupportingThePlayer o i;
+  i=parent(player);
+  while (i~=0 && i~=visibility_ceiling)
+  {   if (i==o) rfalse;
+      i = parent(i);
+      if (i~=0 && i hasnt supporter) rtrue;
+  }
+  rtrue;
+];
+
+[ Locale descin text1 text2 o k p j f2 flag;
 
   objectloop (o in descin) give o ~workflag;
 
   k=0;
   objectloop (o in descin)
-      if (o hasnt concealed && o~=parent(player))
-      {  PronounNotice(o);
+      if (o hasnt concealed && NotSupportingThePlayer(o))
+      {  #IFNDEF MANUAL_PRONOUNS;
+         PronounNotice(o);
+         #ENDIF;
          if (o hasnt scenery)
          {   give o workflag; k++;
              p=initial; f2=0;
@@ -1227,12 +1528,12 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 [ LMode3Sub; lookmode=3; print (string) Story; L__M(##LMode3); ];  ! Superbrief
 
 [ NoteArrival descin;
-  descin=location;
-  if (descin~=lastdesc)
-  {   if (descin.initial~=0) PrintOrRun(descin, initial);
+  if (location==thedark) { lastdesc = thedark; return; }
+  if (location~=lastdesc)
+  {   if (location.initial~=0) PrintOrRun(location, initial);
+      descin = location;
       NewRoom();
-      MoveFloatingObjects();
-      lastdesc=descin;
+      lastdesc = descin;
   }
 ];
 
@@ -1246,28 +1547,41 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   }
 ];
 
-[ LookSub allow_abbrev  visible visibility_levels i j k;
+[ FindVisibilityLevels visibility_levels;
+  visibility_levels = 1;
+  visibility_ceiling = parent(player);
+  while ((parent(visibility_ceiling) ~= 0)
+         && (visibility_ceiling hasnt container
+             || visibility_ceiling has open
+             || visibility_ceiling has transparent))
+  {   visibility_ceiling = parent(visibility_ceiling);
+      visibility_levels++;
+  }      
+  return visibility_levels;
+];
+
+[ LookSub allow_abbrev  visibility_levels i j k;
   if (parent(player)==0) return RunTimeError(10);
 
-  if (location == thedark) visible = thedark;
+  .MovedByInitial;
+  if (location == thedark) { visibility_ceiling = thedark; NoteArrival(); }
   else
-  {   visibility_levels = 1;
-      visible = parent(player);
-      while ((parent(visible) ~= 0)
-             && (visible hasnt container
-                 || visible has open || visible has transparent))
-      {   visible = parent(visible);
-          visibility_levels++;
+  {   visibility_levels = FindVisibilityLevels();
+      if (visibility_ceiling == location)
+      {   NoteArrival();
+          if (visibility_ceiling ~= location) jump MovedByInitial;
       }
-      if (visible == location) NoteArrival();
   }
+
+  !   Printing the top line: e.g.
+  !   Octagonal Room (on the table) (as Frodo)
 
   new_line;
   style bold;
   if (visibility_levels == 0) print (name) thedark;
   else
-  {   if (visible ~= location) print (The) visible;
-      else print (name) visible;
+  {   if (visibility_ceiling ~= location) print (The) visibility_ceiling;
+      else print (name) visibility_ceiling;
   }
   style roman;
 
@@ -1278,7 +1592,9 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   if (print_player_flag==1) L__M(##Look,3,player);
   new_line;
 
-  if (lookmode<3 && visible==location)
+  !   The room description (if visible)
+
+  if (lookmode<3 && visibility_ceiling==location)
   {   if ((allow_abbrev~=1) || (lookmode==2) || (location hasnt visited))
       {   if (location.describe~=NULL) RunRoutines(location,describe);
           else
@@ -1290,11 +1606,15 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 
   if (visibility_levels == 0) Locale(thedark);
   else
-  for (j=visibility_levels: j>0: j--)
-  {   for (i=player, k=0: k<j: k++) i=parent(i);
-      if (i.inside_description~=0)
-      {   new_line; PrintOrRun(i,inside_description); }
-      Locale(i);
+  {   for (i=player, j=visibility_levels: j>0: j--, i=parent(i))
+          give i workflag;
+      
+      for (j=visibility_levels: j>0: j--)
+      {   for (i=player, k=0: k<j: k++) i=parent(i);
+          if (i.inside_description~=0)
+          {   new_line; PrintOrRun(i,inside_description); }
+          Locale(i);
+      }
   }
 
   LookRoutine();
@@ -1434,6 +1754,11 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 [ EatSub;
   if (ObjectIsUntouchable(noun)) return;
   if (noun hasnt edible) return L__M(##Eat,1,noun);
+  if (noun has worn)
+  {   L__M(##Drop,3,noun);
+      <Disrobe noun>;
+      if (noun has worn && noun in player) rtrue;
+  }
   remove noun;
   if (AfterRoutines()==1) rtrue;
   if (keep_silent==1) rtrue;
@@ -1539,6 +1864,11 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
       if (RunRoutines(second,before)~=0) { action=##ThrowAt; rtrue; }
       action=##ThrowAt;
   }
+  if (noun has worn)
+  {   L__M(##Drop,3,noun);
+      <Disrobe noun>;
+      if (noun has worn && noun in player) rtrue;
+  }
   if (second hasnt animate) return L__M(##ThrowAt,1);
   if (RunLife(second,##ThrowAt)~=0) rfalse;
   L__M(##ThrowAt,2,noun);
@@ -1557,7 +1887,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 ];
 
 [ AnswerSub;
-  if (RunLife(second,##Answer)~=0) rfalse;
+  if (second~=0 && RunLife(second,##Answer)~=0) rfalse;
   L__M(##Answer,1,noun);
 ];  
 
@@ -1587,11 +1917,18 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
   print "[Parser tracing set to level ", parser_trace, ".]^"; ];
 [ TraceOffSub; parser_trace=0; "Trace off."; ];
 [ RoutinesOnSub;  debug_flag=debug_flag | 1; "[Message listing on.]"; ];
-[ RoutinesOffSub; debug_flag=debug_flag & 6; "[Message listing off.]"; ];
+[ RoutinesOffSub; debug_flag=debug_flag & 14; "[Message listing off.]"; ];
 [ ActionsOnSub;  debug_flag=debug_flag | 2; "[Action listing on.]"; ];
-[ ActionsOffSub; debug_flag=debug_flag & 5; "[Action listing off.]"; ];
+[ ActionsOffSub; debug_flag=debug_flag & 13; "[Action listing off.]"; ];
 [ TimersOnSub;  debug_flag=debug_flag | 4; "[Timers listing on.]"; ];
-[ TimersOffSub; debug_flag=debug_flag & 3; "[Timers listing off.]"; ];
+[ TimersOffSub; debug_flag=debug_flag & 11; "[Timers listing off.]"; ];
+IFDEF VN_1610;
+[ ChangesOnSub;  debug_flag=debug_flag | 8; "[Changes listing on.]"; ];
+[ ChangesOffSub; debug_flag=debug_flag & 7; "[Changes listing off.]"; ];
+IFNOT;
+[ ChangesOnSub; "[Changes listing only available under Inform 6.2.]"; ];
+[ ChangesOffSub; "[Changes listing only available under Inform 6.2.]"; ];
+ENDIF;
 [ CommandsOnSub;
   @output_stream 4; xcommsdir=1; "[Command recording on.]"; ];
 [ CommandsOffSub;
@@ -1635,7 +1972,7 @@ Constant NOARTICLE_BIT 4096;  !  Print no articles, definite or not
 ];
 [ XTreeSub i;
   if (noun==0)
-  {   objectloop(i) if (parent(i)==0) XObj(i);
+  {   objectloop(i) if (i ofclass Object && parent(i)==0) XObj(i);
   }
   else XObj(noun,1);
 ];

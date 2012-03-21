@@ -1,8 +1,8 @@
 /* ------------------------------------------------------------------------- */
 /*   "expressp" :  The expression parser                                     */
 /*                                                                           */
-/*   Part of Inform 6.1                                                      */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   Part of Inform 6.21                                                     */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
@@ -58,7 +58,7 @@ static token_data current_token, previous_token, heldback_token;
 static void function_call_triggered(void);
 
 static int comma_allowed, arrow_allowed, superclass_allowed,
-           array_init_ambiguity,
+           array_init_ambiguity, action_ambiguity,
 
            etoken_count, inserting_token, bracket_level;
 
@@ -207,10 +207,15 @@ but not used as a value:", unicode);
 
                 case OPENB_SEP:
                     bracket_level++;
+                    if (expr_trace_level>=3)
+                    { printf("Previous token type = %d\n",previous_token.type);
+                      printf("Previous token val  = %d\n",previous_token.value);
+                    }
                     if ((previous_token.type == OP_TT)
                         || (previous_token.type == SUBOPEN_TT)
                         || (previous_token.type == ENDEXP_TT)
-                        || (array_init_ambiguity))
+                        || (array_init_ambiguity)
+                        || ((bracket_level == 1) && (action_ambiguity)))
                         current_token.type = SUBOPEN_TT;
                     else
                     {   inserting_token = TRUE;
@@ -493,6 +498,79 @@ extern int32 value_of_system_constant(int t)
             return strings_offset/scale_factor;
         case code_offset_SC:
             return code_offset/scale_factor;
+        case actual_largest_object_SC:
+            return no_objects;
+        case static_memory_offset_SC:
+            return static_memory_offset;
+        case array_names_offset_SC:
+            return array_names_offset;
+        case readable_memory_offset_SC:
+            return Write_Code_At;
+        case cpv__start_SC:
+            return prop_values_offset;
+        case cpv__end_SC:
+            return class_numbers_offset;
+        case ipv__start_SC:
+            return individuals_offset;
+        case ipv__end_SC:
+            return variables_offset;
+        case array__start_SC:
+            return variables_offset + 480;
+        case array__end_SC:
+            return static_memory_offset;
+
+        case highest_attribute_number_SC:
+            return no_attributes-1;
+        case attribute_names_array_SC:
+            return attribute_names_offset;
+
+        case highest_property_number_SC:
+            return no_individual_properties-1;
+        case property_names_array_SC:
+            return identifier_names_offset + 2;
+
+        case highest_action_number_SC:
+            return no_actions-1;
+        case action_names_array_SC:
+            return action_names_offset;
+
+        case highest_fake_action_number_SC:
+            return ((grammar_version_number==1)?256:4096) + no_fake_actions-1;
+        case fake_action_names_array_SC:
+            return fake_action_names_offset;
+
+        case highest_routine_number_SC:
+            return no_named_routines-1;
+        case routine_names_array_SC:
+            return routine_names_offset;
+        case routines_array_SC:
+            return routines_array_offset;
+        case routine_flags_array_SC:
+            return routine_flags_array_offset;
+        case highest_global_number_SC:
+            return 16 + no_globals-1;
+        case global_names_array_SC:
+            return global_names_offset;
+        case globals_array_SC:
+            return variables_offset;
+        case global_flags_array_SC:
+            return global_flags_array_offset;
+        case highest_array_number_SC:
+            return no_arrays-1;
+        case array_names_array_SC:
+            return array_names_offset;
+        case array_flags_array_SC:
+            return array_flags_array_offset;
+        case highest_constant_number_SC:
+            return no_named_constants-1;
+        case constant_names_array_SC:
+            return constant_names_offset;
+        case highest_class_number_SC:
+            return no_classes-1;
+        case class_objects_array_SC:
+            return class_numbers_offset;
+        case highest_object_number_SC:
+            return no_objects-1;
     }
     return(0);
 }
@@ -546,19 +624,7 @@ static int evaluate_term(token_data t, assembly_operand *o)
         case SYSTEM_CONSTANT_TT:
              o->type = LONG_CONSTANT_OT;
              switch(t.value)
-             {   case adjectives_table_SC:
-                 case actions_table_SC:
-                 case classes_table_SC:
-                 case identifiers_table_SC:
-                 case preactions_table_SC:
-                 case largest_object_SC:
-                 case strings_offset_SC:
-                 case code_offset_SC:
-                     v = t.value;
-                     o->marker = INCON_MV;
-                     break;
-
-                 /*  These four system constants depend only on the
+             {   /*  Certain system constants depend only on the
                      version number and need no backpatching, as they
                      are known in advance.  We can therefore evaluate
                      them immediately.  */
@@ -579,6 +645,25 @@ static int evaluate_term(token_data t, assembly_operand *o)
                      o->type = SHORT_CONSTANT_OT;
                      o->marker = 0;
                      v = (version_number==3)?6:8; break;
+                 case lowest_attribute_number_SC:
+                 case lowest_action_number_SC:
+                 case lowest_routine_number_SC:
+                 case lowest_array_number_SC:
+                 case lowest_constant_number_SC:
+                 case lowest_class_number_SC:
+                     o->type = SHORT_CONSTANT_OT; o->marker = 0; v = 0; break;
+                 case lowest_object_number_SC:
+                 case lowest_property_number_SC:
+                     o->type = SHORT_CONSTANT_OT; o->marker = 0; v = 1; break;
+                 case lowest_global_number_SC:
+                     o->type = SHORT_CONSTANT_OT; o->marker = 0; v = 16; break;
+                 case lowest_fake_action_number_SC:
+                     o->type = LONG_CONSTANT_OT; o->marker = 0;
+                     v = ((grammar_version_number==1)?256:4096); break;
+                 default:
+                     v = t.value;
+                     o->marker = INCON_MV;
+                     break;
              }
              o->value = v;
              return(TRUE);
@@ -606,6 +691,7 @@ static int emitter_sp, next_marker = 0;
 
 static void function_call_triggered(void)
 {   next_marker = FVALUE_MARKER;
+    if (expr_trace_level >= 3) printf("Function call triggered\n");
 }
 
 static void emit_token(token_data t)
@@ -614,7 +700,7 @@ static void emit_token(token_data t)
     int32 x;
 
     if (expr_trace_level >= 2)
-    {   printf("Output: %-19s%27sStack: ", t.text, "");
+    {   printf("Output: %-19s%21s ", t.text, "");
         for (i=0; i<emitter_sp; i++)
         {   if (emitter_markers[i] == FVALUE_MARKER) printf(" FVALUE:");
             if (emitter_markers[i] == ORVALUE_MARKER) printf(" ORVALUE:");
@@ -624,6 +710,7 @@ static void emit_token(token_data t)
     }
 
     if (t.type == SUBOPEN_TT) return;
+
     if (t.type == SUBCLOSE_TT)
     {   if (emitter_sp == 0)
         {   error("No expression between brackets '(' and ')'");
@@ -632,6 +719,9 @@ static void emit_token(token_data t)
             emitter_stack[0].value = 0;
             emitter_stack[0].marker = 0;
             emitter_sp = 1;
+        }
+        if (next_marker == FVALUE_MARKER)
+        {   emitter_markers[emitter_sp-1] = next_marker; next_marker=0;
         }
         return;
     }
@@ -647,12 +737,12 @@ static void emit_token(token_data t)
                 t.marker = 0;
             }
         }
-
         next_marker=0;
+
         if (emitter_sp == MAX_EXPRESSION_NODES)
-            memoryerror("MAX_EXPRESSION_NODES", MAX_EXPRESSION_NODES);
+            memoryerror("MAX_EXPRESSION_NODES1", MAX_EXPRESSION_NODES);
         if (!evaluate_term(t, &(emitter_stack[emitter_sp++])))
-            printf("*** Emit token error: %s ***\n", t.text);
+            compiler_error_named("Emit token error:", t.text);
         return;
     }
 
@@ -670,18 +760,20 @@ static void emit_token(token_data t)
 
     if ((t.value == COMMA_OP) && (emitter_sp != stack_size)) return;
     if (t.value == OR_OP)
-    {   switch(stack_size)
-        {   case 0: case 1: case 2: error("'or' used improperly");
-            default: emitter_markers[emitter_sp-1] = ORVALUE_MARKER;
-        }
+    {   emitter_markers[emitter_sp-1] = ORVALUE_MARKER;
         return;
     }
 
     arity = 1;
-
     if (t.value == FCALL_OP)
+    {   if (expr_trace_level >= 3)
+        {   printf("FCALL_OP finds marker stack: ");
+            for (x=0; x<emitter_sp; x++) printf("%d ", emitter_markers[x]);
+            printf("\n");
+        }
         while (emitter_markers[emitter_sp-arity] != FVALUE_MARKER)
             arity++;
+    }
     else
     {   arity = 1;
         if (operators[t.value].usage == IN_U) arity = 2;
@@ -696,7 +788,7 @@ static void emit_token(token_data t)
         {   error_named("Missing operand for", t.text);
             while (arity > stack_size)
             {   if (emitter_sp == MAX_EXPRESSION_NODES)
-                    memoryerror("MAX_EXPRESSION_NODES", MAX_EXPRESSION_NODES);
+                    memoryerror("MAX_EXPRESSION_NODES2", MAX_EXPRESSION_NODES);
                 emitter_markers[emitter_sp] = 0;
                 emitter_stack[emitter_sp].type = SHORT_CONSTANT_OT;
                 emitter_stack[emitter_sp].value = 0;
@@ -732,9 +824,9 @@ static void emit_token(token_data t)
             {
                 switch(t.value)
                 {
-                    case PLUS_OP: x = o1.value + o2.value; goto FoldConstant;
-                    case MINUS_OP: x = o1.value - o2.value; goto FoldConstant;
-                    case TIMES_OP: x = o1.value * o2.value; goto FoldConstant;
+                    case PLUS_OP: x = o1.value + o2.value; goto FoldConstantC;
+                    case MINUS_OP: x = o1.value - o2.value; goto FoldConstantC;
+                    case TIMES_OP: x = o1.value * o2.value; goto FoldConstantC;
                     case DIVIDE_OP: if (o2.value==0)
                                   error("Division of constant by zero");
                              else x = o1.value / o2.value; goto FoldConstant;
@@ -774,7 +866,7 @@ static void emit_token(token_data t)
 
     op_node_number = ET_used++;
     if (op_node_number == MAX_EXPRESSION_NODES)
-        memoryerror("MAX_EXPRESSION_NODES", MAX_EXPRESSION_NODES);
+        memoryerror("MAX_EXPRESSION_NODES3", MAX_EXPRESSION_NODES);
 
     ET[op_node_number].operator_number = t.value;
     ET[op_node_number].up = -1;
@@ -786,12 +878,16 @@ static void emit_token(token_data t)
     previous_node_number = 0;
 
     for (i = emitter_sp-arity; i != emitter_sp; i++)
-    {   if (emitter_stack[i].type == EXPRESSION_OT)
+    {
+        if (expr_trace_level >= 3)
+            printf("i=%d, emitter_sp=%d, arity=%d, ETU=%d\n",
+                i, emitter_sp, arity, ET_used);
+        if (emitter_stack[i].type == EXPRESSION_OT)
             operand_node_number = emitter_stack[i].value;
         else
         {   operand_node_number = ET_used++;
             if (operand_node_number == MAX_EXPRESSION_NODES)
-                memoryerror("MAX_EXPRESSION_NODES", MAX_EXPRESSION_NODES);
+                memoryerror("MAX_EXPRESSION_NODES4", MAX_EXPRESSION_NODES);
             ET[operand_node_number].down = -1;
             ET[operand_node_number].value = emitter_stack[i];
         }
@@ -814,6 +910,26 @@ static void emit_token(token_data t)
     emitter_markers[emitter_sp - 1] = mark_result;
 
     return;
+
+    FoldConstantC:
+
+    if ((x<-32768) || (x > 32767))
+    {   char folding_error[40];
+        switch(t.value)
+        {
+            case PLUS_OP:
+                sprintf(folding_error, "%d + %d = %d", o1.value, o2.value, x);
+                break;
+            case MINUS_OP:
+                sprintf(folding_error, "%d - %d = %d", o1.value, o2.value, x);
+                break;
+            case TIMES_OP:
+                sprintf(folding_error, "%d * %d = %d", o1.value, o2.value, x);
+                break;
+        }
+        error_named("Signed arithmetic on compile-time constants overflowed \
+the range -32768 to +32767:", folding_error);
+    }
 
     FoldConstant:
 
@@ -1074,7 +1190,7 @@ static void insert_exp_to_cond(int n, int context)
     {   if (context==CONDITION_CONTEXT)
         {   new = ET_used++;
             if (new == MAX_EXPRESSION_NODES)
-                memoryerror("MAX_EXPRESSION_NODES", MAX_EXPRESSION_NODES);
+                memoryerror("MAX_EXPRESSION_NODES5", MAX_EXPRESSION_NODES);
             ET[new] = ET[n];
             ET[n].down = new; ET[n].operator_number = NONZERO_OP;
             ET[new].up = n; ET[new].right = -1;
@@ -1097,7 +1213,7 @@ static void insert_exp_to_cond(int n, int context)
 
             new = ET_used++;
             if (new == MAX_EXPRESSION_NODES)
-                memoryerror("MAX_EXPRESSION_NODES", MAX_EXPRESSION_NODES);
+                memoryerror("MAX_EXPRESSION_NODES6", MAX_EXPRESSION_NODES);
             ET[new] = ET[n];
             ET[n].down = new; ET[n].operator_number = NONZERO_OP;
             ET[new].up = n; ET[new].right = -1;
@@ -1117,7 +1233,7 @@ static assembly_operand check_conditions(assembly_operand AO, int context)
     {   if (context != CONDITION_CONTEXT) return AO;
         n = ET_used++;
         if (n == MAX_EXPRESSION_NODES)
-            memoryerror("MAX_EXPRESSION_NODES", MAX_EXPRESSION_NODES);
+            memoryerror("MAX_EXPRESSION_NODES7", MAX_EXPRESSION_NODES);
         ET[n].down = -1;
         ET[n].up = -1;
         ET[n].right = -1;
@@ -1156,6 +1272,11 @@ extern assembly_operand parse_expression(int context)
 
             QUANTITY_CONTEXT    the default: a quantity is to be specified
 
+            ACTION_Q_CONTEXT    like QUANTITY_CONTEXT, but postfixed brackets
+                                at the top level do not indicate function call:
+                                used for e.g.
+                                   <Insert button (random(pocket1, pocket2))>
+
             ASSEMBLY_CONTEXT    a quantity which cannot use the '->' operator
                                 (needed for assembly language to indicate
                                 store destinations)
@@ -1192,8 +1313,10 @@ extern assembly_operand parse_expression(int context)
     comma_allowed = (context == VOID_CONTEXT);
     arrow_allowed = (context != ASSEMBLY_CONTEXT);
     array_init_ambiguity = (context == ARRAY_CONTEXT);
+    action_ambiguity = (context == ACTION_Q_CONTEXT);
 
     if (context == ASSEMBLY_CONTEXT) context = QUANTITY_CONTEXT;
+    if (context == ACTION_Q_CONTEXT) context = QUANTITY_CONTEXT;
     if (context == ARRAY_CONTEXT) context = CONSTANT_CONTEXT;
 
     etoken_count = 0;
@@ -1222,13 +1345,13 @@ extern assembly_operand parse_expression(int context)
     do
     {   if (expr_trace_level >= 2)
         {   printf("Input: %-20s", current_token.text);
-            printf("Stack: ");
             for (i=0; i<sr_sp; i++) printf("%s ", sr_stack[i].text);
             printf("\n");
         }
+        if (expr_trace_level >= 3) printf("ET_used = %d\n", ET_used);
 
         if (sr_sp == 0)
-        {   error("*** SR error: stack empty ***");
+        {   compiler_error("SR error: stack empty");
             return(AO);
         }
 
@@ -1236,11 +1359,11 @@ extern assembly_operand parse_expression(int context)
 
         if ((a.type == ENDEXP_TT) && (b.type == ENDEXP_TT))
         {   if (emitter_sp == 0)
-            {   error("*** SR error: emitter stack empty ***");
+            {   compiler_error("SR error: emitter stack empty");
                 return AO;
             }
             if (emitter_sp > 1)
-            {   error("*** SR error: emitter stack overfull ***");
+            {   compiler_error("SR error: emitter stack overfull");
                 return AO;
             }
 
@@ -1277,8 +1400,21 @@ extern assembly_operand parse_expression(int context)
             case LOWER_P:
             case EQUAL_P:
                 if (sr_sp == MAX_EXPRESSION_NODES)
-                    memoryerror("MAX_EXPRESSION_NODES", MAX_EXPRESSION_NODES);
+                    memoryerror("MAX_EXPRESSION_NODES8", MAX_EXPRESSION_NODES);
                 sr_stack[sr_sp++] = b;
+                if ((b.type == OP_TT) && (b.value == OR_OP))
+                {
+                    if (!((sr_stack[sr_sp-2].type == OP_TT) &&
+                          (sr_stack[sr_sp-2].value >= ZERO_OP) &&
+                          (sr_stack[sr_sp-2].value <= NOTPROVIDES_OP)))
+                    {
+                error("'or' not between values to the right of a condition");
+
+                        /* Convert to + for error recovery purposes */
+                        sr_stack[sr_sp-1].value = PLUS_OP;
+                    }
+                }
+
                 get_next_etoken();
                 break;
             case GREATER_P:

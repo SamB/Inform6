@@ -1,8 +1,8 @@
 /* ------------------------------------------------------------------------- */
 /*   "syntax" : Syntax analyser and compiler                                 */
 /*                                                                           */
-/*   Part of Inform 6.1                                                      */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   Part of Inform 6.21                                                     */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
@@ -115,7 +115,7 @@ extern int parse_directive(int internal_flag)
         else
         {   assign_symbol(routine_symbol,
                 parse_routine(lexical_source, FALSE,
-                    (char *) symbs[routine_symbol], FALSE),
+                    (char *) symbs[routine_symbol], FALSE, routine_symbol),
                 ROUTINE_T);
             slines[routine_symbol] = routine_starts_line;
         }
@@ -263,7 +263,7 @@ static void parse_switch_spec(assembly_operand switch_value, int label,
 }
 
 extern int32 parse_routine(char *source, int embedded_flag, char *name,
-    int veneer_flag)
+    int veneer_flag, int r_symbol)
 {   int32 packed_address; int i; int debug_flag = FALSE;
     int switch_clause_made = FALSE, default_clause_made = FALSE,
         switch_label = 0;
@@ -313,8 +313,15 @@ extern int32 parse_routine(char *source, int embedded_flag, char *name,
 
     construct_local_variable_tables();
 
+    if ((trace_fns_setting==3)
+        || ((trace_fns_setting==2) && (veneer_mode==FALSE))
+        || ((trace_fns_setting==1) && (is_systemfile()==FALSE)))
+        debug_flag = TRUE;
+    if ((embedded_flag == FALSE) && (veneer_mode == FALSE) && debug_flag)
+        sflags[r_symbol] |= STAR_SFLAG;
+
     packed_address = assemble_routine_header(no_locals, debug_flag,
-        name, &start_line_ref);
+        name, &start_line_ref, embedded_flag, r_symbol);
 
     do
     {   begin_syntax_line(TRUE);
@@ -333,6 +340,7 @@ extern int32 parse_routine(char *source, int embedded_flag, char *name,
         {   if (switch_clause_made && (!default_clause_made))
                 assemble_label_no(switch_label);
             directives.enabled = TRUE;
+            sequence_point_follows = TRUE;
             assemble_routine_end(embedded_flag, &token_line_ref);
             break;
         }

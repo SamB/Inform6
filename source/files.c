@@ -7,8 +7,8 @@
 /*             routines in "inform.c", since they are tied up with ICL       */
 /*             settings and are very host OS-dependent.                      */
 /*                                                                           */
-/*   Part of Inform 6.1                                                      */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   Part of Inform 6.21                                                     */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
@@ -28,6 +28,9 @@ static int checksum_low_byte,           /* For calculating the Z-machine's   */
 /* ------------------------------------------------------------------------- */
 
 FileId InputFiles[MAX_SOURCE_FILES];    /*  Ids for all the source files     */
+static char *filename_storage,          /*  Translated filenames             */
+            *filename_storage_p;
+static int filename_storage_left;
 
 /* ------------------------------------------------------------------------- */
 /*   File handles and names for temporary files.                             */
@@ -57,7 +60,15 @@ increase #define MAX_SOURCE_FILES");
         handle = fopen(name,"r");
     } while ((handle == NULL) && (x != 0));
 
-    strcpy(InputFiles[input_file].filename, name);
+    if (filename_storage_left <= strlen(name))
+        fatalerror("Source files have unduly long file names: \
+increase #define MAX_SOURCE_FILES");
+
+    filename_storage_left -= strlen(name)+1;
+    strcpy(filename_storage_p, name);
+    InputFiles[input_file].filename = filename_storage_p;
+
+    filename_storage_p += strlen(name)+1;
 
     if (debugfile_switch)
     {   write_debug_byte(FILE_DBR); write_debug_byte(input_file + 1);
@@ -178,16 +189,6 @@ extern void output_file(void)
         0.5K.  This calculates the number of bytes of padding needed:        */
 
     while (((length_scale_factor*length)+blanks-1)%512 != 511) blanks++;
-
-    /*  Write a copy of the header into the debugging information file
-        (mainly so that it can be used to identify which story file matches
-        with which debugging info file)                                      */
-
-    if (debugfile_switch)
-    {   write_debug_byte(HEADER_DBR);
-        for (i=0; i<64; i++)
-            write_debug_byte((int) (zmachine_paged_memory[i]));
-    }
 
     translate_out_filename(new_name, Code_Name);
 
@@ -345,6 +346,19 @@ extern void output_file(void)
       fatalerror("I/O failure: couldn't backtrack on story file for checksum");
 
     fclose(sf_handle);
+
+    /*  Write a copy of the header into the debugging information file
+        (mainly so that it can be used to identify which story file matches
+        with which debugging info file)                                      */
+
+    if (debugfile_switch)
+    {   write_debug_byte(HEADER_DBR);
+        for (i=0; i<64; i++)
+        {   if (i==28) write_debug_byte(checksum_high_byte);
+            else if (i==29) write_debug_byte(checksum_low_byte);
+            else write_debug_byte((int) (zmachine_paged_memory[i]));
+        }
+    }
 
 #ifdef ARCHIMEDES
     {   char settype_command[128];
@@ -572,11 +586,13 @@ extern void files_begin_pass(void)
 }
 
 extern void files_allocate_arrays(void)
-{
+{   filename_storage = my_malloc(MAX_SOURCE_FILES*64, "filename storage");
+    filename_storage_p = filename_storage;
+    filename_storage_left = MAX_SOURCE_FILES*64;
 }
 
 extern void files_free_arrays(void)
-{
+{   my_free(&filename_storage, "filename storage");
 }
 
 /* ========================================================================= */

@@ -1,9 +1,9 @@
 ! ----------------------------------------------------------------------------
 !  GRAMMAR:  Grammar table entries for the standard verbs library.
 !
-!  Supplied for use with Inform 6                         Serial number 970405
-!                                                                  Release 6/5
-!  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997
+!  Supplied for use with Inform 6                         Serial number 990428
+!                                                                  Release 6/9
+!  (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999
 !      but freely usable (see manuals)
 ! ----------------------------------------------------------------------------
 !  The "meta-verbs", commands to the game rather than in the game, come first:
@@ -26,7 +26,7 @@ Verb meta 'verify'
                 *                                -> Verify;
 Verb meta 'save'
                 *                                -> Save;
-Verb meta 'script'
+Verb meta 'script' 'transcript'
                 *                                -> ScriptOn
                 * 'off'                          -> ScriptOff
                 * 'on'                           -> ScriptOn;
@@ -74,6 +74,10 @@ Verb meta 'timers' 'daemons'
                 *                                -> TimersOn
                 * 'on'                           -> TimersOn
                 * 'off'                          -> TimersOff;
+Verb meta 'changes'
+                *                                -> ChangesOn
+                * 'on'                           -> ChangesOn
+                * 'off'                          -> ChangesOff;
 Verb meta 'recording'
                 *                                -> CommandsOn
                 * 'on'                           -> CommandsOn
@@ -114,9 +118,9 @@ Verb 'take' 'carry' 'hold'
                 * multiinside 'off' noun         -> Remove
                 * 'inventory'                    -> Inv;
 Verb 'get'      * 'out'/'off'/'up'               -> Exit
+                * multi                          -> Take
                 * 'in'/'into'/'on'/'onto' noun   -> Enter
                 * 'off' noun                     -> GetOff
-                * multi                          -> Take
                 * multiinside 'from' noun        -> Remove;
 Verb 'pick'
                 * 'up' multi                     -> Take
@@ -384,4 +388,7 @@ Constant Make__PN;
 #ENDIF;
 #Default Story 0;
 #Default Headline 0;
+#IFDEF INFIX;
+#Include "infix";
+#ENDIF;
 ! ----------------------------------------------------------------------------

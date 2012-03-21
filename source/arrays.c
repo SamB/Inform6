@@ -3,8 +3,8 @@
 /*               likewise global variables, which are in some ways a         */
 /*               simpler form of the same thing.                             */
 /*                                                                           */
-/*   Part of Inform 6.1                                                      */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   Part of Inform 6.21                                                     */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
@@ -32,6 +32,10 @@ int no_globals,                        /* Number of global variables used
                                           uses the top seven -- but these do
                                           not count)                         */
     dynamic_array_area_size;           /* Size in bytes                      */
+
+int no_arrays;
+int32   *array_symbols;
+int     *array_sizes, *array_types;
 
 static int array_entry_size,           /* 1 for byte array, 2 for word array */
            array_base;                 /* Offset in dynamic array area of the
@@ -82,7 +86,7 @@ extern void array_entry(int32 i, assembly_operand VAL)
             and truncate the value                                           */
         else
         if (VAL.value >= 256)
-            warning("Array entry too large for a byte");
+            warning("Entry in '->' or 'string' array not in range 0 to 255");
     }
     else
     {   dynamic_array_area[dynamic_array_area_size + 2*i]   = (VAL.value)/256;
@@ -115,14 +119,7 @@ extern void set_variable_value(int i, int32 v)
 {   global_initial_value[i]=v;
 }
 
-/*  Inform supports four array types...                                      */
-
-#define BYTE_ARRAY      0
-#define WORD_ARRAY      1
-#define STRING_ARRAY    2
-#define TABLE_ARRAY     3
-
-/*  ...each of which can be initialised in four ways:                        */
+/*  There are four ways to initialise arrays:                                */
 
 #define UNSPECIFIED_AI  -1
 #define NULLS_AI        0
@@ -162,6 +159,9 @@ extern void make_global(int array_flag, int name_only)
 
     if (array_flag)
     {   assign_symbol(i, dynamic_array_area_size, ARRAY_T);
+        if (no_arrays == MAX_ARRAYS)
+            memoryerror("MAX_ARRAYS", MAX_ARRAYS);
+        array_symbols[no_arrays] = i;
     }
     else
     {   if (no_globals==233)
@@ -278,35 +278,23 @@ extern void make_global(int array_flag, int name_only)
 
     if ((array_type==STRING_ARRAY) || (array_type==TABLE_ARRAY))
         dynamic_array_area_size += array_entry_size;
-
-/*    printf("Array %s: ", varname);
-    switch(data_type)
-    {   case NULLS_AI: printf("nulls "); break;
-        case DATA_AI: printf("data "); break;
-        case ASCII_AI: printf("ascii "); break;
-        case BRACKET_AI: printf("bracket "); break;
-    }
-    switch(array_type)
-    {   case BYTE_ARRAY: printf("byte "); break;
-        case WORD_ARRAY: printf("word "); break;
-        case STRING_ARRAY: printf("string "); break;
-        case TABLE_ARRAY: printf("table "); break;
-    }
-    printf("\n");
-*/
+    array_types[no_arrays] = array_type;
 
     switch(data_type)
     {
         case NULLS_AI:
 
             AO = parse_expression(CONSTANT_CONTEXT);
+
+            CalculatedArraySize:
+
             if (module_switch && (AO.marker != 0))
             {   error("Array sizes must be known now, not externally defined");
                 break;
             }
 
-            if (AO.value <= 0)
-            {   error("An array must have a positive number of entries");
+            if ((AO.value <= 0) || (AO.value >= 32768))
+            {   error("An array must have between 1 and 32767 entries");
                 AO.value = 1;
             }
 
@@ -338,7 +326,19 @@ extern void make_global(int array_flag, int name_only)
                 }
                 put_token_back();
 
-                array_entry(i, parse_expression(ARRAY_CONTEXT));
+                AO = parse_expression(ARRAY_CONTEXT);
+
+                if (i == 0)
+                {   get_next_token();
+                    put_token_back();
+                    if ((token_type == SEP_TT)
+                        && (token_value == SEMICOLON_SEP))
+                    {   data_type = NULLS_AI;
+                        goto CalculatedArraySize;
+                    }
+                }
+
+                array_entry(i, AO);
                 i++;
             } while (TRUE);
             put_token_back();
@@ -392,6 +392,9 @@ extern void make_global(int array_flag, int name_only)
     }
 
     finish_array(i);
+
+    if ((array_type==BYTE_ARRAY) || (array_type==WORD_ARRAY)) i--;
+    array_sizes[no_arrays++] = i;
 }
 
 extern int32 begin_table_array(void)
@@ -427,20 +430,27 @@ extern int32 begin_word_array(void)
 extern void init_arrays_vars(void)
 {   dynamic_array_area = NULL;
     global_initial_value = NULL;
+    array_sizes = NULL; array_symbols = NULL; array_types = NULL;
 }
 
 extern void arrays_begin_pass(void)
-{   no_globals=0; dynamic_array_area_size=0x1e0;
+{   no_globals=0; no_arrays = 0; dynamic_array_area_size=0x1e0;
 }
 
 extern void arrays_allocate_arrays(void)
 {   dynamic_array_area = my_calloc(sizeof(int), MAX_STATIC_DATA, "static data");
+    array_sizes = my_calloc(sizeof(int), MAX_ARRAYS, "array sizes");
+    array_types = my_calloc(sizeof(int), MAX_ARRAYS, "array types");
+    array_symbols = my_calloc(sizeof(int32), MAX_ARRAYS, "array symbols");
     global_initial_value = my_calloc(sizeof(int32), 240, "global values");
 }
 
 extern void arrays_free_arrays(void)
 {   my_free(&dynamic_array_area, "static data");
     my_free(&global_initial_value, "global values");
+    my_free(&array_sizes, "array sizes");
+    my_free(&array_types, "array sizes");
+    my_free(&array_symbols, "array sizes");
 }
 
 /* ========================================================================= */

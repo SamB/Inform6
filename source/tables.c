@@ -3,8 +3,8 @@
 /*               end of dynamic memory, gluing together all the required     */
 /*               tables.                                                     */
 /*                                                                           */
-/*   Part of Inform 6.1                                                      */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   Part of Inform 6.21                                                     */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
@@ -38,8 +38,21 @@ int32 code_offset,
       class_numbers_offset,
       individuals_offset,
       identifier_names_offset,
+      array_names_offset,
       prop_defaults_offset,
-      prop_values_offset;
+      prop_values_offset,
+      static_memory_offset,
+      attribute_names_offset,
+      action_names_offset,
+      fake_action_names_offset,
+      routine_names_offset,
+      constant_names_offset,
+      routines_array_offset,
+      constants_array_offset,
+      routine_flags_array_offset,
+      global_names_offset,
+      global_flags_array_offset,
+      array_flags_array_offset;
 
 int32 Out_Size, Write_Code_At, Write_Strings_At;
 
@@ -124,8 +137,7 @@ static int32 rough_size_of_paged_memory(void)
             + properties_table_size            /* property values of objects */
             + (no_classes+1)*(module_switch?4:2)
                                                /* class object numbers table */
-            + no_individual_properties*2 + 2         /* table for prop names */
-            + 48*2 + no_actions*2          /* and attribute and action names */
+            + no_symbols*2                       /* names of numerous things */
             + individuals_length                 /* tables of prop variables */
             + dynamic_array_area_size;               /* variables and arrays */
 
@@ -158,18 +170,23 @@ extern void construct_storyfile(void)
     int32 globals_at, link_table_at, dictionary_at, actions_at, preactions_at,
           abbrevs_at, prop_defaults_at, object_tree_at, object_props_at,
           map_of_module, grammar_table_at, charset_at, headerext_at,
-          unicode_at;
+          terminating_chars_at,
+          unicode_at, id_names_length;
     char *output_called = (module_switch)?"module":"story file";
 
     individual_name_strings =
         my_calloc(sizeof(int32), no_individual_properties,
             "identifier name strings");
     action_name_strings =
-        my_calloc(sizeof(int32), no_actions,
+        my_calloc(sizeof(int32), no_actions + no_fake_actions,
             "action name strings");
     attribute_name_strings =
         my_calloc(sizeof(int32), 48,
             "attribute name strings");
+    array_name_strings =
+        my_calloc(sizeof(int32),
+            no_symbols,
+            "array name strings");
 
     write_the_identifier_names();
 
@@ -308,7 +325,7 @@ extern void construct_storyfile(void)
     p[mark++] = 0;
     p[mark++] = 0;
 
-    /*  ---------------- Table of Indiv Property Values -------------------- */
+    /*  ------------------- Table of Identifier Names ---------------------- */
 
     identifier_names_offset = mark;
 
@@ -320,16 +337,44 @@ extern void construct_storyfile(void)
             p[mark++] = individual_name_strings[i]%256;
         }
 
+        attribute_names_offset = mark;
         for (i=0; i<48; i++)
         {   p[mark++] = attribute_name_strings[i]/256;
             p[mark++] = attribute_name_strings[i]%256;
         }
 
-        for (i=0; i<no_actions; i++)
+        action_names_offset = mark;
+        fake_action_names_offset = mark + 2*no_actions;
+        for (i=0; i<no_actions + no_fake_actions; i++)
         {   p[mark++] = action_name_strings[i]/256;
             p[mark++] = action_name_strings[i]%256;
         }
+
+        array_names_offset = mark;
+        global_names_offset = mark + 2*no_arrays;
+        routine_names_offset = global_names_offset + 2*no_globals;
+        constant_names_offset = routine_names_offset + 2*no_named_routines;
+        for (i=0; i<no_arrays + no_globals
+                    + no_named_routines + no_named_constants; i++)
+        {   p[mark++] = array_name_strings[i]/256;
+            p[mark++] = array_name_strings[i]%256;
+            if (define_INFIX_switch == FALSE) break;
+        }
+
+        id_names_length = (mark - identifier_names_offset)/2;
     }
+    routine_flags_array_offset = mark;
+
+    if (define_INFIX_switch)
+    {   for (i=0, k=1, l=0; i<no_named_routines; i++)
+        {   if (sflags[named_routine_symbols[i]] & STAR_SFLAG) l=l+k;
+            k=k*2;
+            if (k==256) { p[mark++] = l; k=1; l=0; }
+        }
+        if (k!=1) p[mark++]=l;
+    }
+
+    /*  ---------------- Table of Indiv Property Values -------------------- */
 
     individuals_offset = mark;
     for (i=0; i<individuals_length; i++)
@@ -345,6 +390,14 @@ extern void construct_storyfile(void)
     for (i=0; i<240; i++)
     {   j=global_initial_value[i];
         p[globals_at+i*2]   = j/256; p[globals_at+i*2+1] = j%256;
+    }
+
+    /*  ------------------ Terminating Characters Table -------------------- */
+
+    if (version_number >= 5)
+    {   terminating_chars_at = mark;
+        for (i=0; i<no_termcs; i++) p[mark++] = terminating_characters[i];
+        p[mark++] = 0;
     }
 
     /*  ------------------------ Grammar Table ----------------------------- */
@@ -464,6 +517,14 @@ table format requested (producing number 2 format instead)");
     while ((mark%length_scale_factor) != 0) p[mark++]=0;
     while (mark < (scale_factor*0x100)) p[mark++]=0;
 
+    if (mark > 0x10000)
+    {   error("This program has overflowed the maximum readable-memory \
+size of the Z-machine format. See the memory map below: the start \
+of the area marked \"above readable memory\" must be brought down to $10000 \
+or less.");
+        memory_map_switch = TRUE;
+    }
+
     /*  -------------------------- Code Area ------------------------------- */
     /*  (From this point on we don't write any more into the "p" buffer.)    */
     /*  -------------------------------------------------------------------- */
@@ -522,6 +583,7 @@ table format requested (producing number 2 format instead)");
     preactions_offset = preactions_at;
     prop_defaults_offset = prop_defaults_at;
     prop_values_offset = object_props_at;
+    static_memory_offset = grammar_table_at;
 
     if (extend_memory_map)
     {   extend_offset=256;
@@ -571,6 +633,11 @@ table format requested (producing number 2 format instead)");
     {   j=(Write_Code_At - extend_offset*scale_factor)/length_scale_factor;
         p[40]=j/256; p[41]=j%256;                         /* Routines offset */
         p[42]=j/256; p[43]=j%256;                        /* = Strings offset */
+    }
+
+    if (version_number >= 5)
+    {   p[46] = terminating_chars_at/256;    /* Terminating characters table */
+        p[47] = terminating_chars_at%256;
     }
 
     if (alphabet_modified)
@@ -644,7 +711,7 @@ table format requested (producing number 2 format instead)");
 
     if (!module_switch)
     {   backpatch_zmachine_image();
-        for (i=1; i< no_actions + 48 + no_individual_properties; i++)
+        for (i=1; i<id_names_length; i++)
         {   int32 v = 256*p[identifier_names_offset + i*2]
                       + p[identifier_names_offset + i*2 + 1];
             if (v!=0) v += strings_offset/scale_factor;
@@ -717,15 +784,18 @@ table format requested (producing number 2 format instead)");
 
             printf("Allocated:\n\
 %6d symbols (maximum %4d)       %6ld bytes of memory\n\
-Out:   Version %d (%s) %s %ld%sK long containing:\n\
-%6d classes (maximum %2d)         %6d objects (maximum %3d)\n\
-%6d global vars (maximum 233)    %6d variable/array space (maximum %d)\n",
+Out:   Version %d \"%s\" %s %d.%c%c%c%c%c%c (%ld%sK long):\n",
                  no_symbols, MAX_SYMBOLS,
                  (long int) malloced_bytes,
                  version_number,
                  version_name(version_number),
                  output_called,
-                 (long int) k_long, k_str,
+                 release_number, p[18], p[19], p[20], p[21], p[22], p[23],
+                 (long int) k_long, k_str);
+
+            printf("\
+%6d classes (maximum %2d)         %6d objects (maximum %3d)\n\
+%6d global vars (maximum 233)    %6d variable/array space (maximum %d)\n",
                  no_classes, MAX_CLASSES,
                  no_objects, ((version_number==3)?255:(MAX_OBJECTS-1)),
                  no_globals,
@@ -749,6 +819,7 @@ Out:   Version %d (%s) %s %ld%sK long containing:\n\
 "%6ld characters used in text      %6ld bytes compressed (rate %d.%3ld)\n\
 %6d abbreviations (maximum %d)   %6d routines (unlimited)\n\
 %6ld instructions of Z-code       %6d sequence points\n\
+%6ld bytes readable memory used (maximum 65536)\n\
 %6ld bytes used in Z-machine      %6ld bytes free in Z-machine\n",
                  (long int) total_chars_trans,
                  (long int) total_bytes_trans,
@@ -757,6 +828,7 @@ Out:   Version %d (%s) %s %ld%sK long containing:\n\
                  no_abbreviations, MAX_ABBREVS,
                  no_routines,
                  (long int) no_instructions, no_sequence_points,
+                 (long int) Write_Code_At,
                  (long int) Out_Size,
                  (long int)
                       (((long int) (limit*1024L)) - ((long int) Out_Size)));
@@ -868,6 +940,9 @@ printf("        + - - - - - - - - - - +   %05lx\n",
                                           (long int) class_numbers_offset);
 printf("        | class numbers table |\n");
 printf("        + - - - - - - - - - - +   %05lx\n",
+                                          (long int) identifier_names_offset);
+printf("        | symbol names table  |\n");
+printf("        + - - - - - - - - - - +   %05lx\n",
                                           (long int) individuals_offset);
 printf("        | indiv prop values   |\n");
 printf("        +---------------------+   %05lx\n", (long int) globals_at);
@@ -877,9 +952,9 @@ printf("        + - - - - - - - - - - +   %05lx\n",
 printf("        |       arrays        |\n");
 printf("        +=====================+   %05lx\n",
                                           (long int) grammar_table_at);
-printf("Static  |    grammar table    |\n");
-printf("cached  + - - - - - - - - - - +   %05lx\n", (long int) actions_at);
-printf("data    |       actions       |\n");
+printf("Readable|    grammar table    |\n");
+printf("memory  + - - - - - - - - - - +   %05lx\n", (long int) actions_at);
+printf("        |       actions       |\n");
 printf("        + - - - - - - - - - - +   %05lx\n", (long int) preactions_at);
 printf("        |   parsing routines  |\n");
 printf("        + - - - - - - - - - - +   %05lx\n",
@@ -893,11 +968,11 @@ printf("        + - - - - - - - - - - +   %05lx\n",
                                           (long int) map_of_module);
 printf("        | map of module addrs |\n");
 }
-printf("        +---------------------+   %05lx\n", (long int) Write_Code_At);
-printf("Static  |       Z-code        |\n");
-printf("paged   +---------------------+   %05lx\n",
+printf("        +=====================+   %05lx\n", (long int) Write_Code_At);
+printf("Above   |       Z-code        |\n");
+printf("readable+---------------------+   %05lx\n",
                                           (long int) Write_Strings_At);
-printf("data    |       strings       |\n");
+printf("memory  |       strings       |\n");
 if (module_switch)
 {
 printf("        +=====================+   %05lx\n", (long int) link_table_at);

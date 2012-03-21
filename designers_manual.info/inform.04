@@ -1,10 +1,11 @@
 This is Info file inform.info, produced by Makeinfo-1.64 from the input
 file inform.texi.
 
-This is the Inform Designer's Manual, third edition, 4 September 1996.
-It was converted to Info by Christopher J. Madsen <ac608@yfn.ysu.edu>.
+This is the Inform Designer's Manual, third edition, 4 September 1996,
+as updated 16 May 1997.  It was converted to Info by Christopher J.
+Madsen <ac608@yfn.ysu.edu>.
 
-Copyright 1996 Graham Nelson and Christopher J. Madsen
+Copyright 1996,1997 Graham Nelson and Christopher J. Madsen
 
 Permission is granted to make and distribute copies of this manual
 provided that:
@@ -27,7 +28,15 @@ Controlling what is compiled
 instructs Inform to compile the whole of the source code in the given
 file, and only carry on compiling from here once that is complete.  It
 is exactly equivalent to removing the Include directive and replacing it
-with the whole file "filename".
+with the whole file "filename".  (The rules for how Inform interprets
+"filename" vary from machine to machine: run Inform with the -h1 switch
+for information.)  Note that you can write
+
+    Include ">shortname";
+
+to mean "the file called "shortname" which is in the same directory
+that the present file came from".  This is convenient if all the files
+making up the source code of your game are housed together.
 
 !!  Next, there are a number of "conditional compilation" directives.
 They take the general form of a condition:
@@ -118,12 +127,12 @@ using:
 
 For example,
 
-    Ifndef VN_1601;
-    Message fatalerror "This code can only be compiled by Inform 6";
+    Ifndef VN_1610;
+    Message fatalerror "This code can only be compiled by Inform 6.1";
     Endif;
 
-(By a special rule, the condition VN_1601-is-defined is true if and only
-if the version number is 6.01 or more; similarly for other four-digit
+(By a special rule, the condition VN_1610-is-defined is true if and only
+if the version number is 6.10 or more; similarly for other four-digit
 numbers beginning with a 1.)  Informational messages are simply
 printed: e.g.,
 
@@ -242,9 +251,11 @@ always be printed out with the -h2 switch.)
   a   trace assembly-language (without hex dumps; see -t)
   c   more concise error messages
   d   contract double spaces after full stops in text
+  d2  contract double spaces after exclamation and question marks, too
   e   economy mode (slower): make use of declared abbreviations
   f   frequencies mode: show how useful abbreviations are
-  g   with debugging code: traces all function calls
+  g   traces calls to functions (except in the library)
+  g2  traces calls to all functions
   h   print this information
   i   ignore default switches set within the file
   j   list objects as constructed
@@ -274,6 +285,7 @@ always be printed out with the -h2 switch.)
   D   insert "Constant DEBUG;" automatically
   E0  Archimedes-style error messages (current setting)
   E1  Microsoft-style error messages
+  E2  Macintosh MPW-style error messages
   F1  use temporary files to reduce memory consumption
   M   compile as a Module for future linking
   R0  use filetype 060 + version number for games (default)
@@ -503,7 +515,7 @@ like this:
 I/O failure: couldn't read from temporary file 2
 
 Normally you can only have at most 64 files of source code in a single
-compilation.  If this limit is passed, the error
+compilation.  If this limit is passed, Inform generates the error
 
 Program contains too many source files: increase #define MAX_SOURCE_FILES
 
@@ -585,9 +597,9 @@ missed out.
 on as normal in subsequent lines.  But it sometimes happens that a
 whole cascade of errors is thrown up, in code which the user is fairly
 sure must be nearly right.  What has happened is that one syntax
-mistake threw Inform off the right track, so that continued not to know
-where it was for many lines in a row.  Look at the first error message,
-fix that and then try again.
+mistake threw Inform off the right track, so that it continued not to
+know where it was for many lines in a row.  Look at the first error
+message, fix that and then try again.
 
 1. Reading in the source-code
 
@@ -750,7 +762,6 @@ however.)
 8. Conditional compilation
 
 'Ifnot' without matching 'If...'
-'Ifnot' without matching 'If...'
 Second 'Ifnot' for the same 'If...' condition
 End of file reached in code 'If...'d out
 This condition can't be determined
@@ -758,7 +769,7 @@ This condition can't be determined
 "Condition can't be determined" only arises for Iftrue and Iffalse,
 which make numerical or logical tests: for instance,
 
-    Iftrue #strings_offset==$$4a50;
+    Iftrue #strings_offset==$4a50;
 
 can't be determined because even though both quantities are constants,
 the #strings_offset will not be known until compilation is finished.
@@ -772,7 +783,7 @@ can be determined, as the version number was set before compilation.
 
 You can't 'Replace' a system function already used
 Must specify 0 to 3 local variables for 'Stub' routine
-A 'Switches' directive must must come before the first constant definition
+A 'Switches' directive must come before the first constant definition
 All 48 attributes already declared
 All 62 properties already declared
 'alias' incompatible with 'additive'
@@ -1036,8 +1047,8 @@ contain the core of ordinary rules common to all games:
          Grammar      the grammar table, or what the Parser understands.
 
 (If compilation is annoyingly slow, it should be easy enough to "link
-the library files", which is much faster: see *Note Linking::.)  Apart
-from the inclusions, `Ruins' contains:
+the library files", which is much faster: *note Linking::.)  Apart from
+the inclusions, `Ruins' contains:
 
   a. strings (that is, quoted text) giving the game's name and a
      copyright message, to be printed out when appropriate;

@@ -2,8 +2,8 @@
 /*   "bpatch" : Keeps track of, and finally acts on, backpatch markers,      */
 /*              correcting symbol values not known at compilation time       */
 /*                                                                           */
-/*   Part of Inform 6.1                                                      */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   Part of Inform 6.21                                                     */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
@@ -34,11 +34,12 @@ extern int32 backpatch_value(int32 value)
             value += code_offset/scale_factor; break;
         case VROUTINE_MV:
             if ((value<0) || (value>=VENEER_ROUTINES))
-            {   backpatch_error_flag = TRUE;
-                if (no_link_errors > 0) break;
-                compiler_error
-                    ("Backpatch veneer routine number out of range");
-                printf("Illegal BP veneer routine number: %d\n", value);
+            {   if (no_link_errors > 0) break;
+                if (compiler_error
+                    ("Backpatch veneer routine number out of range"))
+                {   printf("Illegal BP veneer routine number: %d\n", value);
+                    backpatch_error_flag = TRUE;
+                }
                 value = 0;
                 break;
             }
@@ -47,12 +48,13 @@ extern int32 backpatch_value(int32 value)
         case NO_OBJS_MV:
             value = no_objects; break;
         case INCON_MV:
-            if ((value<0) || (value>=12))
-            {   backpatch_error_flag = TRUE;
-                if (no_link_errors > 0) break;
-                compiler_error
-                    ("Backpatch system constant number out of range");
-                printf("Illegal BP system constant number: %d\n", value);
+            if ((value<0) || (value>=NO_SYSTEM_CONSTANTS))
+            {   if (no_link_errors > 0) break;
+                if (compiler_error
+                    ("Backpatch system constant number out of range"))
+                {   printf("Illegal BP system constant number: %d\n", value);
+                    backpatch_error_flag = TRUE;
+                }
                 value = 0;
                 break;
             }
@@ -85,10 +87,11 @@ extern int32 backpatch_value(int32 value)
             break;
         case SYMBOL_MV:
             if ((value<0) || (value>=no_symbols))
-            {   backpatch_error_flag = TRUE;
-                if (no_link_errors > 0) break;
-                compiler_error("Backpatch symbol number out of range");
-                printf("Illegal BP symbol number: %d\n", value);
+            {   if (no_link_errors > 0) break;
+                if (compiler_error("Backpatch symbol number out of range"))
+                {   printf("Illegal BP symbol number: %d\n", value);
+                    backpatch_error_flag = TRUE;
+                }
                 value = 0;
                 break;
             }
@@ -105,12 +108,13 @@ extern int32 backpatch_value(int32 value)
                 backpatch_marker = (svals[value]/0x10000);
                 if ((backpatch_marker < 0)
                     || (backpatch_marker > LARGEST_BPATCH_MV))
-                {   
-                    backpatch_error_flag = TRUE;
+                {
                     if (no_link_errors == 0)
-                    compiler_error_named(
+                    {   compiler_error_named(
                         "Illegal backpatch marker attached to symbol",
                         (char *) symbs[value]);
+                        backpatch_error_flag = TRUE;
+                    }
                 }
                 else
                     svals[value] = backpatch_value((svals[value]) % 0x10000);
@@ -126,11 +130,12 @@ extern int32 backpatch_value(int32 value)
             }
             break;
         default:
-            backpatch_error_flag = TRUE;
             if (no_link_errors > 0) break;
-            compiler_error("Illegal backpatch marker");
-            printf("Illegal backpatch marker %d value %04x\n",
-                backpatch_marker, value);
+            if (compiler_error("Illegal backpatch marker"))
+            {   printf("Illegal backpatch marker %d value %04x\n",
+                    backpatch_marker, value);
+                backpatch_error_flag = TRUE;
+            }
             break;
     }
 
@@ -149,7 +154,7 @@ extern void backpatch_zmachine(int mv, int zmachine_area, int32 offset)
         if (mv == ACTION_MV) return;
     }
 
-/*    printf("MV %d ZA %d Off %04x\n", mv, zmachine_area, offset);  */
+    /* printf("MV %d ZA %d Off %04x\n", mv, zmachine_area, offset); */
 
     write_byte_to_memory_block(&zmachine_backpatch_table,
         zmachine_backpatch_size++, mv);
@@ -180,9 +185,9 @@ extern void backpatch_zmachine_image(void)
             case INDIVIDUAL_PROP_ZA: addr = individuals_offset; break;
             case DYNAMIC_ARRAY_ZA:   addr = variables_offset; break;
             default:
-                backpatch_error_flag = TRUE;
                 if (no_link_errors == 0)
-                    compiler_error("Illegal area to backpatch");
+                    if (compiler_error("Illegal area to backpatch"))
+                        backpatch_error_flag = TRUE;
         }
         addr += offset;
 

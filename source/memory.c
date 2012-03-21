@@ -2,8 +2,8 @@
 /*   "memory" : Memory management and ICL memory setting commands            */
 /*              (For "memoryerror", see "errors.c")                          */
 /*                                                                           */
-/*   Part of Inform 6.1                                                      */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   Part of Inform 6.21                                                     */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
@@ -110,7 +110,7 @@ extern int read_byte_from_memory_block(memory_block *MB, int32 index)
 {   uchar *p;
     p = MB->chunk[index/ALLOC_CHUNK_SIZE];
     if (p == NULL)
-    {   error_named("*** memory: read from unwritten byte in",
+    {   compiler_error_named("memory: read from unwritten byte in",
             chunk_name(MB, index/ALLOC_CHUNK_SIZE));
         return 0;
     }
@@ -120,7 +120,7 @@ extern int read_byte_from_memory_block(memory_block *MB, int32 index)
 extern void write_byte_to_memory_block(memory_block *MB, int32 index, int value)
 {   uchar *p; int ch = index/ALLOC_CHUNK_SIZE;
     if (ch < 0)
-    {   error_named("*** memory: negative index to", chunk_name(MB, 0));
+    {   compiler_error_named("memory: negative index to", chunk_name(MB, 0));
         return;
     }
     if (ch >= 72) fatalerror("One of the memory blocks has exceeded 640K");
@@ -145,6 +145,7 @@ int MAX_SYMBOLS;
 int SYMBOLS_CHUNK_SIZE;
 int HASH_TAB_SIZE;
 int MAX_OBJECTS;
+int MAX_ARRAYS;
 int MAX_ACTIONS;
 int MAX_ADJECTIVES;
 int MAX_DICT_ENTRIES;
@@ -231,8 +232,8 @@ extern void set_memory_sizes(int size_flag)
         MAX_LABELS = 1000;
         MAX_LINESPACE = 16000;
 
-        MAX_STATIC_STRINGS = 2000;
-        MAX_ZCODE_SIZE = 10000;
+        MAX_STATIC_STRINGS = 8000;
+        MAX_ZCODE_SIZE = 20000;
         MAX_LINK_DATA_SIZE = 2000;
 
         MAX_LOW_STRINGS = 2048;
@@ -243,6 +244,7 @@ extern void set_memory_sizes(int size_flag)
         MAX_CLASS_TABLE_SIZE = 1000;
 
         MAX_INDIV_PROP_TABLE_SIZE = 15000;
+        MAX_ARRAYS = 128;
     }
     if (size_flag == LARGE_SIZE)
     {
@@ -254,7 +256,7 @@ extern void set_memory_sizes(int size_flag)
 
         MAX_OBJECTS = 512;
 
-        MAX_ACTIONS      = 150;
+        MAX_ACTIONS      = 200;
         MAX_ADJECTIVES   = 50;
         MAX_DICT_ENTRIES = 1300;
         MAX_STATIC_DATA  = 10000;
@@ -269,8 +271,8 @@ extern void set_memory_sizes(int size_flag)
         MAX_LINESPACE = 10000;
 
         MAX_LABELS = 1000;
-        MAX_STATIC_STRINGS = 2000;
-        MAX_ZCODE_SIZE = 10000;
+        MAX_STATIC_STRINGS = 8000;
+        MAX_ZCODE_SIZE = 20000;
         MAX_LINK_DATA_SIZE = 2000;
 
         MAX_LOW_STRINGS = 2048;
@@ -281,6 +283,7 @@ extern void set_memory_sizes(int size_flag)
         MAX_CLASS_TABLE_SIZE = 1000;
 
         MAX_INDIV_PROP_TABLE_SIZE = 10000;
+        MAX_ARRAYS = 128;
     }
     if (size_flag == SMALL_SIZE)
     {
@@ -292,7 +295,7 @@ extern void set_memory_sizes(int size_flag)
 
         MAX_OBJECTS = 300;
 
-        MAX_ACTIONS      = 150;
+        MAX_ACTIONS      = 200;
         MAX_ADJECTIVES   = 50;
         MAX_DICT_ENTRIES = 700;
         MAX_STATIC_DATA  = 10000;
@@ -307,8 +310,8 @@ extern void set_memory_sizes(int size_flag)
         MAX_LINESPACE = 10000;
         MAX_LABELS = 1000;
 
-        MAX_STATIC_STRINGS = 1000;
-        MAX_ZCODE_SIZE = 7000;
+        MAX_STATIC_STRINGS = 8000;
+        MAX_ZCODE_SIZE = 10000;
         MAX_LINK_DATA_SIZE = 1000;
 
         MAX_LOW_STRINGS = 1024;
@@ -319,6 +322,7 @@ extern void set_memory_sizes(int size_flag)
         MAX_CLASS_TABLE_SIZE = 800;
 
         MAX_INDIV_PROP_TABLE_SIZE = 5000;
+        MAX_ARRAYS = 64;
     }
 }
 
@@ -327,7 +331,8 @@ static void explain_parameter(char *command)
     if (strcmp(command,"MAX_QTEXT_SIZE")==0)
     {   printf(
 "  MAX_QTEXT_SIZE is the maximum length of a quoted string.  Increasing\n\
-   by 1 costs 5 bytes (for lexical analysis memory).\n");
+   by 1 costs 5 bytes (for lexical analysis memory).  Inform automatically\n\
+   ensures that MAX_STATIC_STRINGS is at least twice the size of this.");
         return;
     }
     if (strcmp(command,"MAX_SYMBOLS")==0)
@@ -392,6 +397,11 @@ static void explain_parameter(char *command)
   allowed to exceed 64.\n");
         return;
     }
+    if (strcmp(command,"MAX_ARRAYS")==0)
+    {   printf(
+"  MAX_ARRAYS is the maximum number of declared arrays.\n");
+        return;
+    }
     if (strcmp(command,"MAX_EXPRESSION_NODES")==0)
     {   printf(
 "  MAX_EXPRESSION_NODES is the maximum number of nodes in the expression \n\
@@ -433,7 +443,9 @@ static void explain_parameter(char *command)
         printf(
 "  MAX_STATIC_STRINGS is the size in bytes of a buffer to hold compiled\n\
   strings before they're written into longer-term storage.  2000 bytes is \n\
-  plenty, allowing string constants of up to about 3000 characters in length.");
+  plenty, allowing string constants of up to about 3000 characters long.\n\
+  Inform automatically ensures that this is at least twice the size of\n\
+  MAX_QTEXT_SIZE, to be on the safe side.");
         return;
 
     }
@@ -515,7 +527,10 @@ extern void memory_command(char *command)
             if (strcmp(command,"BUFFER_LENGTH")==0)
                 flag=2;
             if (strcmp(command,"MAX_QTEXT_SIZE")==0)
-                MAX_QTEXT_SIZE=j, flag=1;
+            {   MAX_QTEXT_SIZE=j, flag=1;
+                if (2*MAX_QTEXT_SIZE > MAX_STATIC_STRINGS)
+                    MAX_STATIC_STRINGS = 2*MAX_QTEXT_SIZE;
+            }
             if (strcmp(command,"MAX_SYMBOLS")==0)
                 MAX_SYMBOLS=j, flag=1;
             if (strcmp(command,"MAX_BANK_SIZE")==0)
@@ -554,6 +569,8 @@ extern void memory_command(char *command)
                 flag=2;
             if (strcmp(command,"MAX_ABBREVS")==0)
                 MAX_ABBREVS=j, flag=1;
+            if (strcmp(command,"MAX_ARRAYS")==0)
+                MAX_ARRAYS=j, flag=1;
             if (strcmp(command,"MAX_EXPRESSION_NODES")==0)
                 MAX_EXPRESSION_NODES=j, flag=1;
             if (strcmp(command,"MAX_VERBS")==0)
@@ -565,7 +582,10 @@ extern void memory_command(char *command)
             if (strcmp(command,"MAX_LINESPACE")==0)
                 MAX_LINESPACE=j, flag=1;
             if (strcmp(command,"MAX_STATIC_STRINGS")==0)
-                MAX_STATIC_STRINGS=j, flag=1;
+            {   MAX_STATIC_STRINGS=j, flag=1;
+                if (2*MAX_QTEXT_SIZE > MAX_STATIC_STRINGS)
+                    MAX_STATIC_STRINGS = 2*MAX_QTEXT_SIZE;
+            }
             if (strcmp(command,"MAX_ZCODE_SIZE")==0)
                 MAX_ZCODE_SIZE=j, flag=1;
             if (strcmp(command,"MAX_LINK_DATA_SIZE")==0)

@@ -1,8 +1,8 @@
 /* ------------------------------------------------------------------------- */
 /*   "lexer" : Lexical analyser                                              */
 /*                                                                           */
-/*   Part of Inform 6.1                                                      */
-/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997                */
+/*   Part of Inform 6.21                                                     */
+/*   copyright (c) Graham Nelson 1993, 1994, 1995, 1996, 1997, 1998, 1999    */
 /*                                                                           */
 /* ------------------------------------------------------------------------- */
 
@@ -213,7 +213,7 @@ extern void describe_token(token_data t)
 /*   "header.h" but is otherwise not significant.                            */
 /* ------------------------------------------------------------------------- */
 
-#define MAX_KEYWORDS 300
+#define MAX_KEYWORDS 350
 
 keyword_group opcode_names =
 { { "je", "jl", "jg", "dec_chk", "inc_chk", "jin", "test", "or", "and",
@@ -273,6 +273,7 @@ keyword_group directive_keywords =
     "string", "table", "data", "initial", "initstr",
     "with", "private", "has", "class",
     "error", "fatalerror", "warning",
+    "terminating",
     "" },
     DIR_KEYWORD_TT, FALSE, TRUE
 };
@@ -308,7 +309,29 @@ keyword_group system_constants =
 { { "adjectives_table", "actions_table", "classes_table",
     "identifiers_table", "preactions_table", "version_number",
     "largest_object", "strings_offset", "code_offset",
-    "dict_par1", "dict_par2", "dict_par3", "" },
+    "dict_par1", "dict_par2", "dict_par3", "actual_largest_object",
+    "static_memory_offset", "array_names_offset", "readable_memory_offset",
+    "cpv__start", "cpv__end", "ipv__start", "ipv__end",
+    "array__start", "array__end",
+    "lowest_attribute_number", "highest_attribute_number",
+    "attribute_names_array",
+    "lowest_property_number", "highest_property_number",
+    "property_names_array",
+    "lowest_action_number", "highest_action_number",
+    "action_names_array",
+    "lowest_fake_action_number", "highest_fake_action_number",
+    "fake_action_names_array",
+    "lowest_routine_number", "highest_routine_number", "routines_array",
+    "routine_names_array", "routine_flags_array",
+    "lowest_global_number", "highest_global_number", "globals_array",
+    "global_names_array", "global_flags_array",
+    "lowest_array_number", "highest_array_number", "arrays_array",
+    "array_names_array", "array_flags_array",
+    "lowest_constant_number", "highest_constant_number", "constants_array",
+    "constant_names_array",
+    "lowest_class_number", "highest_class_number", "class_objects_array",
+    "lowest_object_number", "highest_object_number",
+    "" },
     SYSTEM_CONSTANT_TT, FALSE, TRUE
 };
 
@@ -960,8 +983,8 @@ extern void put_token_back(void)
     /*  The following error, of course, should never happen!                 */
 
     if (tokens_put_back == CIRCLE_SIZE)
-    {   error("*** The lexical analyser has collapsed because of a wrong \
-assumption made by the author.  Please report this error to him. ***");
+    {   compiler_error("The lexical analyser has collapsed because of a wrong \
+assumption inside Inform");
         tokens_put_back--;
         return;
     }
